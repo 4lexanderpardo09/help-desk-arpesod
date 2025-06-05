@@ -9,6 +9,9 @@ $usuario = new Usuario();
 require_once('../models/Documento.php');
 $documento = new Documento();
 
+require_once('../models/Email.php');
+$correo = new Email();
+
 switch ($_GET["op"]) {
     case "insert":
 
@@ -17,10 +20,10 @@ switch ($_GET["op"]) {
             foreach($datos as $row){
                 $output['tick_id'] = $row['tick_id'];
                 
-                if($_FILES['files']==0){
-
+                if(empty($_FILES['files'])){
+                    
                 }else{
-                    $countfiles = count($_FILES['files']['name']);
+                    $countfiles = is_countable($_FILES['files']['name'] ?? null) ? count($_FILES['files']['name']) : 0;
                     $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
                     $files_arr = array();   
 
@@ -221,11 +224,15 @@ switch ($_GET["op"]) {
 
     case "update":
         $ticket->update_ticket($_POST['tick_id']);
+        $correo->ticket_cerrado($_POST['tick_id']);
         $ticket->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
     break;
 
     case "updateasignacion":
-        $ticket->update_ticket_asignacion($_POST['tick_id'], $_POST['usu_asig']);
+        $ticket->update_ticket_asignacion($_POST['tick_id'], $_POST['usu_asig'], $_POST['how_asig']);
+
+        $correo->ticket_asignado($_POST["tick_id"]);
+
     break;
 
     case "total":

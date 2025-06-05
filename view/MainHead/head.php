@@ -27,6 +27,8 @@
 
 	<link rel="stylesheet" href="../../public/css/separate/vendor/select2.min.css">
 
+	<link rel="stylesheet" href="../../public/css/lib/ladda-button/ladda-themeless.min.css">
+
 	<link href="../../public/css/lib/charts-c3js/c3.min.css" rel="stylesheet" type="text/css">
 	
 	<link rel="stylesheet" href="../../public/css/main.css">

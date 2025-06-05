@@ -131,6 +131,64 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function listar_ticket_x_id_x_usuaarioasignado($tick_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT
+        tm_ticket.tick_id,
+        tm_ticket.usu_id,
+        tm_ticket.cat_id,
+        tm_ticket.tick_titulo,
+        tm_ticket.tick_descrip,
+        tm_ticket.tick_estado,
+        tm_ticket.fech_crea,
+        tm_ticket.fech_asig,
+        tm_usuario.usu_nom,
+        tm_usuario.usu_ape,
+        tm_usuario.usu_correo,
+        tm_categoria.cat_nom
+        FROM
+        tm_ticket
+        INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
+        INNER JOIN tm_usuario ON tm_ticket.usu_asig = tm_usuario.usu_id
+        WHERE
+        tm_ticket.est = 1 AND tm_ticket.tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
+
+    public function listar_ticket_x_id_x_quien_asigno($tick_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT
+        tm_ticket.tick_id,
+        tm_ticket.usu_id,
+        tm_ticket.cat_id,
+        tm_ticket.tick_titulo,
+        tm_ticket.tick_descrip,
+        tm_ticket.tick_estado,
+        tm_ticket.fech_crea,
+        tm_ticket.fech_asig,
+        tm_usuario.usu_nom,
+        tm_usuario.usu_ape,
+        tm_usuario.usu_correo,
+        tm_categoria.cat_nom
+        FROM
+        tm_ticket
+        INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
+        INNER JOIN tm_usuario ON tm_ticket.how_asig = tm_usuario.usu_id
+        WHERE
+        tm_ticket.est = 1 AND tm_ticket.tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
+
     public function insert_ticket_detalle($tick_id, $usu_id, $tickd_descrip)
     {
         $conectar = parent::Conexion();
@@ -157,14 +215,16 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_ticket_asignacion($tick_id,$usu_asig)
+    public function update_ticket_asignacion($tick_id,$usu_asig,$how_asig)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_ticket SET usu_asig = ?, fech_asig = NOW() WHERE tm_ticket.tick_id = ? ";
+        $sql = "UPDATE tm_ticket SET usu_asig = ?, fech_asig = NOW(), how_asig = ? WHERE tm_ticket.tick_id = ? ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
-        $sql->bindValue(2, $tick_id);
+        $sql->bindValue(2, $how_asig);
+        $sql->bindValue(3, $tick_id);
+
         $sql->execute();
 
         return $resultado = $sql->fetchAll();

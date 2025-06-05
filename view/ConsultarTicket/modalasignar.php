@@ -14,6 +14,8 @@
             </div>
             <form method="post" id="ticket_form">
                 <div class="modal-body">
+
+                    <input type="hidden" id="how_asig" name="how_asig">
                     <input type="hidden" id="tick_id" name="tick_id">
 
                     <div class="form-group">
@@ -25,7 +27,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" name="action" id="#" value="add" class="btn btn-rounded btn-primary">Guardar</button>
+                    <button type="submit" name="action" id="btnGuardar"  class="btn btn-rounded btn-primary ladda-button" data-style="expand-right"><span class="ladda-label">Guardar</span></button>
                 </div>
             </form>
         </div>

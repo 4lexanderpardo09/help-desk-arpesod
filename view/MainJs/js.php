@@ -10,6 +10,9 @@
 <script src="../../public/js/summernote-ES.js"></script>
 <script src="../../public/js/lib/select2/select2.full.min.js"></script>
 <script src="../../public/js/lib/charts-c3js/c3.min.js"></script>
+<script src="../../public/js/lib/ladda-button/spin.min.js"></script>
+<script src="../../public/js/lib/ladda-button/ladda.min.js"></script>
+<script src="../../public/js/lib/ladda-button/ladda-button-init.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 

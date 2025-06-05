@@ -128,6 +128,7 @@ function asignar(tick_id){
     $.post("../../controller/ticket.php?op=mostrar", {tick_id:tick_id}, function(data) {
         data = JSON.parse(data);
         $("#tick_id").val(data.tick_id);
+        $("#how_asig").val(usu_id);
         $("#mdltitulo").html('Asignar');        
         $("#modalasignar").modal('show')
     });  
@@ -139,6 +140,12 @@ function ver(tick_id){
 
 function guardar(e){
     e.preventDefault();
+
+    // Activar Ladda
+    var l = Ladda.create($('#btnGuardar')[0]);
+    $('#btnGuardar').prop('disabled', true);
+    l.start();
+
     var formData = new FormData($("#ticket_form")[0])
     $.ajax({
         url: "../../controller/ticket.php?op=updateasignacion",
@@ -157,7 +164,14 @@ function guardar(e){
                 type: "success",
                 confirmButtonClass: "btn-success"
             });          
-        }
+        },
+
+        complete: function() {
+            // Detener Ladda después de terminar
+            l.stop();
+            $('#btnGuardar').prop('disabled', false);
+
+        },
     })
 }
 

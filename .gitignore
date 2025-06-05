@@ -1,1 +1,2 @@
-public/document
+/vendor/
+/public/document/**

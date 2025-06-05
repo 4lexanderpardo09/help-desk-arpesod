@@ -1,15 +1,16 @@
- function init(){
-    $('#ticket_form').on('submit', function(e){
+function init() {
+    $('#ticket_form').on('submit', function (e) {
         guardaryeditar(e);
     })
- }
+}
 
-$(document).ready(function() {
+
+$(document).ready(function () {
     $('#tick_descrip').summernote({
         height: 200,
         lang: "es-ES",
         callbacks: {
-            onImageUpload: function(image) {
+            onImageUpload: function (image) {
                 console.log("Image detect...");
                 myimagetreat(image[0]);
             },
@@ -27,42 +28,44 @@ $(document).ready(function() {
         ]
     });
 
-    $.post("../../controller/categoria.php?op=combo",function(data, status) {
+    $.post("../../controller/categoria.php?op=combo", function (data, status) {
         $('#cat_id').html(data);
     })
 
 });
 
-function guardaryeditar(e){
+function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($('#ticket_form')[0])
 
-    if($('#cat_id').val() == '') {
+    if ($('#cat_id').val() == '') {
         swal("Atención", "Debe seleccionar una categoría", "warning");
         return false;
-    }if($('#tick_titulo').val() == '') {
+    } if ($('#tick_titulo').val() == '') {
         swal("Atención", "Debe ingresar un título", "warning");
         return false;
-    }if($('#tick_descrip').summernote('isEmpty')) {
+    } if ($('#tick_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una descripción", "warning");
         return false;
     }
 
     var totalFile = $('#fileElem').val().length;
 
-    for(var i = 0; i < totalFile; i++) {
-        formData.append('files[]',$('#fileElem')[0].files[i]); 
+    for (var i = 0; i < totalFile; i++) {
+        formData.append('files[]', $('#fileElem')[0].files[i]);
     }
 
     $.ajax({
-        url: "../../controller/ticket.php?op=insert", 
+        url: "../../controller/ticket.php?op=insert",
         type: "POST",
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos){
-            console.log(datos);
-            
+        success: function (data) {
+            data = JSON.parse(data);
+
+            $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
+                
             $('#cat_id').val('');
             $('#tick_titulo').val('');
             $('#fileElem').val('');
