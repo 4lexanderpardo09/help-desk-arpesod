@@ -35,6 +35,7 @@ $(document).ready(function() {
 
 function guardaryeditar(e){
     e.preventDefault();
+    var formData = new FormData($('#ticket_form')[0])
 
     if($('#cat_id').val() == '') {
         swal("Atención", "Debe seleccionar una categoría", "warning");
@@ -47,7 +48,12 @@ function guardaryeditar(e){
         return false;
     }
 
-    var formData = new FormData($('#ticket_form')[0])
+    var totalFile = $('#fileElem').val().length;
+
+    for(var i = 0; i < totalFile; i++) {
+        formData.append('files[]',$('#fileElem')[0].files[i]); 
+    }
+
     $.ajax({
         url: "../../controller/ticket.php?op=insert", 
         type: "POST",
@@ -55,8 +61,11 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
+            console.log(datos);
+            
             $('#cat_id').val('');
             $('#tick_titulo').val('');
+            $('#fileElem').val('');
             $('#tick_descrip').summernote('reset');
             swal("Correcto", "Registrado correctamente ", "success");
         }

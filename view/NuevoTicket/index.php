@@ -44,6 +44,12 @@ if (isset($_SESSION["usu_id"])) {
                 <div class="row">
                     <form method="post" id="ticket_form">
                         <input type="hidden" id="usu_id" name="usu_id" value="<?php echo $_SESSION["usu_id"] ?>">
+                        <div class="col-lg-12">
+                            <fieldset class="form-group semibold">
+                                <label class="form-label" for="tick_titulo">Titulo</label>
+                                <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" placeholder="Titulo del ticket">
+                            </fieldset>
+                        </div>
                         <div class="col-lg-6">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Categoria</label>
@@ -52,9 +58,9 @@ if (isset($_SESSION["usu_id"])) {
                             </fieldset>
                         </div>
                         <div class="col-lg-6">
-                            <fieldset class="form-group semibold">
-                                <label class="form-label" for="tick_titulo">Titulo</label>
-                                <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" placeholder="Titulo del ticket">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="cat_id">Documento adicional</label>
+                                <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
                             </fieldset>
                         </div>
                         <div class="col-lg-12">

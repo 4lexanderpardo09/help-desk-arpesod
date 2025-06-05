@@ -46,7 +46,23 @@ if (isset($_SESSION["usu_id"])) {
                                 <input class="form-control" id="cat_id" name="cat_id" readonly>
                             </fieldset>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-12">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="tick_titulo">Documentos adicionales</label>
+                                <table id="documentos_data" class="table table-bondered table-striped table-vcenter js-datatable-full">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 90%;">Nombre</th>
+                                            <th class="text-center" style="width: 10%;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Los datos se llenaran mediante AJAX -->
+                                    </tbody>
+                                </table>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-12">
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tick_titulo">Titulo</label>
                                 <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" readonly>

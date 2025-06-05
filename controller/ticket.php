@@ -6,10 +6,45 @@ $ticket = new Ticket();
 require_once('../models/Usuario.php');
 $usuario = new Usuario();
 
+require_once('../models/Documento.php');
+$documento = new Documento();
+
 switch ($_GET["op"]) {
     case "insert":
 
-        $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
+        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
+        if(is_array($datos)==true and count($datos)>0){
+            foreach($datos as $row){
+                $output['tick_id'] = $row['tick_id'];
+                
+                if($_FILES['files']==0){
+
+                }else{
+                    $countfiles = count($_FILES['files']['name']);
+                    $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
+                    $files_arr = array();   
+
+                    if(!file_exists($ruta)) {
+                        mkdir($ruta, 0777, true);
+                    } 
+
+                    for($index = 0; $index < $countfiles; $index++){
+                        $doc1 = $_FILES['files']['name'][$index];
+                        $tmp_name = $_FILES['files']['tmp_name'][$index];
+                        $destino = $ruta . $doc1;
+
+                        $documento->insert_documento($output['tick_id'], $doc1);
+
+                        move_uploaded_file($tmp_name, $destino);
+
+
+                    }
+                }
+
+            }
+        }
+        echo json_encode($datos);
+
     break;
 
     case "listar_x_usu":

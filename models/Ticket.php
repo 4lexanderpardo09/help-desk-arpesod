@@ -13,7 +13,11 @@ class Ticket extends Conectar
         $sql->bindValue(4, $tick_descrip);
         $sql->execute();
 
-        return $resultado = $sql->fetchAll();
+        $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
+        $sql1 = $conectar->prepare($sql1);
+        $sql1->execute();   
+
+        return $resultado = $sql1->fetchAll();
     }
 
     public function listar_ticket_x_usuario($usu_id)
@@ -73,7 +77,7 @@ class Ticket extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->execute();
 
-        return $resultado = $sql->fetchAll();
+        return $resultado = $sql->fetchAll(pdo::FETCH_ASSOC);
     }
 
 
