@@ -1,17 +1,18 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $tick_titulo, $tick_descrip)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,tick_titulo,tick_descrip,tick_estado,fech_crea,usu_asig,fech_asig,est) VALUES (NULL,?,?,?,?,?,'Abierto',NOW(),NULL,NULL,'1' )  ";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,fech_crea,usu_asig,fech_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',NOW(),NULL,NULL,'1' )  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
-        $sql->bindValue(3, $cats_id);
-        $sql->bindValue(4, $tick_titulo);
-        $sql->bindValue(5, $tick_descrip);
+        $sql->bindValue(3, $pd_id);
+        $sql->bindValue(4, $cats_id);
+        $sql->bindValue(5, $tick_titulo);
+        $sql->bindValue(6, $tick_descrip);
         $sql->execute();
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
@@ -60,6 +61,7 @@ class Ticket extends Conectar
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
+                tm_ticket.cats_id,
                 tm_ticket.tick_titulo,
                 tm_ticket.tick_descrip,
                 tm_ticket.tick_estado,
@@ -68,11 +70,13 @@ class Ticket extends Conectar
                 tm_ticket.fech_asig,
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
-                tm_categoria.cat_nom
+                tm_categoria.cat_nom,
+                tm_subcategoria.cats_nom
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
                 WHERE 
                 tm_ticket.est = 1";
         $sql = $conectar->prepare($sql);
@@ -112,6 +116,7 @@ class Ticket extends Conectar
         tm_ticket.tick_id,
         tm_ticket.usu_id,
         tm_ticket.cat_id,
+        tm_ticket.cats_id,
         tm_ticket.tick_titulo,
         tm_ticket.tick_descrip,
         tm_ticket.tick_estado,
@@ -119,11 +124,14 @@ class Ticket extends Conectar
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
         tm_usuario.usu_correo,
-        tm_categoria.cat_nom
+        tm_categoria.cat_nom,
+        tm_subcategoria.cats_nom
         FROM
         tm_ticket
         INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
         INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+        INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+
         WHERE
         tm_ticket.est = 1 AND tm_ticket.tick_id = ?";
         $sql = $conectar->prepare($sql);

@@ -31,7 +31,11 @@ $(document).ready(function () {
         $('#cat_id').html('<option value="">Seleccionar</option>' + data);
     });
 
-    
+    $.post("../../controller/prioridad.php?op=combo", function (data) {
+        $('#pd_id').html('<option value="">Seleccionar</option>' + data);
+    });
+
+
     $('#cats_id').html('<option value="">Seleccionar</option>');
 
     $("#cat_id").change(function(){
@@ -80,6 +84,7 @@ function guardaryeditar(e) {
             $('#tick_titulo').val('');
             $('#fileElem').val('');
             $('#cats_id').val('');
+            $('#pd_id').val('');
             $('#tick_descrip').summernote('reset');
             swal("Correcto", "Registrado correctamente ", "success");
         }

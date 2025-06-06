@@ -64,10 +64,17 @@ if (isset($_SESSION["usu_id"])) {
                                 </select>
                             </fieldset>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Documento adicional</label>
                                 <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="pd_id">Pioridad</label>
+                                <select class="form-control" id="pd_id" name="pd_id" placeholder="Seleccione la prioridad">
+                                </select>
                             </fieldset>
                         </div>
                         <div class="col-lg-12">

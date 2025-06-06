@@ -16,7 +16,7 @@ switch ($_GET["op"]) {
 
     case "insert":
 
-        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'],$_POST['cats_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
+        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'],$_POST['cats_id'],$_POST['pd_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
         if(is_array($datos)==true and count($datos)>0){
             foreach($datos as $row){
                 $output['tick_id'] = $row['tick_id'];
@@ -201,6 +201,7 @@ switch ($_GET["op"]) {
                 $output['tick_id'] = $row['tick_id'];
                 $output['usu_id'] = $row['usu_id'];
                 $output['cat_id'] = $row['cat_id'];
+                $output['cats_id'] = $row['cats_id'];
                 $output['tick_titulo'] = $row['tick_titulo'];
                 $output['tick_descrip'] = $row['tick_descrip'];
                 $output['tick_estado_texto'] = $row['tick_estado'];
@@ -213,6 +214,7 @@ switch ($_GET["op"]) {
                 $output['usu_nom'] = $row['usu_nom'];
                 $output['usu_ape'] = $row['usu_ape'];
                 $output['cat_nom'] = $row['cat_nom'];
+                $output['cats_nom'] = $row['cats_nom'];
             }
             echo json_encode($output);
         }
