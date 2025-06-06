@@ -119,7 +119,6 @@ var getUrlParameter = function getUrlParameter(sParam) {
 
 $(document).on('click', '#btnenviar', function() {
 
-
     if($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
         return false;
@@ -129,12 +128,38 @@ $(document).on('click', '#btnenviar', function() {
     var usu_id = $('#user_idx').val();
     var tickd_descrip = $('#tickd_descrip').val();  
 
-    $.post("../../controller/ticket.php?op=insertdetalle",{tick_id: tick_id, usu_id:usu_id, tickd_descrip:tickd_descrip}, function(data) {
-        listarDetalle(tick_id);
-        $('#tickd_descrip').summernote('reset'); 
-        swal("Correcto", "Respuesta enviada correctamente", "success");
+    var formData = new FormData($('#detalle_form')[0])
+
+    formData.append("tick_id", tick_id);
+    formData.append("usu_id", usu_id);
+    formData.append("tickd_descrip", tickd_descrip);
+
+    var totalFile = $('#fileElem').val().length;
+    for (var i = 0; i < totalFile; i++) {
+        formData.append('files[]', $('#fileElem')[0].files[i]);
+     }
+
+        $.ajax({
+            url: "../../controller/ticket.php?op=insertdetalle",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (data) {
+                console.log(data);
+                var resultado = JSON.parse(data);
+
+                listarDetalle(tick_id);
+
+                swal("Correcto", "Respuesta enviada correctamente", "success");
+
+                // Limpiar el formulario 
+                $('#tickd_descrip').summernote('reset');
+                $('#fileElem').val('');
+            }
+        })
          
-    });
+
 
 });
 

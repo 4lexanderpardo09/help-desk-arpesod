@@ -92,15 +92,17 @@ class Ticket extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
         $sql = "SELECT
-              td_ticketdetalle.tickd_id, 
-              td_ticketdetalle.tickd_descrip,
-              td_ticketdetalle.fech_crea,
-              tm_usuario.usu_nom,
-              tm_usuario.usu_ape,
-              tm_usuario.rol_id
-              FROM td_ticketdetalle 
-              INNER JOIN tm_usuario ON td_ticketdetalle.usu_id = tm_usuario.usu_id
-              WHERE td_ticketdetalle.tick_id = ? AND td_ticketdetalle.est = 1
+                td_ticketdetalle.tickd_id, 
+                td_ticketdetalle.tickd_descrip,
+                td_ticketdetalle.fech_crea,
+                tm_usuario.usu_nom,
+                tm_usuario.usu_ape,
+                tm_usuario.rol_id,
+                td_documento_detalle.det_nom 
+            FROM td_ticketdetalle 
+            INNER JOIN tm_usuario ON td_ticketdetalle.usu_id = tm_usuario.usu_id
+            LEFT JOIN td_documento_detalle ON td_ticketdetalle.tickd_id = td_documento_detalle.tickd_id
+            WHERE td_ticketdetalle.tick_id = ? AND td_ticketdetalle.est = 1
               ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
@@ -214,7 +216,11 @@ class Ticket extends Conectar
         $sql->bindValue(3, $tickd_descrip);
         $sql->execute();
 
-        return $resultado = $sql->fetchAll();
+        $sql1 = "SELECT LAST_INSERT_ID() as tickd_id";
+        $sql1 = $conectar->prepare($sql1);
+        $sql1->execute();   
+
+        return $sql1->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function update_ticket($tick_id)

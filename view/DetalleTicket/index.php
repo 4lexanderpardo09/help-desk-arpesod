@@ -95,9 +95,18 @@ if (isset($_SESSION["usu_id"])) {
                     <p>
                         Ingrese su duda o consulta
                     </p>
+                    
 
                     <div class="row">
                         <div class="col-lg-12">
+                        <form method="post" id="detalle_form">
+                            <div class="">
+                                <fieldset class="form-group">
+                                    <label class="form-label semibold" for="cat_id">Documento adicional</label>
+                                    <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                </fieldset>
+                            </div>
+                        </form>
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tickd_descrip">Descripcion</label>
                                 <div class="summernote-theme-1">
