@@ -66,7 +66,15 @@ switch ($_GET["op"]) {
             }else{
                 $sub_array[] = '<a onClick="cambiarEstado('.$row['tick_id'].')" ><span class="label label-danger">Cerrado</span></a>';
             }  
-             
+            
+            if($row['pd_nom']=='Baja'){
+                $sub_array[] = '<span class="label label-default">Baja</span>';
+            }elseif($row['pd_nom']== 'Media'){
+                $sub_array[] = '<span class="label label-warning">Media</span>';
+            }else{
+                $sub_array[] = '<span class="label label-danger">Alta</span>';
+            }
+
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
             if($row['fech_asig'] == null){

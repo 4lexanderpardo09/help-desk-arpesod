@@ -38,11 +38,13 @@ class Ticket extends Conectar
                 tm_ticket.fech_asig,
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
-                tm_categoria.cat_nom
+                tm_categoria.cat_nom,
+                td_prioridad.pd_nom
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
+                INNER join td_prioridad on tm_ticket.pd_id = td_prioridad.pd_id
                 WHERE 
                 tm_ticket.est = 1
                 AND tm_usuario.usu_id=?";
