@@ -175,5 +175,40 @@ function guardar(e){
     })
 }
 
+function cambiarEstado(tick_id){
+    swal({
+        title: "Re-abrir ticket",
+        text: "¿Estas que quieres re abrir el ticket?",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-warning",
+        confirmButtonText: "Si, re-abir!",
+        cancelButtonText: "No, cancelar!",
+        closeOnConfirm: false,
+        closeOnCancel: false
+    },
+    function(isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/ticket.php?op=reabrir", {tick_id:tick_id, usu_id:usu_id}, function(data) {
+                $('#ticket_data').DataTable().ajax.reload(); 
+                swal({
+                    title: "Ticket!",
+                    text: "Ticket nuevamente abierto",
+                    type: "success",
+                    confirmButtonClass: "btn-success"
+                }); 
+            });
+        } else {
+            swal({
+                title: "Cancelado",
+                text: "El ticket no se abrio.",
+                type: "error",
+                confirmButtonClass: "btn-danger"
+                
+            });
+        }
+    });
+}
+
 
 init();

@@ -214,6 +214,17 @@ class Ticket extends Conectar
 
         return $resultado = $sql->fetchAll();
     }
+    public function reabrir_ticket($tick_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_ticket SET tick_estado = 'Abierto' WHERE tm_ticket.tick_id = ? ";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+
+        return $resultado = $sql->fetchAll();
+    } 
 
     public function update_ticket_asignacion($tick_id,$usu_asig,$how_asig)
     {
@@ -235,6 +246,19 @@ class Ticket extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
         $sql = "INSERT INTO td_ticketdetalle (tickd_id, tick_id, usu_id, tickd_descrip, fech_crea, est) VALUES ( NULL, ?, ?, 'Ticket cerrado', NOW(), '1')  ";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $usu_id);
+        $sql->execute();
+
+        return $resultado = $sql->fetchAll();
+    }
+
+    public function insert_ticket_detalle_reabrir($tick_id, $usu_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "INSERT INTO td_ticketdetalle (tickd_id, tick_id, usu_id, tickd_descrip, fech_crea, est) VALUES ( NULL, ?, ?, 'Ticket Re-abierto', NOW(), '1')  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->bindValue(2, $usu_id);

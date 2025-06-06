@@ -13,6 +13,7 @@ require_once('../models/Email.php');
 $correo = new Email();
 
 switch ($_GET["op"]) {
+
     case "insert":
 
         $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
@@ -63,7 +64,7 @@ switch ($_GET["op"]) {
             if($row['tick_estado']=='Abierto'){
                 $sub_array[] = '<span class="label label-success">Abierto</span>';
             }else{
-                $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+                $sub_array[] = '<a onClick="cambiarEstado('.$row['tick_id'].')" ><span class="label label-danger">Cerrado</span></a>';
             }  
              
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
@@ -110,7 +111,7 @@ switch ($_GET["op"]) {
             if($row['tick_estado']=='Abierto'){
                 $sub_array[] = '<span class="label label-success">Abierto</span>';
             }else{
-                $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+                $sub_array[] = '<a onClick="cambiarEstado('.$row['tick_id'].')" ><span class="label label-danger">Cerrado</span></a>';
             }
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
@@ -121,7 +122,7 @@ switch ($_GET["op"]) {
                 $sub_array[] =  date("d/m/Y H:i:s", strtotime($row["fech_asig"]));
             }
 
-            if($row['usu_asig'] == null){
+            if($row['usu_asig'] == null){   
                 $sub_array[] = '<a onClick="asignar('.$row['tick_id'].')" ><span class="label label-danger">Sin asignar</span></a>';
             }else{
                 $datos = $usuario->get_usuario_x_id($row['usu_asig']);
@@ -226,6 +227,12 @@ switch ($_GET["op"]) {
         $ticket->update_ticket($_POST['tick_id']);
         $correo->ticket_cerrado($_POST['tick_id']);
         $ticket->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
+    break;
+
+    case "reabrir":
+        $ticket->reabrir_ticket($_POST['tick_id']);
+       // $correo->ticket_cerrado($_POST['tick_id']);
+        $ticket->insert_ticket_detalle_reabrir($_POST['tick_id'], $_POST['usu_id']);
     break;
 
     case "updateasignacion":
