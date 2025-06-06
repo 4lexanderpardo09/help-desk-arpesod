@@ -4,7 +4,6 @@ function init() {
     })
 }
 
-
 $(document).ready(function () {
     $('#tick_descrip').summernote({
         height: 200,
@@ -28,8 +27,19 @@ $(document).ready(function () {
         ]
     });
 
-    $.post("../../controller/categoria.php?op=combo", function (data, status) {
-        $('#cat_id').html(data);
+    $.post("../../controller/categoria.php?op=combo", function (data) {
+        $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+    });
+
+    
+    $('#cats_id').html('<option value="">Seleccionar</option>');
+
+    $("#cat_id").change(function(){
+        cat_id = $(this).val();
+
+        $.post("../../controller/subcategoria.php?op=combo",{cat_id:cat_id}, function (data) {
+            $('#cats_id').html(data);
+        });
     })
 
 });
@@ -69,10 +79,13 @@ function guardaryeditar(e) {
             $('#cat_id').val('');
             $('#tick_titulo').val('');
             $('#fileElem').val('');
+            $('#cats_id').val('');
             $('#tick_descrip').summernote('reset');
             swal("Correcto", "Registrado correctamente ", "success");
         }
     })
 }
+
+
 
 init();

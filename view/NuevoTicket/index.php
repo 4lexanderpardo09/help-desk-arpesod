@@ -50,10 +50,17 @@ if (isset($_SESSION["usu_id"])) {
                                 <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" placeholder="Titulo del ticket">
                             </fieldset>
                         </div>
-                        <div class="col-lg-6">
+                        <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Categoria</label>
                                 <select class="form-control" id="cat_id" name="cat_id" placeholder="Seleccione una categoria">
+                                </select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="cats_id">Subcategoria</label>
+                                <select class="form-control" id="cats_id" name="cats_id" placeholder="Seleccione una subcategoria">
                                 </select>
                             </fieldset>
                         </div>
