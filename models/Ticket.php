@@ -63,7 +63,6 @@ class Ticket extends Conectar
                 tm_ticket.tick_id,
                 tm_ticket.usu_id,
                 tm_ticket.cat_id,
-                tm_ticket.cats_id,
                 tm_ticket.tick_titulo,
                 tm_ticket.tick_descrip,
                 tm_ticket.tick_estado,
@@ -73,12 +72,12 @@ class Ticket extends Conectar
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
-                tm_subcategoria.cats_nom
+                td_prioridad.pd_nom
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
-                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+                INNER join td_prioridad on tm_ticket.pd_id = td_prioridad.pd_id
                 WHERE 
                 tm_ticket.est = 1";
         $sql = $conectar->prepare($sql);
@@ -123,16 +122,20 @@ class Ticket extends Conectar
         tm_ticket.tick_descrip,
         tm_ticket.tick_estado,
         tm_ticket.fech_crea,
+        tm_ticket.pd_id,
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
         tm_usuario.usu_correo,
         tm_categoria.cat_nom,
-        tm_subcategoria.cats_nom
+        tm_subcategoria.cats_nom,
+        td_prioridad.pd_nom
         FROM
         tm_ticket
         INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
         INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+        INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
         INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+
 
         WHERE
         tm_ticket.est = 1 AND tm_ticket.tick_id = ?";
@@ -218,7 +221,7 @@ class Ticket extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_ticket SET tick_estado = 'Cerrado' WHERE tm_ticket.tick_id = ? ";
+        $sql = "UPDATE tm_ticket SET tick_estado = 'Cerrado', fech_cierre = NOW() WHERE tm_ticket.tick_id = ? ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->execute();

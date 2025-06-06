@@ -27,6 +27,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <span id="lbltickestado"></span>
                                 <span class="label label-primary" id="lblnomusuario"></span>
                                 <span class="label label-default" id="lblfechacrea"></span>
+                                <span id="lblprioridad"></span>
                                 <ol class="breadcrumb breadcrumb-simple">
                                     <li><a href="..\Home\">Home</a></li>
                                     <li><a href="..\ConsultarTicket\">Consultar ticket</a></li>

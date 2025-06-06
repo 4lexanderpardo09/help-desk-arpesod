@@ -122,7 +122,16 @@ switch ($_GET["op"]) {
                 $sub_array[] = '<a onClick="cambiarEstado('.$row['tick_id'].')" ><span class="label label-danger">Cerrado</span></a>';
             }
 
+            if($row['pd_nom']=='Baja'){
+                $sub_array[] = '<span class="label label-default">Baja</span>';
+            }elseif($row['pd_nom']== 'Media'){
+                $sub_array[] = '<span class="label label-warning">Media</span>';
+            }else{
+                $sub_array[] = '<span class="label label-danger">Alta</span>';
+            }
+
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
 
             if($row['fech_asig'] == null){
                 $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
@@ -210,9 +219,11 @@ switch ($_GET["op"]) {
                 $output['usu_id'] = $row['usu_id'];
                 $output['cat_id'] = $row['cat_id'];
                 $output['cats_id'] = $row['cats_id'];
+                $output['pd_id'] = $row['pd_id'];
                 $output['tick_titulo'] = $row['tick_titulo'];
                 $output['tick_descrip'] = $row['tick_descrip'];
                 $output['tick_estado_texto'] = $row['tick_estado'];
+
                 if($row['tick_estado']=='Abierto'){
                     $output['tick_estado'] = '<span class="label label-success">Abierto</span>';
                 }else{
@@ -223,6 +234,14 @@ switch ($_GET["op"]) {
                 $output['usu_ape'] = $row['usu_ape'];
                 $output['cat_nom'] = $row['cat_nom'];
                 $output['cats_nom'] = $row['cats_nom'];
+                
+                if($row['pd_nom']=='Baja'){
+                    $output['pd_nom'] = '<span class="label label-default">Baja</span>';
+                }elseif($row['pd_nom']== 'Media'){
+                    $output['pd_nom'] = '<span class="label label-warning">Media</span>';
+                }else{
+                    $output['pd_nom'] = '<span class="label label-danger">Alta</span>';
+                }
             }
             echo json_encode($output);
         }

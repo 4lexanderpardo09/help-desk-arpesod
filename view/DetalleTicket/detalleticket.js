@@ -192,6 +192,7 @@ function listarDetalle(tick_id){
     $.post("../../controller/ticket.php?op=mostrar",{tick_id: tick_id}, function(data) {
         data = JSON.parse(data);
         $('#lbltickestado').html(data.tick_estado);
+        $('#lblprioridad').html(data.pd_nom);
         $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);    
         $('#lblfechacrea').html(data.fech_crea);
         $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
