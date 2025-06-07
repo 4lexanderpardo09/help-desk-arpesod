@@ -52,6 +52,12 @@ if ($_SESSION['rol_id'] == 1) {
                     <span class="lbl">Gestion prioridad</span>
                 </a>
             </li>
+            <li class="blue-dirty">
+                <a href="..\GestionCategoria\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Gestion categoria</span>
+                </a>
+            </li>
         </ul>
     </nav>
 <?php
