@@ -191,45 +191,33 @@ switch ($_GET["op"]) {
                                 <section class="activity-line-action">
                                     <div class="time"><?php echo date("h:i A", strtotime($row['fech_crea'])) ?></div>
                                     <div class="cont">
-                                        <div class="cont-in">
+                                        <div class="cont-in summernote-content" style="margin-bottom: 8px;">
                                             <p><?php echo $row['tickd_descrip'] ?></p>
                                             <ul class="meta">
                                             </ul>
                                         </div>
-                                    </div>
                                     <?php
                                     if ($row['det_nom'] != null) {
                                     ?>
-                                        <div class="col-lg-4">
-                                            <fieldset class="form-group">
-                                                <label class="form-label semibold" for="tick_titulo">Documentos adicionales</label>
-                                                <table id="documentos_detalle_data" class="table table-bondered table-striped table-vcenter js-datatable-full">
-                                                    <thead>
-                                                        <tr>
-                                                            <th style="width: 90%;">Nombre</th>
-                                                            <th class="text-center" style="width: 10%;"></th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td>
-                                                                <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank">
-                                                                    <?php echo $row['det_nom']; ?>
-                                                                </a>
-                                                            </td>
-                                                            <td class="text-center">
-                                                                <a type="button" href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="btn btn-inline btn-primary btn-sm ladda-button">
-                                                                    <i class="fa fa-eye"></i>
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </fieldset>
-                                        </div>
+                                        <?php if ($row['det_nom'] != null) { ?>
+                                            <div class="documentos-attachment p-3 border rounded bg-light">
+                                                <p class="mb-3 text-secondary" style="margin-bottom: 0;">
+                                                    <i class="fa fa-paperclip"></i> Documento adjunto
+                                                </p>
+                                                <div class="d-flex justify-content-between align-items-center p-2 bg-white border rounded">
+                                                    <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="text-decoration-none fw-semibold text-dark">
+                                                        <i class="fa fa-file-text-o me-2"></i> <?php echo $row['det_nom']; ?>
+                                                    </a>
+                                                    <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fa fa-eye"></i> Ver
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        <?php } ?>
                                     <?php
                                     }
                                     ?>
+                                    </div>
                                 </section>
                             </div>
                         </article>
