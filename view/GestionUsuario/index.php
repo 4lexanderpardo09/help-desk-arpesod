@@ -26,6 +26,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <h3>Gestion de usuarios</h3>
                                 <ol class="breadcrumb breadcrumb-simple">
                                     <li><a href="..\Home\">Home</a></li>
+                                    <li><a href="#">Gestion</a></li>    
                                     <li class="active">Gestion de usuarios</li>
                                 </ol>
                             </div>
