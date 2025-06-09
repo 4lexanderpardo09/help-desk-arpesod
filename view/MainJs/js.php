@@ -13,6 +13,7 @@
 <script src="../../public/js/lib/ladda-button/spin.min.js"></script>
 <script src="../../public/js/lib/ladda-button/ladda.min.js"></script>
 <script src="../../public/js/lib/ladda-button/ladda-button-init.js"></script>
+<script src="../../public/js/lib/bootstrap-notify/bootstrap-notify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 

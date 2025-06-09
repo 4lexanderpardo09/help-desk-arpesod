@@ -124,6 +124,7 @@ class Ticket extends Conectar
         tm_ticket.tick_descrip,
         tm_ticket.tick_estado,
         tm_ticket.fech_crea,
+        tm_ticket.usu_asig,
         tm_ticket.pd_id,
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
@@ -209,20 +210,48 @@ class Ticket extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
+        
+        $ticket = new Ticket();
+        
+        $datos  = $ticket->listar_ticket_x_id($tick_id);
+        foreach($datos as $row){
+            $usu_asig = $row['usu_asig'];
+            $usu_idx = $row['usu_id'];
+        }
+        
+        if($_SESSION['rol_id']==1){
+            
+            $sql2 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,$usu_asig,'El usuario te ha respondido el ticket Nro ',?,NOW(),'2');";
+            $sql2 = $conectar->prepare($sql2);
+            $sql2->bindValue(1, $tick_id);
+            
+            $sql2->execute();
+            
+        }else{
+
+            $sql3 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,'El agente de soporte te ha respondido el ticket Nro ',?,NOW(),'2');";
+            $sql3 = $conectar->prepare($sql3);
+            $sql3->bindValue(1, $usu_idx);
+            $sql3->bindValue(2, $tick_id);
+
+            $sql3->execute();
+            
+        }
+        
         $sql = "INSERT INTO td_ticketdetalle (tickd_id, tick_id, usu_id, tickd_descrip, fech_crea, est) VALUES ( NULL, ?, ?, ?, NOW(), '1')  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->bindValue(2, $usu_id);
         $sql->bindValue(3, $tickd_descrip);
         $sql->execute();
-
+    
         $sql1 = "SELECT LAST_INSERT_ID() as tickd_id";
         $sql1 = $conectar->prepare($sql1);
-        $sql1->execute();   
-
+        $sql1->execute();  
+        
         return $sql1->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    
     public function update_ticket($tick_id)
     {
         $conectar = parent::Conexion();
@@ -258,7 +287,12 @@ class Ticket extends Conectar
 
         $sql->execute();
 
-        return $resultado = $sql->fetchAll();
+        $sql1 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,est) VALUES(NULL,?,'Se le ha asignado el ticket # ',?,2);";
+        $sql1 = $conectar->prepare($sql1);
+        $sql1->bindValue(1, $usu_asig);
+        $sql1->bindValue(2, $tick_id);
+
+        $sql1->execute();
     }
 
     public function insert_ticket_detalle_cerrar($tick_id, $usu_id)
