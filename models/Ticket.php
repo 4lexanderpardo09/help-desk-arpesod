@@ -287,7 +287,7 @@ class Ticket extends Conectar
 
         $sql->execute();
 
-        $sql1 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,est) VALUES(NULL,?,'Se le ha asignado el ticket # ',?,2);";
+        $sql1 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,'Se le ha asignado el ticket # ',?,NOW(),2);";
         $sql1 = $conectar->prepare($sql1);
         $sql1->bindValue(1, $usu_asig);
         $sql1->bindValue(2, $tick_id);

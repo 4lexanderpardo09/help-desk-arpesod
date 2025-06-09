@@ -37,7 +37,7 @@ class Email extends PHPMailer{
         $archivos = [];
 
         foreach ($datos2 as $row2) {
-            $archivoRuta = __DIR__ . "../public/document/ticket/" . $ticket_id . "/" . $row2['doc_nom'];
+            $archivoRuta = dirname(__DIR__) . "/public/document/ticket/" . $ticket_id . "/" . $row2['doc_nom'];
             if (file_exists($archivoRuta)) {
                 $archivos[] = $archivoRuta;
             }
@@ -69,8 +69,8 @@ class Email extends PHPMailer{
         $nombresArchivos = '';
 
         foreach ($archivos as $archivo) {
-        $nombre = basename($archivo);
-        $nombresArchivos .= $nombre . "<br>";
+        $nombreA = basename($archivo);
+        $nombresArchivos .= $nombreA . "<br>";
         }
 
         $cuerpo = str_replace('[Adjunte capturas de pantalla o videoclips relevantes]', $nombresArchivos, $cuerpo);
@@ -104,6 +104,7 @@ class Email extends PHPMailer{
             $categoria = $row['cat_nom'];
             $correo = $row['usu_correo'];
             $descripcion = $row['tick_descrip'];
+            $prioridad = $row['pd_nom'];
         }
 
         $datos2 = $ticket->listar_ticket_x_id_x_usuaarioasignado($ticket_id);
@@ -150,6 +151,7 @@ class Email extends PHPMailer{
 
         $cuerpo = str_replace('[Nombre del agente]', $nombre_asignado . ' ' . $apellido_asignado, $cuerpo);
         $cuerpo = str_replace('[Fecha]', $fecha_asig ,$cuerpo);
+        $cuerpo = str_replace('[Alta/Media/Baja]', $prioridad ,$cuerpo);
 
 
         $cuerpo = str_replace('[Su nombre]', $nombre_how_asignado . ' ' . $apellido_how_asignado, $cuerpo);
