@@ -1,0 +1,89 @@
+/* --- ESTILOS PARA POPOVER PERSONALIZADO DEL CALENDARIO --- */
+
+/* Contenedor principal del popover */
+.calendar-popover {
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px; /* Esquinas redondeadas */
+    font-family: 'Poppins', sans-serif; /* Usa una fuente moderna, ajústala a la de tu tema */
+}
+
+/* Cabecera del popover */
+.calendar-popover .popover-header {
+    background-color: #f7f9fc;
+    color: #333;
+    font-weight: 600;
+    font-size: 16px;
+    border-bottom: 1px solid #e0e0e0;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+/* Cuerpo del popover */
+.calendar-popover .popover-body {
+    padding: 15px;
+    font-size: 14px;
+}
+
+/* Estilo para cada fila de detalle (ícono + texto) */
+.popover-detail-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.popover-detail-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Estilo para los íconos */
+.popover-icon {
+    width: 25px; /* Ancho fijo para alinear el texto */
+    text-align: center;
+    color: #007bff; /* Color principal de los íconos */
+    margin-right: 8px;
+    font-size: 1.1em;
+}
+
+/* Estilos para la "etiqueta" o "badge" del estado */
+.badge-estado {
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
+.badge-prioridad {
+    padding: 3px 8px;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.85em;
+}
+
+.badge-prioridad-baja {
+    background-color: #6c757d; /* Verde para Abierto */
+}
+
+.badge-prioridad-media {
+    background-color: #28a745; /* Rojo para Cerrado */
+}
+
+.badge-prioridad-alta {
+    background-color: #dc3545; /* Gris para otros estados */
+}
+
+
+.badge-estado-abierto {
+    background-color: #28a745; /* Verde para Abierto */
+}
+
+.badge-estado-cerrado {
+    background-color: #dc3545; /* Rojo para Cerrado */
+}
+
+.badge-estado-default {
+    background-color: #6c757d; /* Gris para otros estados */
+}
+

@@ -40,14 +40,10 @@
 						</div>
 					</div>
 
-					<div class="dropdown dropdown-notification messages">
-						<a href="#"
-							class="header-alarm dropdown-toggle active"
-							id="dd-messages"
-							data-toggle="dropdown"
-							aria-haspopup="true"
-							aria-expanded="false">
-							<i class="font-icon-mail"></i>
+					<div class="dropdown dropdown-notification">
+						<a href=".	.\Calendario\"
+							class="header-alarm">
+							<i class="font-icon font-icon-calend"></i>
 						</a>
 					</div>
 

@@ -368,4 +368,66 @@ class Ticket extends Conectar
 
         return $resultado = $sql->fetchAll();
     }
+
+    public function get_calendar_x_asig($usu_asig)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT
+                tm_ticket.tick_id as id,
+                tm_ticket.tick_titulo as title,
+                tm_ticket.fech_crea as start,
+                tm_ticket.tick_estado as estado,
+                tm_ticket.tick_descrip as descripcion,
+                td_prioridad.pd_nom as prioridad,
+                CONCAT(tm_usuario.usu_nom, ' ', tm_usuario.usu_ape) as nombre,
+                CASE 
+                    WHEN tm_ticket.tick_estado = 'Abierto' THEN 'green'   
+                    WHEN tm_ticket.tick_estado = 'Cerrado' THEN 'red'  
+                    ELSE 'white' 
+                END as color
+                FROM 
+                tm_ticket
+                INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+                INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
+                WHERE usu_asig = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_asig);
+        $sql->execute();
+
+        return $resultado = $sql->fetchAll();
+    }
+
+    public function get_calendar_x_usu($usu_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT
+                tm_ticket.tick_id as id,
+                tm_ticket.tick_titulo as title,
+                tm_ticket.fech_crea as start,
+                tm_ticket.tick_estado as estado,
+                tm_ticket.tick_descrip as descripcion,
+                CONCAT(usu_asignado.usu_nom, ' ', usu_asignado.usu_ape) as usuasignado,
+                td_prioridad.pd_nom as prioridad,
+                CASE 
+                    WHEN tm_ticket.tick_estado = 'Abierto' THEN 'green'   
+                    WHEN tm_ticket.tick_estado = 'Cerrado' THEN 'red'  
+                    ELSE 'white' 
+                END as color
+                FROM 
+                tm_ticket
+                INNER JOIN tm_usuario as usu_creador ON tm_ticket.usu_id = usu_creador.usu_id
+                INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
+                LEFT JOIN tm_usuario as usu_asignado ON tm_ticket.usu_asig = usu_asignado.usu_id
+
+
+                WHERE tm_ticket.usu_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_id);
+        $sql->execute();
+
+        return $resultado = $sql->fetchAll();
+    }
+    
 }

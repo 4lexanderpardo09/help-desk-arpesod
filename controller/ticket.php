@@ -347,4 +347,15 @@ switch ($_GET["op"]) {
         $datos = $ticket->get_total_categoria();
         echo json_encode($datos);
         break;
+    
+    case"calendario_x_usu_asig":
+        $datos=$ticket->get_calendar_x_asig($_POST['usu_asig']);
+        echo json_encode($datos);
+        break;
+
+    case"calendario_x_usu":
+        $datos=$ticket->get_calendar_x_usu($_POST['usu_id']);
+        echo json_encode($datos);
+        break;    
+    
 }

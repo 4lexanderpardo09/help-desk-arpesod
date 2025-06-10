@@ -29,6 +29,13 @@
 
 	<link rel="stylesheet" href="../../public/css/lib/ladda-button/ladda-themeless.min.css">
 
+	<link rel="stylesheet" href="../../public/css/lib/fullcalendar/fullcalendar.min.css">
+	<link rel="stylesheet" href="../../public/css/separate/pages/calendar.min.css">
+	<link rel="stylesheet" href="../../public/css/separate/vendor/bootstrap-datetimepicker.min.css">
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+	<link rel="stylesheet" href="../style.css" />
+
 	<link href="../../public/css/lib/charts-c3js/c3.min.css" rel="stylesheet" type="text/css">
 	
 	<link rel="stylesheet" href="../../public/css/main.css">
