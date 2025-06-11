@@ -26,7 +26,7 @@ function mostrar_notificacion(){
             $.notify({
                 icon: 'glyphicon glyphicon-star',
                 message: data.not_mensaje,
-                url:'http://localhost:8000/view/DetalleTicket/?ID='+data.tick_id    
+                url:'https://mesadeayuda.electrocreditosdelcauca.com/view/DetalleTicket/?ID='+data.tick_id    
             })
 
             $.post("../../controller/notificacion.php?op=actualizar", {not_id:data.not_id},function(data) {

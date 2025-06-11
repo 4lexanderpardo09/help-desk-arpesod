@@ -7,7 +7,9 @@ class Conectar{
 
     protected function Conexion(){
         try{
-            $conectar = $this->dbh = new PDO("mysql:host=localhost;dbname=helpdeskdb", "root", "@Ap200905");
+           // $conectar = $this->dbh = new PDO("mysql:host=localhost;dbname=helpdeskdb", "root", "@Ap200905");
+            $conectar = $this->dbh = new PDO("mysql:host=mesadeayuda.electrocreditosdelcauca.com;dbname=helpdeskdb", "root", "");
+
             return $conectar;
         }catch(Exception $e){
             print "ERROR DB" . $e->getMessage() . "<br/>";
@@ -20,7 +22,10 @@ class Conectar{
     }
 
     public function ruta(){
-        return "http://localhost:8000/";
+       // return "http://localhost:8000/";
+       return "https://mesadeayuda.electrocreditosdelcauca.com/";
+
+       
     }
 }
 
