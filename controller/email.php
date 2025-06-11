@@ -14,6 +14,10 @@
         case 'ticket_asignado':
            $correo->ticket_asignado($_POST["tick_id"]);
            break;
+
+        case 'ticket_cerrado':
+            $correo->ticket_cerrado($_POST['tick_id']);
+            break;
     }
     
 

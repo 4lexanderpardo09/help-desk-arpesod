@@ -185,6 +185,14 @@ $(document).on('click', '#btncerrarticket', function() {
             var tick_id = getUrlParameter('ID');
             var usu_id = $('#user_idx').val();
             updateTicket(tick_id, usu_id);
+
+            setTimeout(function() {
+                $.post("../../controller/email.php?op=ticket_cerrado", { tick_id: tick_id }, function(resp) {
+                }).fail(function(err) {
+                    console.error("Error al enviar el correo:", err.responseText);
+                });
+            }, 0);
+
         } else {
             swal({
                 title: "Cancelado",

@@ -293,7 +293,6 @@ switch ($_GET["op"]) {
 
     case "update":
         $ticket->update_ticket($_POST['tick_id']);
-        $correo->ticket_cerrado($_POST['tick_id']);
         $ticket->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
         break;
 
