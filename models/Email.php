@@ -83,12 +83,7 @@ class Email extends PHPMailer{
             $this->addAttachment($archivo);
         }
     
-        if(!$this->send()) {
-            echo 'Error al enviar el correo: ' . $this->ErrorInfo;
-        } else {
-            echo 'Correo enviado con éxito.';
-        }
-
+        $this->send();
     } 
 
     public function ticket_asignado($ticket_id){
@@ -159,11 +154,7 @@ class Email extends PHPMailer{
 
         $this->Body = $cuerpo;
     
-        if(!$this->send()) {
-            echo 'Error al enviar el correo: ' . $this->ErrorInfo;
-        } else {
-            echo 'Correo enviado con éxito.';
-        }
+        $this->send();
 
         
     }
@@ -218,11 +209,8 @@ class Email extends PHPMailer{
 
         $this->Body = $cuerpo;
     
-        if(!$this->send()) {
-            echo 'Error al enviar el correo: ' . $this->ErrorInfo;
-        } else {
-            echo 'Correo enviado con éxito.';
-        }
+        $this->send();
+           
 
     }
 }

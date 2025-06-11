@@ -9,9 +9,6 @@ $usuario = new Usuario();
 require_once('../models/Documento.php');
 $documento = new Documento();
 
-require_once('../models/Email.php');
-$correo = new Email();
-
 switch ($_GET["op"]) {
 
     case "insert":
@@ -308,9 +305,6 @@ switch ($_GET["op"]) {
 
     case "updateasignacion":
         $ticket->update_ticket_asignacion($_POST['tick_id'], $_POST['usu_asig'], $_POST['how_asig']);
-
-        $correo->ticket_asignado($_POST["tick_id"]);
-
         break;
 
     case "total":

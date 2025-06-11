@@ -141,20 +141,18 @@ function ver(tick_id){
 function guardar(e){
     e.preventDefault();
 
-    // Activar Ladda
-    var l = Ladda.create($('#btnGuardar')[0]);
-    $('#btnGuardar').prop('disabled', true);
-    l.start();
-
     var formData = new FormData($("#ticket_form")[0])
+    var tick_id = $("#tick_id").val(); 
     $.ajax({
         url: "../../controller/ticket.php?op=updateasignacion",
         type: "POST",
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos){
-            console.log(datos);
+        success: function(){
+
+            $.post("../../controller/email.php?op=ticket_asignado", { tick_id: tick_id });
+
             $("#ticket_form")[0].reset();
             $("#modalasignar").modal('hide');
             $("#ticket_data").DataTable().ajax.reload();
@@ -164,14 +162,7 @@ function guardar(e){
                 type: "success",
                 confirmButtonClass: "btn-success"
             });          
-        },
-
-        complete: function() {
-            // Detener Ladda después de terminar
-            l.stop();
-            $('#btnGuardar').prop('disabled', false);
-
-        },
+        }
     })
 }
 
