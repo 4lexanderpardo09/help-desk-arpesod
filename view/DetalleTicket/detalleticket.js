@@ -5,6 +5,8 @@ function init(){
 
 $(document).ready(function() {
 
+    var rol_id = $("#rol_idx").val();
+
     var tick_id = getUrlParameter('ID'); 
 
     listarDetalle(tick_id);
@@ -99,6 +101,9 @@ $(document).ready(function() {
         }
     }).DataTable();
 
+    if(rol_id==1){
+        $("#btncerrarticket").addClass('hidden');
+    }
 
 });
 
