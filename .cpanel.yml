@@ -1,7 +1,12 @@
 ---
 deployment:
   tasks:
-    # Paso 1: Define la ruta donde se copiarán los archivos.
+    # Ruta de despliegue para toda la aplicación.
     - export DEPLOYPATH=/home/electroc/mesadeayuda.electrocreditosdelcauca.com/
 
-   - /bin/cp -R * $DEPLOYPATH
+    # Crea la carpeta de destino si no existe.
+    - mkdir -p $DEPLOYPATH
+
+    # Copia todos los archivos y carpetas del proyecto. Esto incluye la carpeta 'public'
+    # y el nuevo .htaccess que está dentro de ella.
+    - /bin/cp -R * $DEPLOYPATH
