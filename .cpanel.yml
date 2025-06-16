@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    # Paso 1: Define la ruta donde se copiarán los archivos.
+    # ¡MUY IMPORTANTE! Cambia 'tu_usuario_de_cpanel' por tu nombre de usuario real de cPanel.
+    - export DEPLOYPATH=/home/electroc/mesadeayuda.electrocreditosdelcauca.com/
+
+   - /bin/cp -R * $DEPLOYPATH
