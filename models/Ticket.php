@@ -220,19 +220,26 @@ class Ticket extends Conectar
         }
         
         if($_SESSION['rol_id']==1){
+
+            $mensaje1 = "El usuario te ha respondido el ticket Nro " . $tick_id;
+
             
-            $sql2 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,$usu_asig,'El usuario te ha respondido el ticket Nro ',?,NOW(),'2');";
+            $sql2 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,$usu_asig,?,?,NOW(),'2');";
             $sql2 = $conectar->prepare($sql2);
-            $sql2->bindValue(1, $tick_id);
+            $sql2->bindValue(1, $mensaje1);
+            $sql2->bindValue(2, $tick_id);
             
             $sql2->execute();
             
         }else{
 
-            $sql3 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,'El agente de soporte te ha respondido el ticket Nro ',?,NOW(),'2');";
+            $mensaje2 = "El agente de soporte te ha respondido el ticket Nro " . $tick_id;
+
+            $sql3 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,?,?,NOW(),'2');";
             $sql3 = $conectar->prepare($sql3);
             $sql3->bindValue(1, $usu_idx);
-            $sql3->bindValue(2, $tick_id);
+            $sql3->bindValue(2, $mensaje2);
+            $sql3->bindValue(3, $tick_id);
 
             $sql3->execute();
             
@@ -287,10 +294,14 @@ class Ticket extends Conectar
 
         $sql->execute();
 
-        $sql1 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,'Se le ha asignado el ticket # ',?,NOW(),2);";
+        // Crea el mensaje completo en una variable de PHP
+        $mensaje = "Se le ha asignado el ticket # " . $tick_id;
+
+        $sql1 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,?,?,?,NOW(),2);";
         $sql1 = $conectar->prepare($sql1);
         $sql1->bindValue(1, $usu_asig);
-        $sql1->bindValue(2, $tick_id);
+        $sql1->bindValue(2, $mensaje);
+        $sql1->bindValue(3, $tick_id);
 
         $sql1->execute();
     }

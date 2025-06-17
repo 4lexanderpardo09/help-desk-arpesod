@@ -61,5 +61,15 @@
             return $resultado = $sql->fetchAll();
         }
 
+        public function get_nuevas_notificaciones_para_enviar(){
+            $conectar = parent::Conexion();
+            parent::set_names();
+            // Buscamos notificaciones con estado 2 (nuevas, no enviadas)
+            $sql = "SELECT * FROM tm_notificacion WHERE est = 2";
+            $sql = $conectar->prepare($sql);
+            $sql->execute();
+            return $resultado = $sql->fetchAll();
+        }
+
     }
 ?>
