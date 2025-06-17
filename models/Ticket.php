@@ -9,8 +9,8 @@ class Ticket extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
-        $sql->bindValue(3, $pd_id);
-        $sql->bindValue(4, $cats_id);
+        $sql->bindValue(3, $cats_id);
+        $sql->bindValue(4, $pd_id);
         $sql->bindValue(5, $tick_titulo);
         $sql->bindValue(6, $tick_descrip);
         $sql->execute();
