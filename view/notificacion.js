@@ -17,7 +17,8 @@ $(document).ready(function() {
     // Usa 'ws://localhost:8080' para pruebas en tu PC.
     // Usa 'wss://mesadeayuda.electrocreditosdelcauca.com:8080' para producción (wss es para HTTPS).
     // El puerto :8080 es un ejemplo, podría ser otro si lo configuraste diferente.
-    const socket_url = 'wss://mesadeayuda.electrocreditosdelcauca.com:8080?userId=' + usu_id;    
+    // La URL final, segura y profesional
+    const socket_url = 'wss://mesadeayuda.electrocreditosdelcauca.com/websocket?userId=' + usu_id;
     const conn = new WebSocket(socket_url);
 
     // --- MANEJO DE EVENTOS DEL WEBSOCKET ---
