@@ -43,7 +43,11 @@
                             <option value="2">Soporte</option>
                         </select>
                     </div>
-
+                    <div class="form-group" id="dp_id_group">
+                        <label class="form-label semibold" for="dp_id">Nombre departamento</label>
+                        <select class="select2" id="dp_id" name="dp_id" placeholder="Seleccione un departamento">
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

@@ -1,25 +1,25 @@
 var tabla;
 
 function init() {
-    $("#usuario_form").on("submit", function(e){
+    $("#dp_form").on("submit", function(e){
         guardaryeditar(e);
     })
 }
 
 function guardaryeditar(e){
     e.preventDefault();
-    var formData = new FormData($("#usuario_form")[0])
+    var formData = new FormData($("#dp_form")[0])
     $.ajax({
-        url: "../../controller/usuario.php?op=guardaryeditar",
+        url: "../../controller/departamento.php?op=guardaryeditar",
         type: "POST",
         data: formData,
         contentType: false,
         processData: false,
         success: function(datos){
             console.log(datos);
-            $("#usuario_form")[0].reset();
-            $("#modalnuevousuario").modal('hide');
-            $("#user_data").DataTable().ajax.reload();
+            $("#pd_nom").html('');
+            $("#modalnuevodepartamento").modal('hide');
+            $("#dp_data").DataTable().ajax.reload();
             swal({
                 title: "Guardado!",
                 text: "Se ha guardado correctamente el nuevo registro.",
@@ -33,9 +33,7 @@ function guardaryeditar(e){
 
 $(document).ready(function () {
 
-    
-
-    tabla = $('#user_data').dataTable({
+    tabla = $('#dp_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
         dom: 'Bfrtip',
@@ -49,7 +47,7 @@ $(document).ready(function () {
             'pdfHtml5',
         ],
         "ajax": {
-            url: '../../controller/usuario.php?op=listar',
+            url: '../../controller/departamento.php?op=listar',
             type: 'post',
             dataType: 'json',
             error: function (e) {
@@ -87,55 +85,42 @@ $(document).ready(function () {
         }
     }).DataTable();
 
-    $.post("../../controller/departamento.php?op=combo", function (data) {
-        $('#dp_id').html('<option value="">Seleccionar</option>' + data);
-    });
-
-    toggleDepartamento()
-
-    $('#rol_id').on('change', toggleDepartamento);
 
 })
 
-function editar(usu_id) {
+function editar(dp_id) {
     $("#mdltitulo").html('Editar registro');
 
-    $.post("../../controller/usuario.php?op=mostrar", {usu_id:usu_id}, function(data) {
+    $.post("../../controller/departamento.php?op=mostrar", {dp_id:dp_id}, function(data) {
         data = JSON.parse(data);
-        $('#usu_id').val(data.usu_id);
-        $('#usu_nom').val(data.usu_nom);
-        $('#usu_ape').val(data.usu_ape);
-        $('#usu_correo').val(data.usu_correo);
-        $('#usu_pass').val(data.usu_pass);
-        $('#rol_id').val(data.rol_id).trigger('change');
-        $('#dp_id').val(data.dp_id).trigger('change');
-
+        $('#dp_id').val(data.dp_id);
+        $('#pd_nom').val(data.pd_nom);
 
         
 
     });    
 
-    $("#modalnuevousuario").modal("show");
+    $("#modalnuevodepartamento").modal("show");
 }
-function eliminar(usu_id) {
+function eliminar(dp_id) {
     swal({
-        title: "¿Estas que quieres eliminar este usuario?",
+        title: "¿Estas que quieres eliminar esta departamento?",
         text: "Una vez eliminado no podrás volver a recuperarlo",
         type: "warning",
         showCancelButton: true,
         confirmButtonClass: "btn-danger",
-        confirmButtonText: "Si, eliminar usuario!",
+        confirmButtonText: "Si, eliminar!",
         cancelButtonText: "No, cancelar!",
         closeOnConfirm: false,
         closeOnCancel: false
     },
     function(isConfirm) {
         if (isConfirm) {
-            $.post("../../controller/usuario.php?op=eliminar", {usu_id:usu_id}, function(data) {
-                $('#user_data').DataTable().ajax.reload(); 
+            $.post("../../controller/departamento.php?op=eliminar", {dp_id:dp_id}, function(data) {
+                $('#dp_data').DataTable().ajax.reload(); 
                 swal({
                     title: "Eliminado!",
-                    text: "Usuario eliminado correctamente",
+                    text: "departamento eliminada correctamente",
                     type: "success",
                     confirmButtonClass: "btn-success"
                 }); 
@@ -143,7 +128,7 @@ function eliminar(usu_id) {
         } else {
             swal({
                 title: "Cancelado",
-                text: "El ticket sigue abierto.",
+                text: "La departamento no fue eliminada",
                 type: "error",
                 confirmButtonClass: "btn-danger"
                 
@@ -152,20 +137,10 @@ function eliminar(usu_id) {
     });
 }
 
-function toggleDepartamento() {
-    var rol = $('#rol_id').val();
-    if (rol === '2') {
-        $('#dp_id_group').show();
-    } else {
-        $('#dp_id_group').hide();
-        $('#dp_id').val(null).trigger('change'); // Limpiar selección
-    }
-}
-
-$(document).on("click", "#btnnuevoregistro", function(){
+$(document).on("click", "#btnnuevodepartamento", function(){
     $("#mdltitulo").html('Nuevo registro');
-    $("#usuario_form")[0].reset();
-    $("#modalnuevousuario").modal("show");
+    $("#dp_form")[0].reset();
+    $("#modalnuevodepartamento").modal("show");
 })
 
 init();

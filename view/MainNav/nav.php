@@ -72,6 +72,11 @@ if ($_SESSION['rol_id'] == 1) {
                             <span class="lbl">Gestion subcategoria</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionDepartamento\">
+                            <span class="lbl">Gestion departamento</span>
+                        </a>
+                    </li>
 	            </ul>
 	        </li>
         </ul>
