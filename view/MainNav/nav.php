@@ -40,6 +40,12 @@ if ($_SESSION['rol_id'] == 1) {
                     <span class="lbl">Consultar Ticket</span>
                 </a>
             </li>
+            <li class="blue-dirty">
+                <a href="..\NuevoTicket\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Nuevo Ticket</span>
+                </a>
+            </li>
             <li class="grey with-sub">
 	            <span>
 	                <i class="font-icon font-icon-dashboard"></i>
