@@ -100,6 +100,67 @@ class Email extends PHPMailer{
             $correo = $row['usu_correo'];
             $descripcion = $row['tick_descrip'];
             $prioridad = $row['pd_nom'];
+            $fech_crea = $row['fech_crea'];
+        }
+
+        $datos2 = $ticket->listar_ticket_x_id_x_usuaarioasignado($ticket_id);
+
+        foreach ($datos2 as $row2) {
+            $id_asignado = $row2['tick_id'];
+            $nombre_asignado = $row2['usu_nom'];
+            $apellido_asignado = $row2['usu_ape'];
+            $correo_asignado = $row2['usu_correo'];
+        }
+
+
+        //igual
+        $this->isSMTP();
+        $this->Host = 'smtp.gmail.com';
+        $this->Port = 587;
+        $this->SMTPAuth = true;
+        $this->Username = $this->gcorreo;
+        $this->Password = $this->gpass;
+        $this->From = $this->gcorreo;
+        $this->SMTPSecure = 'tls';
+        $this->FromName = 'Sistema de Tickets';
+        $this->CharSet = 'UTF-8';
+        $this->addAddress($correo_asignado);
+        $this->WordWrap = 50;
+        $this->isHTML(true);
+        $this->Subject = 'Ticket Asignado';
+        $cuerpo = file_get_contents('../public/asignarticket.html');
+
+        $cuerpo = str_replace('[Nombre del cliente]', $nombre . ' ' . $apellido, $cuerpo);
+        $cuerpo = str_replace('[Número de ticket]', $id ,$cuerpo);
+        $cuerpo = str_replace('[Breve descripcion del problema]', $descripcion,  $cuerpo);
+
+        $cuerpo = str_replace('[Nombre del agente]', $nombre_asignado . ' ' . $apellido_asignado, $cuerpo);
+        $cuerpo = str_replace('[Fecha reasignacion]', $fech_crea,$cuerpo);
+        $cuerpo = str_replace('[Alta/Media/Baja]', $prioridad ,$cuerpo);
+
+        
+
+        $this->Body = $cuerpo;
+    
+        $this->send();
+
+        
+    }
+
+    public function ticket_reasignado($ticket_id){
+
+        $ticket = new Ticket();
+        $datos = $ticket->listar_ticket_x_id($ticket_id);
+        
+        foreach ($datos as $row) {
+            $id = $row['tick_id'];
+            $nombre = $row['usu_nom'];
+            $apellido = $row['usu_ape'];
+            $titulo = $row['tick_titulo'];
+            $categoria = $row['cat_nom'];
+            $correo = $row['usu_correo'];
+            $descripcion = $row['tick_descrip'];
+            $prioridad = $row['pd_nom'];
         }
 
         $datos2 = $ticket->listar_ticket_x_id_x_usuaarioasignado($ticket_id);
@@ -136,19 +197,21 @@ class Email extends PHPMailer{
         $this->addAddress($correo_asignado);
         $this->WordWrap = 50;
         $this->isHTML(true);
-        $this->Subject = 'Ticket Asignado';
-        $cuerpo = file_get_contents('../public/asignarticket.html');
+        $this->Subject = 'Ticket Re-asignado';
+        $cuerpo = file_get_contents('../public/reasignarticket.html');
 
-        $cuerpo = str_replace('[Nombre del cliente]', $nombre . ' ' . $apellido, $cuerpo);
-        $cuerpo = str_replace('[Número de ticket]', $id ,$cuerpo);
-        $cuerpo = str_replace('[Breve descripcion del problema]', $descripcion,  $cuerpo);
-
-        $cuerpo = str_replace('[Nombre del agente]', $nombre_asignado . ' ' . $apellido_asignado, $cuerpo);
-        $cuerpo = str_replace('[Alta/Media/Baja]', $prioridad ,$cuerpo);
+        $cuerpo = str_replace('[Usuario]', $nombre . ' ' . $apellido, $cuerpo);
+        $cuerpo = str_replace('[Nr Ticket]', $id ,$cuerpo);
+        $cuerpo = str_replace('[Titulo]', $titulo,  $cuerpo);
+        $cuerpo = str_replace('[Descripcion]', $descripcion,  $cuerpo);
 
 
-        $cuerpo = str_replace('[Su nombre]', $nombre_how_asignado . ' ' . $apellido_how_asignado, $cuerpo);
-        $cuerpo = str_replace('[Su correo]', $correo__how_asignado , $cuerpo);
+        $cuerpo = str_replace('[Agente anterior]', $nombre_how_asignado . ' ' . $apellido_how_asignado, $cuerpo);
+        $cuerpo = str_replace('[Agente nuevo]', $nombre_asignado . ' ' . $apellido_asignado, $cuerpo);
+        $cuerpo = str_replace('[Fecha reasignacion]', date('d/m/Y h:i A'),$cuerpo);
+        $cuerpo = str_replace('[Prioridad]', $prioridad ,$cuerpo);
+
+        $cuerpo = str_replace('[Correo agente anterior]', $correo__how_asignado , $cuerpo);
 
         $this->Body = $cuerpo;
     

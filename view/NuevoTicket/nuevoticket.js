@@ -93,6 +93,8 @@ function guardaryeditar(e) {
             data = JSON.parse(data);
 
             $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
+            $.post("../../controller/email.php?op=ticket_asignado", { tick_id: data[0].tick_id })
+
                 
             $('#cat_id').val('');
             $('#tick_titulo').val('');

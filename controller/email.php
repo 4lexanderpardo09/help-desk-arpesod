@@ -7,6 +7,7 @@
     $correo = new Email(); 
 
     switch ($_GET["op"]) {
+        
         case "ticket_abierto":
             $correo->ticket_abierto($_POST['tick_id']);
         break;
@@ -14,6 +15,9 @@
         case 'ticket_asignado':
            $correo->ticket_asignado($_POST["tick_id"]);
            break;
+        case 'ticket_reasignado':
+            $correo->ticket_reasignado($_POST['tick_id']);
+            break;   
 
         case 'ticket_cerrado':
             $correo->ticket_cerrado($_POST['tick_id']);

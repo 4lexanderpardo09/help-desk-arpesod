@@ -151,7 +151,7 @@ function guardar(e){
         processData: false,
         success: function(){
 
-            $.post("../../controller/email.php?op=ticket_asignado", { tick_id: tick_id });
+            $.post("../../controller/email.php?op=ticket_reasignado", { tick_id: tick_id });
 
             $("#ticket_form")[0].reset();
             $("#modalasignar").modal('hide');
