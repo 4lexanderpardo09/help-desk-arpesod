@@ -24,7 +24,7 @@ switch ($_GET["op"]) {
             $sub_array = array();
             $sub_array[] = $row['usu_nom'];
             $sub_array[] = $row['usu_ape'];
-            $sub_array[] = $row['dp_nom'];
+            $sub_array[] = isset($row['dp_nom']) ? $row['dp_nom'] : 'Sin departamento';
             $sub_array[] = $row['usu_correo'];
           
             if($row['rol_id']==1){

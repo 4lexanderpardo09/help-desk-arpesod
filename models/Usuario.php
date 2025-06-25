@@ -53,7 +53,13 @@ class Usuario extends Conectar{
             $sql->bindValue(3, $usu_correo);
             $sql->bindValue(4, $hashed_pass);
             $sql->bindValue(5, $rol_id);
-            $sql->bindValue(6, $dp_id);
+
+            // dp_id puede ser NULL
+            if (empty($dp_id)) {
+                $sql->bindValue(6, null, PDO::PARAM_NULL);
+            } else {
+                $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+            }
 
             $sql->execute();
 
@@ -80,7 +86,14 @@ class Usuario extends Conectar{
             $sql->bindValue(3, $usu_correo);
             $sql->bindValue(4, $hashed_pass);
             $sql->bindValue(5, $rol_id);
-            $sql->bindValue(6, $dp_id);
+
+            // dp_id puede ser NULL
+            if (empty($dp_id)) {
+                $sql->bindValue(6, null, PDO::PARAM_NULL);
+            } else {
+                $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+            }
+
             $sql->bindValue(7, $usu_id);
 
             $sql->execute();
@@ -122,7 +135,16 @@ class Usuario extends Conectar{
     public function get_usuario_x_departamento($dp_id){
         $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT * FROM tm_usuario WHERE dp_id = ? AND est = '1'";
+
+            if (is_null($dp_id)) {
+                $sql = "SELECT * FROM tm_usuario WHERE dp_id IS NULL AND est = '1'";
+                $sql = $conectar->prepare($sql);
+            } else {
+                $sql = "SELECT * FROM tm_usuario WHERE dp_id = ? AND est = '1'";
+                $sql = $conectar->prepare($sql);
+                $sql->bindValue(1, $dp_id, PDO::PARAM_INT);
+            }
+
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $dp_id);
             $sql->execute();
