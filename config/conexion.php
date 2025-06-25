@@ -2,15 +2,26 @@
 
 session_start();
 
+// Requerir el autoload de Composer para poder usar las librerías instaladas
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Cargar las variables de entorno desde el archivo .env
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
+
 class Conectar{
     protected $dbh;
 
     protected function Conexion(){
         try{
-           //$conectar = $this->dbh = new PDO("mysql:host=localhost;dbname=helpdeskdb", "root", "@Ap200905");
-           $conectar = $this->dbh = new PDO("mysql:host=localhost;dbname=electroc_mesadeayuda", "electroc_webmast", "4Rxf1vNLYW_w");
+           // Ahora leemos las variables de entorno con $_ENV
+           $host = $_ENV['DB_HOST'];
+           $dbname = $_ENV['DB_NAME'];
+           $user = $_ENV['DB_USER'];
+           $pass = $_ENV['DB_PASS'];
 
-            return $conectar;
+           $conectar = $this->dbh = new PDO("mysql:host={$host};dbname={$dbname}", $user, $pass);
+           return $conectar;
         }catch(Exception $e){
             print "ERROR DB" . $e->getMessage() . "<br/>";
             die();
@@ -22,10 +33,8 @@ class Conectar{
     }
 
     public function ruta(){
-       //return "http://localhost:8000/";
-       return "https://mesadeayuda.electrocreditosdelcauca.com/";
-
-       
+       // La ruta también viene del archivo .env
+       return $_ENV['APP_URL'];
     }
 }
 

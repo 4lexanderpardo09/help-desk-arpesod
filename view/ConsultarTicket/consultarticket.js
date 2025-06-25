@@ -135,7 +135,7 @@ function asignar(tick_id){
 }
 
 function ver(tick_id){
-    window.location.href = 'https://mesadeayuda.electrocreditosdelcauca.com//view/DetalleTicket/?ID='+ tick_id
+    window.location.href = '/view/DetalleTicket/?ID='+ tick_id
 }
 
 function guardar(e){
