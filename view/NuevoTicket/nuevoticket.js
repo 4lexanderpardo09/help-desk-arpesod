@@ -35,6 +35,20 @@ $(document).ready(function () {
         $('#pd_id').html('<option value="">Seleccionar</option>' + data);
     });
 
+    $.post("../../controller/departamento.php?op=combo", function (data) {
+        $('#dp_id').html('<option value="">Seleccionar</option>' + data);
+    });
+    
+    $('#usu_asig').html('<option value="">Seleccionar</option>');
+
+    $("#dp_id").change(function(){
+        dp_id = $(this).val();
+        
+        $.post("../../controller/usuario.php?op=usuariosxdepartamento",{dp_id:dp_id}, function(data) {
+            $("#usu_asig").html(data);
+        });  
+    });
+
 
     $('#cats_id').html('<option value="">Seleccionar</option>');
 
@@ -86,6 +100,7 @@ function guardaryeditar(e) {
             $('#cats_id').val('');
             $('#pd_id').val('');
             $('#tick_descrip').summernote('reset');
+            $('#usu_asig').val('');
             swal("Correcto", "Registrado correctamente ", "success");
         }
     })

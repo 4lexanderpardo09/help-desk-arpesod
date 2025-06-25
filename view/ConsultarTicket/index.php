@@ -42,7 +42,6 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 5%;">Estado</th>
                                 <th style="width: 5%;">Prioridad</th>
                                 <th style="width: 10%;">Fecha creacion</th>
-                                <th style="width: 5%;">Fecha asignacion</th>
                                 <th style="width: 5%;">Soporte</th>
                                 <th style="width: 5%;">Accion</th>
                             </tr>

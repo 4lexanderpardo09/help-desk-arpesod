@@ -13,7 +13,7 @@ switch ($_GET["op"]) {
 
     case "insert":
 
-        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['cats_id'], $_POST['pd_id'], $_POST['tick_titulo'], $_POST['tick_descrip']);
+        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['cats_id'], $_POST['pd_id'], $_POST['tick_titulo'], $_POST['tick_descrip'], $_POST['usu_asig']);
         if (is_array($datos) == true and count($datos) > 0) {
             foreach ($datos as $row) {
                 $output['tick_id'] = $row['tick_id'];
@@ -70,12 +70,6 @@ switch ($_GET["op"]) {
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
-            if ($row['fech_asig'] == null) {
-                $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
-            } else {
-                $sub_array[] =  date("d/m/Y H:i:s", strtotime($row["fech_asig"]));
-            }
-
             if ($row['usu_asig'] == null) {
                 $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
             } else {
@@ -125,19 +119,12 @@ switch ($_GET["op"]) {
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
-
-            if ($row['fech_asig'] == null) {
-                $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
-            } else {
-                $sub_array[] =  date("d/m/Y H:i:s", strtotime($row["fech_asig"]));
-            }
-
             if ($row['usu_asig'] == null) {
-                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-danger">Sin asignar</span></a>';
+                $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
                 $datos = $usuario->get_usuario_x_id($row['usu_asig']);
                 foreach ($datos as $row2) {
-                    $sub_array[] = '<span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span> ';
+                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
                 }
             }
 

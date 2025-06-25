@@ -119,6 +119,17 @@ class Usuario extends Conectar{
             return $resultado = $sql->fetchAll();
     }
 
+    public function get_usuario_x_departamento($dp_id){
+        $conectar = parent::Conexion();
+            parent::set_names();
+            $sql = "SELECT * FROM tm_usuario WHERE dp_id = ? AND est = '1'";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, $dp_id);
+            $sql->execute();
+
+            return $resultado = $sql->fetchAll();
+    }
+
     public function get_usuario_x_id($usu_id){
         $conectar = parent::Conexion();
         parent::set_names();

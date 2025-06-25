@@ -114,5 +114,16 @@ switch ($_GET["op"]) {
             }
             echo $html;
         }
-    break;    
+    break;   
+    
+    case "usuariosxdepartamento":
+        $datos = $usuario->get_usuario_x_departamento($_POST['dp_id']);
+        if(is_array($datos) == true and count($datos) > 0){
+            $html.="<option label='Seleccionar'></option>";
+            foreach($datos as $row){
+                $html.="<option value='".$row['usu_id']."'>".$row['usu_nom']." ".$row['usu_ape']."</option>";
+            }
+            echo $html;
+        }
+    break; 
 }

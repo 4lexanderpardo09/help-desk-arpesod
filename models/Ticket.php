@@ -1,11 +1,11 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $usu_asig)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,fech_crea,usu_asig,fech_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',NOW(),NULL,NULL,'1' )  ";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,fech_crea,usu_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',NOW(),?,'1' )  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
@@ -13,6 +13,8 @@ class Ticket extends Conectar
         $sql->bindValue(4, $pd_id);
         $sql->bindValue(5, $tick_titulo);
         $sql->bindValue(6, $tick_descrip);
+        $sql->bindValue(7, $usu_asig);
+
         $sql->execute();
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
@@ -35,7 +37,6 @@ class Ticket extends Conectar
                 tm_ticket.tick_estado,
                 tm_ticket.fech_crea,     
                 tm_ticket.usu_asig,
-                tm_ticket.fech_asig,
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
@@ -68,7 +69,6 @@ class Ticket extends Conectar
                 tm_ticket.tick_estado,
                 tm_ticket.fech_crea,
                 tm_ticket.usu_asig,
-                tm_ticket.fech_asig,
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
@@ -160,7 +160,6 @@ class Ticket extends Conectar
         tm_ticket.tick_descrip,
         tm_ticket.tick_estado,
         tm_ticket.fech_crea,
-        tm_ticket.fech_asig,
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
         tm_usuario.usu_correo,
@@ -189,7 +188,6 @@ class Ticket extends Conectar
         tm_ticket.tick_descrip,
         tm_ticket.tick_estado,
         tm_ticket.fech_crea,
-        tm_ticket.fech_asig,
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
         tm_usuario.usu_correo,
@@ -286,7 +284,7 @@ class Ticket extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_ticket SET usu_asig = ?, fech_asig = NOW(), how_asig = ? WHERE tm_ticket.tick_id = ? ";
+        $sql = "UPDATE tm_ticket SET usu_asig = ?, how_asig = ? WHERE tm_ticket.tick_id = ? ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
         $sql->bindValue(2, $how_asig);

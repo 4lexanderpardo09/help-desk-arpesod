@@ -109,7 +109,6 @@ class Email extends PHPMailer{
             $nombre_asignado = $row2['usu_nom'];
             $apellido_asignado = $row2['usu_ape'];
             $correo_asignado = $row2['usu_correo'];
-            $fecha_asig = $row2['fech_asig'];
         }
 
         $datos3 = $ticket->listar_ticket_x_id_x_quien_asigno($ticket_id);
@@ -145,7 +144,6 @@ class Email extends PHPMailer{
         $cuerpo = str_replace('[Breve descripcion del problema]', $descripcion,  $cuerpo);
 
         $cuerpo = str_replace('[Nombre del agente]', $nombre_asignado . ' ' . $apellido_asignado, $cuerpo);
-        $cuerpo = str_replace('[Fecha]', $fecha_asig ,$cuerpo);
         $cuerpo = str_replace('[Alta/Media/Baja]', $prioridad ,$cuerpo);
 
 
