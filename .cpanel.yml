@@ -10,3 +10,4 @@ deployment:
     # Copia todos los archivos y carpetas del proyecto. Esto incluye la carpeta 'public'
     # y el nuevo .htaccess que está dentro de ella.
     - /bin/cp -R * $DEPLOYPATH
+    
