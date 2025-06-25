@@ -47,6 +47,10 @@ $(document).ready(function () {
         $.post("../../controller/usuario.php?op=usuariosxdepartamento",{dp_id:dp_id}, function(data) {
             $("#usu_asig").html(data);
         });  
+
+        $.post("../../controller/categoria.php?op=combo", {dp_id:dp_id}, function (data) {
+            $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+        });
     });
 
 

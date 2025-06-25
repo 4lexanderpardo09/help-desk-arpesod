@@ -6,6 +6,7 @@
             $sql = "SELECT * FROM tm_categoria WHERE dp_id = ? and est = 1;";
 
             $sql = $conectar->prepare($sql);
+            $sql->bindValue(1,$dp_id);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
