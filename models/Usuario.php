@@ -143,11 +143,8 @@ class Usuario extends Conectar{
                 $sql = "SELECT * FROM tm_usuario WHERE dp_id = ? AND est = '1'";
                 $sql = $conectar->prepare($sql);
                 $sql->bindValue(1, $dp_id, PDO::PARAM_INT);
+                $sql->execute();
             }
-
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1, $dp_id);
-            $sql->execute();
 
             return $resultado = $sql->fetchAll();
     }
