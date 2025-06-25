@@ -39,6 +39,7 @@ if (isset($_SESSION["usu_id"])) {
                         <thead>
                             <tr role="row">
                                 <th style="width: 25%;">Nombre</th>
+                                <th style="width: 25%;">Departamento</th>
                                 <th style="width: 2%;">Editar</th>
                                 <th style="width: 2%;">Eliminar</th>
 

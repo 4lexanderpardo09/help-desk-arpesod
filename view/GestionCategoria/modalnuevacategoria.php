@@ -21,6 +21,11 @@
                         <input type="text" class="form-control" id="cat_nom" name="cat_nom" placeholder="Ingrese un nombre" required>
                         <div></div>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label semibold" for="dp_id">Departamento</label>
+                        <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione una categoria">
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

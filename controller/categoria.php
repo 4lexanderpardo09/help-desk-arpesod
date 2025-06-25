@@ -9,7 +9,7 @@ $categoria = new Categoria();
 switch ($_GET["op"]) {
     case "combo":
         
-        $datos = $categoria->get_categoria();
+        $datos = $categoria->get_categoria($_POST['dp_id']);
         if(is_array($datos) and count($datos) > 0){
             $html = "";
             foreach($datos as $row){
@@ -24,19 +24,20 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['cat_id'])){
-                $categoria->insert_categoria($_POST['cat_nom']);
+                $categoria->insert_categoria($_POST['cat_nom'],$_POST['dp_id']);
             }else{
-                $categoria->update_categoria($_POST['cat_id'],$_POST['cat_nom']);
+                $categoria->update_categoria($_POST['cat_id'],$_POST['cat_nom'],$_POST['dp_id']);
             }  
     
             break; 
     
         case "listar":
-            $datos = $categoria->get_categoria();
+            $datos = $categoria->get_categoriatodo();
             $data = array();
             foreach ($datos as $row) {
                 $sub_array = array();
                 $sub_array[] = $row["cat_nom"];
+                $sub_array[] = $row["dp_nom"];
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['cat_id'] . ');" id="' . $row['cat_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['cat_id'] . ');" id="' . $row['cat_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
                 $data[] = $sub_array;

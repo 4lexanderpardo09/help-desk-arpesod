@@ -85,6 +85,9 @@ $(document).ready(function () {
         }
     }).DataTable();
 
+    $.post("../../controller/departamento.php?op=combo", function (data) {
+        $('#dp_id').html('<option value="">Seleccionar</option>' + data);
+    });
 
 })
 
