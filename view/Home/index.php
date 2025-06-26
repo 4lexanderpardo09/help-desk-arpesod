@@ -6,6 +6,20 @@ if (isset($_SESSION["usu_id"])) {
     <html>
     <?php require_once('../MainHead/head.php') ?>
     <title>Dashboard de Reportes</title>
+    <style>
+        /* Estilo normal para el número en las cajas de estadísticas */
+        .statistic-box .number {
+            font-size: 36px; /* Este es el tamaño de fuente grande por defecto */
+            transition: font-size 0.3s ease; /* Efecto suave al cambiar de tamaño (opcional) */
+        }
+
+        /* NUEVA CLASE: Estilo para cuando el texto es largo */
+        .statistic-box .number.texto-largo {
+            font-size: 24px;      /* Un tamaño de fuente más pequeño */
+            line-height: 1.2;     /* Mejora el espaciado si hay dos líneas */
+    padding-top: 10px;    /* Ajusta la posición verticalmente para que se vea centrado */
+}
+    </style>
     </head>
 
     <body class="with-side-menu">

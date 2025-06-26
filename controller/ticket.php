@@ -176,7 +176,15 @@ switch ($_GET["op"]) {
                     $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
                 }
             }
-
+            if ($row['usu_id'] == null) {
+                $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
+            } else {
+                $datos = $usuario->get_usuario_x_id($row['usu_id']);
+                foreach ($datos as $row2) {
+                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
+                }
+            }
+            $sub_array[] = '<button type="button" onClick="asignar(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-success btn-sm ladda-button"><i class="fa fa-sync-alt"></i></button>';
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
         }

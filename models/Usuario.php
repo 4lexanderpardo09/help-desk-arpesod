@@ -8,38 +8,65 @@ class Usuario extends Conectar{
     public function login(){
         $conectar = parent::Conexion();
         parent::set_names();
+
         if(isset($_POST["enviar"])){
             $correo = $_POST["usu_correo"];
             $password = $_POST["usu_pass"];
-            $rol = $_POST["rol_id"];  
+            // CORRECCIÓN 1: Convertimos el rol solicitado a un número entero (int)
+            $rol_solicitado = (int)$_POST["rol_id"];
+
             if(empty($correo) || empty($password)){
                 header("Location: " . Conectar::ruta() . "index.php?m=2");
                 exit();
-            }else{
-                $sql = "SELECT * FROM tm_usuario WHERE usu_correo = ? AND rol_id = ? AND est = 1";
+            } else {
+                
+                $sql = "SELECT * FROM tm_usuario WHERE usu_correo = ? AND est = 1";
                 $stmt = $conectar->prepare($sql);
                 $stmt->bindValue(1, $correo);
-                $stmt->bindValue(2, $rol);
                 $stmt->execute();
                 $resultado = $stmt->fetch();
 
-
                 if(is_array($resultado) and count($resultado) > 0 and password_verify($password, $resultado["usu_pass"])){
-                    $_SESSION["usu_id"] = $resultado["usu_id"];
-                    $_SESSION["usu_nom"] = $resultado["usu_nom"];
-                    $_SESSION["usu_ape"] = $resultado["usu_ape"];
-                    $_SESSION["rol_id"] = $resultado["rol_id"];
+                    
+                    // Obtenemos el rol real del usuario (ya viene como int)
+                    $rol_real_del_usuario = $resultado["rol_id"];
+                    
+                    $acceso_permitido = false;
 
-                    header ("Location: " . Conectar::ruta() . "view/Home/");
-                    exit();
-                }else{
-                    header("Location: " . Conectar::ruta() . "index.php?m=1");
+                    // CORRECCIÓN 2: Usamos el rol de Administrador correcto (1, según tus datos).
+                    // ¡IMPORTANTE! Si tu rol de Admin es otro número, cámbialo aquí.
+                    $rol_de_administrador = 3;
+
+                    if ($rol_real_del_usuario == $rol_de_administrador) {
+                        $acceso_permitido = true;
+                    }
+                    else if ($rol_real_del_usuario == $rol_solicitado) {
+                        $acceso_permitido = true;
+                    }
+                    
+                    if ($acceso_permitido) {
+                        $_SESSION["usu_id"] = $resultado["usu_id"];
+                        $_SESSION["usu_nom"] = $resultado["usu_nom"];
+                        $_SESSION["usu_ape"] = $resultado["usu_ape"];
+                        $_SESSION["rol_id"] = $rol_solicitado; 
+                        $_SESSION["rol_id_real"] = $rol_real_del_usuario; 
+
+                        header ("Location: " . Conectar::ruta() . "view/Home/");
+                        exit();
+                    } else {
+                        // Acceso denegado por falta de permisos de rol
+                        header("Location: " . Conectar::ruta() . "index.php?m=1");
+                        exit();
+                    }
+
+                } else {
+                    // Acceso denegado por credenciales incorrectas
+                    header("Location: " . Conectar::ruta() . "index.php?m=1"); 
                     exit();
                 }
             }
         }
     }
-
     public function insert_usuario($usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id){
             $conectar = parent::Conexion();
             parent::set_names();

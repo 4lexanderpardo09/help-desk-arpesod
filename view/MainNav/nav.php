@@ -1,5 +1,5 @@
 <?php
-if ($_SESSION['rol_id'] == 1) {
+if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
 ?>
     <nav class="side-menu">
         <ul class="side-menu-list">
@@ -24,7 +24,7 @@ if ($_SESSION['rol_id'] == 1) {
         </ul>
     </nav>
 <?php
-} else if ($_SESSION['rol_id'] == 2) {
+} else if ($_SESSION['rol_id'] == 2 && $_SESSION['rol_id_real'] != 3) {
 ?>
     <nav class="side-menu">
         <ul class="side-menu-list">
@@ -50,6 +50,25 @@ if ($_SESSION['rol_id'] == 1) {
                 <a href="..\ConsultarTicketAgentes\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Consultar Ticket Creados</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+<?php
+}else if ($_SESSION['rol_id'] == 2 || $_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] == 3) {
+?>
+    <nav class="side-menu">
+        <ul class="side-menu-list">
+            <li class="blue-dirty">
+                <a href="..\Home\">
+                    <i class="font-icon font-icon-dashboard"></i>
+                    <span class="lbl">Inicio</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicket\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket</span>
                 </a>
             </li>
             <li class="grey with-sub">
