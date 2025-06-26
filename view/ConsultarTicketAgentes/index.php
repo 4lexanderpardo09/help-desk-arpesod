@@ -42,8 +42,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 5%;">Estado</th>
                                 <th style="width: 5%;">Prioridad</th>
                                 <th style="width: 10%;">Fecha creacion</th>
-                                <th id="lblusertable" style="width: 5%;">Soporte</th>
-                                <th id="lblreasignartable" style="width: 5%;">Reasignar</th>
+                                <th style="width: 5%;">Soporte</th>
                                 <th style="width: 5%;">Accion</th>
                             </tr>
                         </thead>
@@ -51,11 +50,10 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
             </div>
         </div>
-        <?php require_once('../ConsultarTicket/modalasignar.php') ?>
 
         <?php require_once('../MainJs/js.php') ?>
 
-        <script type="text/javascript" src="../ConsultarTicket/consultarticket.js"></script>
+        <script type="text/javascript" src="../ConsultarTicketAgentes/consultarticketagentes.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
 
 

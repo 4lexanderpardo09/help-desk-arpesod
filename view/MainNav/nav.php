@@ -35,15 +35,21 @@ if ($_SESSION['rol_id'] == 1) {
                 </a>
             </li>
             <li class="blue-dirty">
-                <a href="..\ConsultarTicket\">
-                    <i class="tag-color grey-blue"></i>
-                    <span class="lbl">Consultar Ticket</span>
-                </a>
-            </li>
-            <li class="blue-dirty">
                 <a href="..\NuevoTicket\">
                     <i class="tag-color grey-blue"></i>
                     <span class="lbl">Nuevo Ticket</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicket\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Asignados</span>
+                </a>
+            </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarTicketAgentes\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Creados</span>
                 </a>
             </li>
             <li class="grey with-sub">

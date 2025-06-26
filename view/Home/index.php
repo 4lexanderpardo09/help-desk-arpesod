@@ -60,7 +60,7 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </section>
 
-                <section class="card">
+                <section id="cargaagente" class="card">
                     <header class="card-header">
                         Carga de Trabajo por Agente (Tickets Abiertos)
                     </header>

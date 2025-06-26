@@ -79,10 +79,59 @@ switch ($_GET["op"]) {
                 }
             }
 
-
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
         }
+        $result = array(
+            "sEcho" => 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        );
+        echo json_encode($result);
+        break;
+    
+    case "listar_x_agente":
+
+            $datos = $ticket->listar_ticket_x_agente($_POST['usu_asig']);
+            $data = array();
+            foreach ($datos as $row) {
+                $sub_array = array();
+                $sub_array[] = $row['tick_id'];
+                $sub_array[] = $row['cat_nom'];
+                $sub_array[] = $row['tick_titulo'];
+    
+                if ($row['tick_estado'] == 'Abierto') {
+                    $sub_array[] = '<span class="label label-success">Abierto</span>';
+                } else {
+                    $sub_array[] = '<a onClick="cambiarEstado(' . $row['tick_id'] . ')" ><span class="label label-danger">Cerrado</span></a>';
+                }
+    
+                if ($row['pd_nom'] == 'Baja') {
+                    $sub_array[] = '<span class="label label-default">Baja</span>';
+                } elseif ($row['pd_nom'] == 'Media') {
+                    $sub_array[] = '<span class="label label-warning">Media</span>';
+                } else {
+                    $sub_array[] = '<span class="label label-danger">Alta</span>';
+                }
+    
+                $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+    
+                if ($row['usu_id'] == null) {
+                    $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
+                } else {
+                    $datos = $usuario->get_usuario_x_id($row['usu_id']);
+                    foreach ($datos as $row2) {
+                        $sub_array[] = '<span class="label label-primary">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span>';
+                    }
+                }
+    
+    
+                $sub_array[] = '<button type="button" onClick="asignar(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-success btn-sm ladda-button"><i class="fa fa-sync-alt"></i></button>';
+                $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+
+                $data[] = $sub_array;
+            }    
 
         $result = array(
             "sEcho" => 1,
@@ -220,6 +269,7 @@ switch ($_GET["op"]) {
                 $output['cat_id'] = $row['cat_id'];
                 $output['cats_id'] = $row['cats_id'];
                 $output['pd_id'] = $row['pd_id'];
+                $output['usu_asig'] = $row['usu_asig'];
                 $output['tick_titulo'] = $row['tick_titulo'];
                 $output['tick_descrip'] = $row['tick_descrip'];
                 $output['tick_estado_texto'] = $row['tick_estado'];

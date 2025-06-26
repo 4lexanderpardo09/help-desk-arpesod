@@ -1,5 +1,6 @@
 var tabla;
 var usu_id = $('#user_idx').val()
+var usu_asig = $('#user_idx').val()
 var rol_id = $('#rol_idx').val()
 
 function init(){
@@ -14,8 +15,12 @@ $(document).ready(function() {
     $.post("../../controller/usuario.php?op=usuariosxrol", function(data) {
         $("#usu_asig").html(data);
     });  
-
+    
+    
     if(rol_id == 1){
+
+        $('#lblreasignartable').remove();
+
         tabla=$('#ticket_data').dataTable({
             "aProcessing": true,
             "aServerSide": true,
@@ -68,7 +73,10 @@ $(document).ready(function() {
                 }
             }
         }).DataTable();
-    }else{
+    }else if(rol_id == 2){
+
+        $("#lblusertable").html('Usuario')
+
         tabla=$('#ticket_data').dataTable({
             "aProcessing": true,
             "aServerSide": true,
@@ -83,8 +91,9 @@ $(document).ready(function() {
                     'pdfHtml5',
                     ],
             "ajax": {
-                url: '../../controller/ticket.php?op=listar',
+                url: '../../controller/ticket.php?op=listar_x_agente',
                 type: 'post',
+                data: {usu_asig:usu_asig},
                 dataType: 'json',
                 error: function(e){
                     console.log(e.responseText);

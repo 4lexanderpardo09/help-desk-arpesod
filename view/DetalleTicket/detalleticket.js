@@ -101,10 +101,6 @@ $(document).ready(function() {
         }
     }).DataTable();
 
-    if(rol_id==1){
-        $("#btncerrarticket").addClass('hidden');
-    }
-
 });
 
 var getUrlParameter = function getUrlParameter(sParam) {
@@ -225,10 +221,12 @@ function listarDetalle(tick_id){
 
     $.post("../../controller/ticket.php?op=listardetalle",{tick_id: tick_id}, function(data) {
         $('#lbldetalle').html(data);
+        
     });
 
     $.post("../../controller/ticket.php?op=mostrar",{tick_id: tick_id}, function(data) {
         data = JSON.parse(data);
+        
         $('#lbltickestado').html(data.tick_estado);
         $('#lblprioridad').html(data.pd_nom);
         $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);    
@@ -241,6 +239,12 @@ function listarDetalle(tick_id){
         if(data.tick_estado_texto == 'Cerrado'){
             $('#boxdetalleticket').hide();
         };
+
+        var usu_id = $('#user_idx').val();
+        if(usu_id != data.usu_asig){
+            $("#btncerrarticket").addClass('hidden');
+        };
+
     });
 
 }

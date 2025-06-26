@@ -10,16 +10,20 @@ $(document).ready(function () {
 
     // Si el rol es Administrador (o soporte, ej: rol_id=2), muestra el dashboard completo.
     // Si el rol es Usuario (rol_id=1), puedes decidir mostrar una vista más simple.
-    if (rol_id != 1) { 
+    if (rol_id == 2) { 
         // Cargar todos los componentes del dashboard de reportes
         cargarKPIs(usu_asig);
         cargarGraficoTicketsPorMes(usu_asig);
         cargarTablaTopCategorias(usu_asig);
         cargarTablaTopUsuarios(usu_asig);
-    } else {
+        $('#cargaagente').remove()
+    } else if (rol_id == 1) {
         // Para el usuario normal, puedes mantener la vista antigua o una versión simplificada.
         // Por ejemplo, solo mostrar sus propios tickets.
         totalTicketsUsuario(usu_id); // Función simplificada para usuario
+        $('#cargaagente').remove()
+    }else{
+
     }
 });
 
