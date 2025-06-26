@@ -18,7 +18,10 @@
 <script type="text/javascript" src="../../public/js/lib/moment/moment-with-locales.min.js"></script>
 <script src="../../public/js/lib/fullcalendar/fullcalendar.min.js"></script>
 <script type="text/javascript" src="../../public/js/lib/eonasdan-bootstrap-datetimepicker/bootstrap-datetimepicker.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="../../public/js/lib/jqueryui/jquery-ui.min.js"></script>
+<script src="../../public/js/lib/lobipanel/lobipanel.min.js"></script>
+<script src="../../public/js/lib/match-height/jquery.matchHeight.min.js"></script>
+
 
 
     
