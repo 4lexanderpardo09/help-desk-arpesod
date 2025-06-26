@@ -39,3 +39,5 @@
 	<link href="../../public/css/lib/charts-c3js/c3.min.css" rel="stylesheet" type="text/css">
 	
 	<link rel="stylesheet" href="../../public/css/main.css">
+
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
