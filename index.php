@@ -79,9 +79,9 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
                         <input type="password" class="form-control" id="usu_pass" name="usu_pass" placeholder="Contraseña" />
                     </div>
                     <div class="form-group">
-                        <div class="float-right reset">
+                        <!-- <div class="float-right reset">
                             <a href="reset-password.html">Cambiar contraseña</a>
-                        </div>
+                        </div> -->
 
                         <div class="float-left reset">
                             <a href="#" id="btnsoporte">Acceso soporte</a>
@@ -100,6 +100,7 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
     <script src="public/js/lib/bootstrap/bootstrap.min.js"></script>
     <script src="public/js/plugins.js"></script>
     <script type="text/javascript" src="public/js/lib/match-height/jquery.matchHeight.min.js"></script>
+    <script src="public/js/lib/hide-show-password/bootstrap-show-password.min.js"></script>
     <script>
         $(function() {
             $('.page-center').matchHeight({

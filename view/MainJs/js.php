@@ -21,6 +21,7 @@
 <script src="../../public/js/lib/jqueryui/jquery-ui.min.js"></script>
 <script src="../../public/js/lib/lobipanel/lobipanel.min.js"></script>
 <script src="../../public/js/lib/match-height/jquery.matchHeight.min.js"></script>
+<script src="../../public/js/lib/hide-show-password/bootstrap-show-password.min.js"></script>
 
 
 

@@ -3,8 +3,16 @@ function init(){
 }
 
 $(document).ready(function() {
-    
-
+    // Esta pequeña función activa el plugin en nuestro campo de contraseña
+        $(function() {
+            $('#usu_pass').password({
+                // Texto que aparece al pasar el mouse sobre el ojo (opcional)
+                show: 'Mostrar Contraseña',
+                hide: 'Ocultar Contraseña',
+                // Ícono del ojo. Tu plantilla usa "font-icon", así que esto debería funcionar.
+                eyeClass: 'font-icon-eye'
+            });
+        });
 });
 
 $(document).on('click', '#btnsoporte', function(){
@@ -21,6 +29,8 @@ $(document).on('click', '#btnsoporte', function(){
         $('#imgtipo').attr('src','public/img/user-1.png');
 
     }
+
+    
 
 })
 
