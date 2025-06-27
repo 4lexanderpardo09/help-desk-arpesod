@@ -295,9 +295,10 @@ function cargarTablaTopUsuarios(usu_asig) {
                 const tbody = $('#tabla-usuarios tbody');
                 tbody.empty(); // Limpiar tabla
                 data.forEach(item => {
+                    const departamento = item.departamento || 'Sin Departamento';
                     const row = `<tr>
                                     <td>${item.nombre_usuario}</td>
-                                    <td>${item.departamento}</td>
+                                    <td>${departamento}</td>
                                     <td><span class="label label-pill label-success">${item.tickets_creados}</span></td>
                                  </tr>`;
                     tbody.append(row);
@@ -317,9 +318,10 @@ function cargarTablaTopUsuarios(usu_asig) {
                 const tbody = $('#tabla-usuarios tbody');
                 tbody.empty(); // Limpiar tabla
                 data.forEach(item => {
+                    const departamento = item.departamento || 'Sin Departamento';
                     const row = `<tr>
                                     <td>${item.nombre_usuario}</td>
-                                    <td>${item.departamento}</td>
+                                    <td>${departamento}</td>
                                     <td><span class="label label-pill label-success">${item.tickets_creados}</span></td>
                                  </tr>`;
                     tbody.append(row);

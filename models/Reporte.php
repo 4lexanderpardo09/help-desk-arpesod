@@ -97,7 +97,7 @@ class Reporte extends Conectar {
                     COUNT(t.tick_id) AS tickets_creados
                 FROM tm_ticket AS t
                 INNER JOIN tm_usuario AS u ON t.usu_id = u.usu_id
-                INNER JOIN tm_departamento AS d on u.dp_id = d.dp_id
+                LEFT JOIN tm_departamento AS d on u.dp_id = d.dp_id
                 GROUP BY nombre_usuario, departamento
                 ORDER BY tickets_creados DESC
                 LIMIT 10";
