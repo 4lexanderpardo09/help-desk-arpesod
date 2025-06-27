@@ -143,7 +143,7 @@ function eliminar(cats_id) {
 }
 
 function mostrarcategoria(){
-    $.post("../../controller/categoria.php?op=combo", function (data) {
+    $.post("../../controller/categoria.php?op=getcombo", function (data) {
         $('#cat_id').html(data);
     });
 }

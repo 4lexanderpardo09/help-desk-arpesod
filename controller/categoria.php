@@ -7,6 +7,22 @@ error_reporting(E_ALL);
 $categoria = new Categoria();
 
 switch ($_GET["op"]) {
+
+    
+
+    case "getcombo":
+        
+        $datos = $categoria->get_categoriatodo();
+        if(is_array($datos) and count($datos) > 0){
+            $html = "";
+            foreach($datos as $row){
+                 $html.= "<option value='".$row["cat_id"]."'>".$row["cat_nom"]."</option>";
+            }
+            echo $html;
+        }
+
+        break;
+
     case "combo":
         
         $datos = $categoria->get_categoria($_POST['dp_id']);
