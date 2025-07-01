@@ -20,6 +20,19 @@ switch ($_GET["op"]) {
 
         break;
 
+    case "comboxusu":
+        
+        $datos = $empresa->get_empresa_x_usu($_POST['usu_id']);
+        if(is_array($datos) and count($datos) > 0){
+            $html = "";
+            foreach($datos as $row){
+                $html.= "<option value='".$row["emp_id"]."'>".$row["emp_nom"]."</option>";
+            }
+            echo $html;
+        }
+
+        break;    
+        
         case "guardaryeditar":
 
             if(empty($_POST['emp_id'])){

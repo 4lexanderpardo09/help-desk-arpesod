@@ -27,10 +27,6 @@ $(document).ready(function () {
         ]
     });
 
-    $.post("../../controller/categoria.php?op=combo", function (data) {
-        $('#cat_id').html('<option value="">Seleccionar</option>' + data);
-    });
-
     $.post("../../controller/prioridad.php?op=combo", function (data) {
         $('#pd_id').html('<option value="">Seleccionar</option>' + data);
     });
@@ -38,33 +34,70 @@ $(document).ready(function () {
     $.post("../../controller/departamento.php?op=combo", function (data) {
         $('#dp_id').html('<option value="">Seleccionar</option>' + data);
     });
-    
-    $('#usu_asig').html('<option value="">Seleccionar</option>');
 
-    $("#dp_id").change(function(){
-        dp_id = $(this).val();
-        
-        $.post("../../controller/usuario.php?op=usuariosxdepartamento",{dp_id:dp_id}, function(data) {
-            $("#usu_asig").html(data);
-        });  
-
-        $.post("../../controller/categoria.php?op=combo", {dp_id:dp_id}, function (data) {
-            $('#cat_id').html('<option value="">Seleccionar</option>' + data);
-        });
-    });
-
-
-    $('#cats_id').html('<option value="">Seleccionar</option>');
-
-    $("#cat_id").change(function(){
-        cat_id = $(this).val();
-
-        $.post("../../controller/subcategoria.php?op=combo",{cat_id:cat_id}, function (data) {
-            $('#cats_id').html(data);
-        });
-    })
+    categoriasAnidadas();
 
 });
+
+function categoriasAnidadas(){
+    $('#usu_asig').html('<option value="">Seleccionar</option>');
+    $('#emp_id').html('<option value="">Seleccionar</option>');
+    $('#cat_id').html('<option value="">Seleccionar</option>');
+    $('#cats_id').html('<option value="">Seleccionar</option>');
+
+    $("#dp_id").change(function () {
+        dp_id = $(this).val();
+
+        if (dp_id == 0) {
+            $('#usu_asig').html('<option value="">Seleccionar</option>');
+            $('#emp_id').html('<option value="">Seleccionar</option>');
+            $('#cat_id').html('<option value="">Seleccionar</option>');
+            $('#cats_id').html('<option value="">Seleccionar</option>');
+        } else {
+            $.post("../../controller/usuario.php?op=usuariosxdepartamento", { dp_id: dp_id }, function (data) {
+                $("#usu_asig").html(data);
+            });
+
+            $("#usu_asig").change(function () {
+                usu_asig = $(this).val();
+
+                if (usu_asig == 0) {
+                    $('#emp_id').html('<option value="">Seleccionar</option>');
+                    $('#cat_id').html('<option value="">Seleccionar</option>');
+                    $('#cats_id').html('<option value="">Seleccionar</option>');
+                } else {
+                    $.post("../../controller/empresa.php?op=comboxusu", { usu_id: usu_asig }, function (data) {
+                        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
+                    });
+                    $("#emp_id").change(function () {
+                        emp_id = $(this).val();
+
+                        if(emp_id == 0){
+                            $('#cat_id').html('<option value="">Seleccionar</option>');
+                            $('#cats_id').html('<option value="">Seleccionar</option>');
+                        }else{
+                            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
+                                $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+                            });
+    
+                            $("#cat_id").change(function () {
+                                cat_id = $(this).val();
+    
+                                $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
+                                    $('#cats_id').html('<option value="">Seleccionar</option>' + data);
+                                });
+                            })
+                        }
+
+
+                    })
+
+                }
+
+            });
+        }
+    });
+}
 
 function guardaryeditar(e) {
     e.preventDefault();
@@ -99,7 +132,7 @@ function guardaryeditar(e) {
             $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
             $.post("../../controller/email.php?op=ticket_asignado", { tick_id: data[0].tick_id })
 
-                
+
             $('#cat_id').val('');
             $('#tick_titulo').val('');
             $('#fileElem').val('');

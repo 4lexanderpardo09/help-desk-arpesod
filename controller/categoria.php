@@ -25,7 +25,7 @@ switch ($_GET["op"]) {
 
     case "combo":
         
-        $datos = $categoria->get_categoria($_POST['dp_id']);
+        $datos = $categoria->get_categoria($_POST['dp_id'],$_POST['emp_id']);
         if(is_array($datos) and count($datos) > 0){
             $html = "";
             foreach($datos as $row){
@@ -40,9 +40,9 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['cat_id'])){
-                $categoria->insert_categoria($_POST['cat_nom'],$_POST['dp_id']);
+                $categoria->insert_categoria($_POST['cat_nom'],$_POST['dp_id'],$_POST['emp_id']);
             }else{
-                $categoria->update_categoria($_POST['cat_id'],$_POST['cat_nom'],$_POST['dp_id']);
+                $categoria->update_categoria($_POST['cat_id'],$_POST['cat_nom'],$_POST['dp_id'],$_POST['emp_id']);
             }  
     
             break; 

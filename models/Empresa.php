@@ -11,6 +11,27 @@
             return $resultado = $sql->fetchAll();
         }
 
+        public function get_empresa_x_usu($usu_id){
+            $conectar = parent::Conexion();
+            parent::set_names();
+            $sql = "SELECT 
+                e.emp_id, 
+                e.emp_nom
+            FROM 
+                empresa_usuario AS eu
+            INNER JOIN 
+                td_empresa AS e ON eu.emp_id = e.emp_id
+            WHERE 
+                eu.usu_id = ? 
+            AND 
+                eu.est = 1";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1,$usu_id);
+            $sql->execute();
+
+            return $resultado = $sql->fetchAll();
+        }
+
         public function get_empresatodo(){
             $conectar = parent::Conexion();
             parent::set_names();

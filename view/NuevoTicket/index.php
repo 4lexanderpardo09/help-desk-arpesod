@@ -44,7 +44,7 @@ if (isset($_SESSION["usu_id"])) {
                 <div class="row">
                     <form method="post" id="ticket_form">
                         <input type="hidden" id="usu_id" name="usu_id" value="<?php echo $_SESSION["usu_id"] ?>">
-                        <div class="col-lg-6">
+                        <div class="col-lg-3">
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tick_titulo">Titulo</label>
                                 <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" placeholder="Titulo del ticket">
@@ -61,6 +61,13 @@ if (isset($_SESSION["usu_id"])) {
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="usu_asig">Agente</label>
                                 <select class="form-control" id="usu_asig" name="usu_asig" placeholder="Seleccione una subcategoria">
+                                </select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="emp_id">Empresa</label>
+                                <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una empresa">
                                 </select>
                             </fieldset>
                         </div>
