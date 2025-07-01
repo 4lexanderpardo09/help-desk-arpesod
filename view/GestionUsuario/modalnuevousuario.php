@@ -33,7 +33,7 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label semibold" for="usu_pass">Contraseña</label>
-                        <input type="password" class="form-control" id="usu_pass" name="usu_pass" placeholder="" required>
+                        <input type="password" class="form-control" id="usu_pass" name="usu_pass" placeholder="">
                         <div></div>
                     </div>
                     <div class="form-group">
@@ -41,6 +41,7 @@
                         <select class="select2" id="rol_id" name="rol_id" required>
                             <option value="1">Usuario</option>
                             <option value="2">Soporte</option>
+                            <option value="3">Admin</option>
                         </select>
                     </div>
                     <div class="form-group" id="dp_id_group">

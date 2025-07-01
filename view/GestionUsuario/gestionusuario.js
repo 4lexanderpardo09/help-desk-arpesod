@@ -106,13 +106,8 @@ function editar(usu_id) {
         $('#usu_nom').val(data.usu_nom);
         $('#usu_ape').val(data.usu_ape);
         $('#usu_correo').val(data.usu_correo);
-        $('#usu_pass').val(data.usu_pass);
         $('#rol_id').val(data.rol_id).trigger('change');
         $('#dp_id').val(data.dp_id).trigger('change');
-
-
-        
-
     });    
 
     $("#modalnuevousuario").modal("show");

@@ -97,33 +97,61 @@ class Usuario extends Conectar{
         $conectar = parent::Conexion();
             parent::set_names();
 
-            $hashed_pass = password_hash($usu_pass, PASSWORD_BCRYPT);
+            if (!empty($_POST['usu_pass'])) {
+                $hashed_pass = password_hash($usu_pass, PASSWORD_BCRYPT);
 
-            $sql = "UPDATE tm_usuario SET
-                usu_nom = ?,
-                usu_ape = ?,
-                usu_correo = ?,
-                usu_pass = ?,
-                rol_id = ?,
-                dp_id = ?
-                WHERE usu_id = ?"; 
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1, $usu_nom);
-            $sql->bindValue(2, $usu_ape);
-            $sql->bindValue(3, $usu_correo);
-            $sql->bindValue(4, $hashed_pass);
-            $sql->bindValue(5, $rol_id);
+                $sql = "UPDATE tm_usuario SET
+                    usu_nom = ?,
+                    usu_ape = ?,
+                    usu_correo = ?,
+                    usu_pass = ?,
+                    rol_id = ?,
+                    dp_id = ?
+                    WHERE usu_id = ?"; 
+                $sql = $conectar->prepare($sql);
+                $sql->bindValue(1, $usu_nom);
+                $sql->bindValue(2, $usu_ape);
+                $sql->bindValue(3, $usu_correo);
+                $sql->bindValue(4, $hashed_pass);
+                $sql->bindValue(5, $rol_id);
 
-            // dp_id puede ser NULL
-            if (empty($dp_id)) {
-                $sql->bindValue(6, null, PDO::PARAM_NULL);
-            } else {
-                $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+                // dp_id puede ser NULL
+                if (empty($dp_id)) {
+                    $sql->bindValue(6, null, PDO::PARAM_NULL);
+                } else {
+                    $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+                }
+
+                $sql->bindValue(7, $usu_id);
+
+                $sql->execute();
+            }else{
+                $sql = "UPDATE tm_usuario SET
+                    usu_nom = ?,
+                    usu_ape = ?,
+                    usu_correo = ?,
+                    rol_id = ?,
+                    dp_id = ?
+                    WHERE usu_id = ?"; 
+                $sql = $conectar->prepare($sql);
+                $sql->bindValue(1, $usu_nom);
+                $sql->bindValue(2, $usu_ape);
+                $sql->bindValue(3, $usu_correo);
+                $sql->bindValue(4, $rol_id);
+
+                // dp_id puede ser NULL
+                if (empty($dp_id)) {
+                    $sql->bindValue(5, null, PDO::PARAM_NULL);
+                } else {
+                    $sql->bindValue(5, $dp_id, PDO::PARAM_INT);
+                }
+
+                $sql->bindValue(6, $usu_id);
+
+                $sql->execute();
             }
 
-            $sql->bindValue(7, $usu_id);
-
-            $sql->execute();
+            
 
             return $resultado = $sql->fetchAll();
     }
