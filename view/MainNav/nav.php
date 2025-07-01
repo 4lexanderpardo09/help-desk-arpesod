@@ -102,6 +102,11 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <span class="lbl">Gestion departamento</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionEmpresa\">
+                            <span class="lbl">Gestion empresa</span>
+                        </a>
+                    </li>
 	            </ul>
 	        </li>
         </ul>
