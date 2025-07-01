@@ -3,7 +3,7 @@
         public function get_empresa(){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT * FROM td_empresa WHERE and est = 1";
+            $sql = "SELECT * FROM td_empresa WHERE est = 1";
 
             $sql = $conectar->prepare($sql);
             $sql->execute();
@@ -86,6 +86,33 @@
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
+        }
+
+        public function insert_empresa_for_usu($usu_id,$emp_id){
+            $conectar = parent::Conexion();
+            parent::set_names();
+
+            // Borra las asociaciones anteriores
+            $del = $conectar->prepare("DELETE FROM empresa_usuario WHERE usu_id = ?");
+            $del->execute([$usu_id]);
+
+            // Si $emp_id contiene comas, lo convertimos en array
+            $emp_ids = strpos($emp_id, ',') !== false ? explode(',', $emp_id) : [$emp_id];
+
+            var_dump($emp_ids);
+
+            $sql = $conectar->prepare("INSERT INTO empresa_usuario (usu_id, emp_id) VALUES (?, ?)");
+
+            foreach ($emp_ids as $id) {
+                // Evita insertar si está vacío
+                if (trim($id) === "") continue;
+
+                $sql->bindValue(1, $usu_id);
+                $sql->bindValue(2, $id);
+                $sql->execute();
+            }
+
+            return true;
         }
     }
 ?>

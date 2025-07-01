@@ -2,6 +2,8 @@ var tabla;
 
 function init() {
     $("#usuario_form").on("submit", function(e){
+        console.log("Enviando empresas: ", $('#emp_id_string').val());
+
         guardaryeditar(e);
     })
 }
@@ -32,8 +34,6 @@ function guardaryeditar(e){
 
 
 $(document).ready(function () {
-
-    
 
     tabla = $('#user_data').dataTable({
         "aProcessing": true,
@@ -95,6 +95,21 @@ $(document).ready(function () {
 
     $('#rol_id').on('change', toggleDepartamento);
 
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        $('#emp_id').html(data);
+    });
+
+    $('#emp_id').on('change', function() {
+    const select = $(this);
+    let values = select.val() || [];
+
+    if (!Array.isArray(values)) {
+        values = [values]; // convierte string a array si no es múltiple
+    }
+    
+    $('#emp_id_string').val(values.join(','));
+});
+
 })
 
 function editar(usu_id) {
@@ -106,6 +121,7 @@ function editar(usu_id) {
         $('#usu_nom').val(data.usu_nom);
         $('#usu_ape').val(data.usu_ape);
         $('#usu_correo').val(data.usu_correo);
+        $('#emp_id').val(data.emp_ids.split(',')).trigger('change')
         $('#rol_id').val(data.rol_id).trigger('change');
         $('#dp_id').val(data.dp_id).trigger('change');
     });    

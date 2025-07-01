@@ -90,7 +90,7 @@ class Usuario extends Conectar{
 
             $sql->execute();
 
-            return $resultado = $sql->fetchAll();
+            return $conectar->lastInsertId();
     }
 
     public function update_usuario($usu_id,$usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id){
@@ -212,7 +212,7 @@ class Usuario extends Conectar{
         $sql->bindValue(1, $usu_id);
         $sql->execute();
 
-        return $resultado = $sql->fetchAll(); 
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC); 
     }
 
     public function get_usuario_total_id($usu_id){

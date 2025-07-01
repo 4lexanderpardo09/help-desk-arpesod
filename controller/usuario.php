@@ -1,16 +1,19 @@
 <?php
 require_once('../config/conexion.php');
 require_once('../models/Usuario.php');
+require_once('../models/Empresa.php');
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 $usuario = new Usuario();
+$empresa = new Empresa();
 
 switch ($_GET["op"]) {
 
     case "guardaryeditar":
         if(empty($_POST["usu_id"])){
-            $usuario->insert_usuario( $_POST["usu_nom"],$_POST["usu_ape"],$_POST["usu_correo"],$_POST["usu_pass"],$_POST["rol_id"], $_POST['dp_id']);
+            $usu_id = $usuario->insert_usuario( $_POST["usu_nom"],$_POST["usu_ape"],$_POST["usu_correo"],$_POST["usu_pass"],$_POST["rol_id"], $_POST['dp_id']);
+            $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
         }else{
             $usuario->update_usuario($_POST["usu_id"], $_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id']);
         }
@@ -58,6 +61,7 @@ switch ($_GET["op"]) {
         if(is_array($datos)==true and count($datos)>0){
             foreach($datos as $row){
                 $output['usu_id'] = $row['usu_id'];
+                $output['emp_ids'] = $row['emp_ids'];
                 $output['usu_nom'] = $row['usu_nom'];
                 $output['usu_ape'] = $row['usu_ape'];
                 $output['usu_correo'] = $row['usu_correo'];
