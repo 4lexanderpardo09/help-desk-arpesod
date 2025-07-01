@@ -23,9 +23,9 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['cats_id'])){
-                $subcategoria->insert_subcategoria($_POST['cat_id'],$_POST['cats_nom']);
+                $subcategoria->insert_subcategoria($_POST['cat_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
             }else{
-                $subcategoria->update_subcategoria($_POST['cats_id'],$_POST['cat_id'],$_POST['cats_nom']);
+                $subcategoria->update_subcategoria($_POST['cats_id'],$_POST['cat_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
             }  
     
             break; 
@@ -62,6 +62,7 @@ switch ($_GET["op"]) {
                     $output['cat_id'] = $row['cat_id'];
                     $output['cats_id'] = $row['cats_id'];
                     $output['cats_nom'] = $row['cats_nom'];
+                    $output['cats_descrip'] = $row['cats_descrip'];
                 }
                 echo json_encode($output);
             }       

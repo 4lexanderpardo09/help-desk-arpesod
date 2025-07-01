@@ -34,6 +34,7 @@ function guardaryeditar(e){
 $(document).ready(function () {
 
     mostrarcategoria();
+    descripcionSubcategoria();
 
     tabla = $('#cats_data').dataTable({
         "aProcessing": true,
@@ -100,8 +101,7 @@ function editar(cats_id) {
         $("#cat_id").val(data.cat_id);
         $('#cats_id').val(data.cats_id);
         $('#cats_nom').val(data.cats_nom);
-
-        
+        $('#cats_descrip').summernote('code',data.cats_descrip);
 
     });    
 
@@ -142,6 +142,30 @@ function eliminar(cats_id) {
     });
 }
 
+function descripcionSubcategoria(){
+    $('#cats_descrip').summernote({
+        height: 200,
+        lang: "es-ES",
+        callbacks: {
+            onImageUpload: function (image) {
+                console.log("Image detect...");
+                myimagetreat(image[0]);
+            },
+            onPaste: function (e) {
+                console.log("Text detect...");
+            }
+        },
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['strikethrough', 'superscript', 'subscript']],
+            ['fontsize', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['height', ['height']]
+        ]
+    });
+}
+
 function mostrarcategoria(){
     $.post("../../controller/categoria.php?op=getcombo", function (data) {
         $('#cat_id').html(data);
@@ -153,5 +177,17 @@ $(document).on("click", "#btnnuevasubcategoria", function(){
     $("#cats_form")[0].reset();
     $("#modalnuevasubcategoria").modal("show");
 })
+
+$('#modalnuevasubcategoria').on('hidden.bs.modal', function () {
+    // Limpiar el formulario al cerrar el modal
+    $("#cats_form")[0].reset();
+
+    // Limpiar contenido de summernote
+    $('#cats_descrip').summernote('code', '');
+
+    // Si usas selects con Select2, puedes resetear así también
+    $('#cat_id').val('').trigger('change');
+});
+
 
 init();

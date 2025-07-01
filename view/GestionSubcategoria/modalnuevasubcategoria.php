@@ -28,6 +28,12 @@
                             <div></div>
                         </div>
                     </div>
+                    <fieldset class="form-group semibold">
+                        <label class="form-label" for="cats_descrip">Descripcion</label>
+                        <div class="summernote-theme-1">
+                            <textarea id="cats_descrip" name="cats_descrip" class="summernote" name="name"></textarea>
+                        </div>
+                    </fieldset>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

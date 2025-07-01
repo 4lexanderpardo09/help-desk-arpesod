@@ -39,13 +39,14 @@ $(document).ready(function () {
 
 });
 
-function categoriasAnidadas(){
+function categoriasAnidadas() {
     $('#usu_asig').html('<option value="">Seleccionar</option>');
     $('#emp_id').html('<option value="">Seleccionar</option>');
     $('#cat_id').html('<option value="">Seleccionar</option>');
     $('#cats_id').html('<option value="">Seleccionar</option>');
+    $('#tick_descrip').summernote('code', '');
 
-    $("#dp_id").change(function () {
+    $("#dp_id").off('change').on('change', function () {
         dp_id = $(this).val();
 
         if (dp_id == 0) {
@@ -53,39 +54,62 @@ function categoriasAnidadas(){
             $('#emp_id').html('<option value="">Seleccionar</option>');
             $('#cat_id').html('<option value="">Seleccionar</option>');
             $('#cats_id').html('<option value="">Seleccionar</option>');
+            $('#tick_descrip').summernote('code', '');
         } else {
             $.post("../../controller/usuario.php?op=usuariosxdepartamento", { dp_id: dp_id }, function (data) {
                 $("#usu_asig").html(data);
             });
 
-            $("#usu_asig").change(function () {
+            $("#usu_asig").off('change').on('change', function () {
                 usu_asig = $(this).val();
 
                 if (usu_asig == 0) {
                     $('#emp_id').html('<option value="">Seleccionar</option>');
                     $('#cat_id').html('<option value="">Seleccionar</option>');
                     $('#cats_id').html('<option value="">Seleccionar</option>');
+                    $('#tick_descrip').summernote('code', '');
                 } else {
                     $.post("../../controller/empresa.php?op=comboxusu", { usu_id: usu_asig }, function (data) {
                         $('#emp_id').html('<option value="">Seleccionar</option>' + data);
                     });
-                    $("#emp_id").change(function () {
+                    $("#emp_id").off('change').on('change', function () {
                         emp_id = $(this).val();
 
-                        if(emp_id == 0){
+                        if (emp_id == 0) {
                             $('#cat_id').html('<option value="">Seleccionar</option>');
                             $('#cats_id').html('<option value="">Seleccionar</option>');
-                        }else{
+                            $('#tick_descrip').summernote('code', '');
+                        } else {
                             $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
                                 $('#cat_id').html('<option value="">Seleccionar</option>' + data);
                             });
-    
-                            $("#cat_id").change(function () {
+
+                            $("#cat_id").off('change').on('change', function () {
                                 cat_id = $(this).val();
-    
+
                                 $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
                                     $('#cats_id').html('<option value="">Seleccionar</option>' + data);
                                 });
+
+                                if (cat_id == 0) {
+                                    $('#cats_id').html('<option value="">Seleccionar</option>');
+                                    $('#tick_descrip').summernote('code', '');
+                                } else {
+                                    $("#cats_id").off('change').on('change', function () {
+                                        cats_id = $(this).val();
+
+                                        if(cats_id==0){
+                                            $('#tick_descrip').summernote('code', '');
+                                        }else{
+                                            $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
+                                                data = JSON.parse(data);
+                                                $('#tick_descrip').summernote('code', data.cats_descrip);
+                                            });
+                                        }
+
+                                    })
+                                }
+
                             })
                         }
 

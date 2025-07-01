@@ -29,13 +29,14 @@
         }
 
 
-        public function insert_subcategoria($cat_id,$cats_nom){
+        public function insert_subcategoria($cat_id,$cats_nom,$cats_descrip){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_subcategoria (cats_id, cat_id, cats_nom, est) VALUES (NULL,?,?,1)";
+            $sql = "INSERT INTO tm_subcategoria (cats_id, cat_id, cats_nom, cats_descrip, est) VALUES (NULL,?,?,?,1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$cat_id);
             $sql->bindValue(2,$cats_nom);
+            $sql->bindValue(3,$cats_descrip);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
@@ -52,14 +53,15 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_subcategoria($cats_id,$cat_id,$cats_nom){
+        public function update_subcategoria($cats_id,$cat_id,$cats_nom,$cats_descrip){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_subcategoria SET cat_id = ?, cats_nom = ? WHERE cats_id = ?";
-            $sql = $conectar->prepare($sql);
+            $sql = "UPDATE tm_subcategoria SET cat_id = ?, cats_nom = ?, cats_descrip = ? WHERE cats_id = ?";
+            $sql = $conectar->prepare($sql);    
             $sql->bindValue(1,$cat_id);
             $sql->bindValue(2,$cats_nom);
-            $sql->bindValue(3,$cats_id);
+            $sql->bindValue(3,$cats_descrip);
+            $sql->bindValue(4,$cats_id);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
