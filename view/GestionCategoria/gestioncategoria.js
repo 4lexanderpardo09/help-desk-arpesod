@@ -16,8 +16,7 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
-            $("#cat_nom").html('');
+            $("#cat_form")[0].reset();
             $("#modalnuevacategoria").modal('hide');
             $("#cat_data").DataTable().ajax.reload();
             swal({
@@ -86,7 +85,11 @@ $(document).ready(function () {
     }).DataTable();
 
     $.post("../../controller/departamento.php?op=combo", function (data) {
-        $('#dp_id').html('<option value="">Seleccionar</option>' + data);
+        $('#dp_id').html(data);
+    });
+
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        $('#emp_id').html(data);
     });
 
 })
@@ -96,10 +99,11 @@ function editar(cat_id) {
 
     $.post("../../controller/categoria.php?op=mostrar", {cat_id:cat_id}, function(data) {
         data = JSON.parse(data);
-        console.log(data);
         
         $('#cat_id').val(data.cat_id);
         $('#cat_nom').val(data.cat_nom);
+        $('#dp_id').val(data.dp_id).trigger('change');
+        $('#emp_id').val(data.emp_id).trigger('change');
 
         
 

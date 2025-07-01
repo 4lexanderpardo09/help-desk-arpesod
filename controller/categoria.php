@@ -53,6 +53,7 @@ switch ($_GET["op"]) {
             foreach ($datos as $row) {
                 $sub_array = array();
                 $sub_array[] = $row["cat_nom"];
+                $sub_array[] = $row["emp_nom"];
                 $sub_array[] = $row["dp_nom"];
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['cat_id'] . ');" id="' . $row['cat_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['cat_id'] . ');" id="' . $row['cat_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
@@ -78,6 +79,8 @@ switch ($_GET["op"]) {
                 foreach ($datos as $row) {
                     $output['cat_id'] = $row['cat_id'];
                     $output['cat_nom'] = $row['cat_nom'];
+                    $output['dp_id'] = $row['dp_id'];
+                    $output['emp_id'] = $row['emp_id'];
                 }
                 echo json_encode($output);
             }    
