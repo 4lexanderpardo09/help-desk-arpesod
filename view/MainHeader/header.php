@@ -50,6 +50,8 @@
 					<input type="hidden" id="user_idx" value="<?php echo $_SESSION["usu_id"] ?>">
 					<input type="hidden" id="rol_idx" value="<?php echo $_SESSION["rol_id"] ?>">
 					<input type="hidden" id="rol_real_idx" value="<?php echo $_SESSION["rol_id_real"] ?>">
+					<input type="hidden" id="dp_idx" value="<?php echo $_SESSION["dp_id"] ?>">
+
 
 
 					<div class="dropdown user-menu">

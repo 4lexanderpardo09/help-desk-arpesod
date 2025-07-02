@@ -107,6 +107,16 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <span class="lbl">Gestion empresa</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionRespuesta\">
+                            <span class="lbl">Gestion respuesta rapida</span>
+                        </a>
+                    </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionDestinatario\">
+                            <span class="lbl">Gestion destinatario ticket</span>
+                        </a>
+                    </li>
 	            </ul>
 	        </li>
         </ul>

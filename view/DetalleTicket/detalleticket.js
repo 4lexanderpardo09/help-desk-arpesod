@@ -101,7 +101,39 @@ $(document).ready(function() {
         }
     }).DataTable();
 
+    getRespuestasRapidas();
+
 });
+
+function getRespuestasRapidas(){
+
+    $.post("../../controller/respuestarapida.php?op=combo",function(data) {
+        $('#answer_id').html('<option value="">Seleccionar</option>' + data);
+        
+    });
+
+}
+
+function getDestinatarios(cats_id){
+    
+    var dp_idx = $('#dp_idx').val();
+
+    $("#answer_id").off('change').on('change', function () {
+    answer_id = $(this).val();
+
+    if(answer_id == 0){
+        $('#dest_id').html('<option value="">Seleccionar</option>');
+    }else{
+        $.post("../../controller/destinatarioticket.php?op=combo", {answer_id:answer_id,dp_id:dp_idx,cats_id:cats_id}, function(data) {
+            $('#dest_id').html('<option value="">Seleccionar</option>' + data);
+            
+        });
+    }
+
+
+    });
+
+}
 
 var getUrlParameter = function getUrlParameter(sParam) {
     var sPageURL = decodeURIComponent(window.location.search.substring(1)),
@@ -244,6 +276,8 @@ function listarDetalle(tick_id){
         if(usu_id != data.usu_asig){
             $("#btncerrarticket").addClass('hidden');
         };
+
+        getDestinatarios(data.cats_id);
 
     });
 

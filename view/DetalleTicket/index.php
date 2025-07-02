@@ -88,25 +88,41 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
 
                 <section class="activity-line" id="lbldetalle">
-                
+
                 </section>
 
                 <div id="boxdetalleticket" class="box-typical box-typical-padding">
                     <p>
                         Ingrese su duda o consulta
                     </p>
-                    
+
 
                     <div class="row">
                         <div class="col-lg-12">
-                        <form method="post" id="detalle_form">
-                            <div class="">
-                                <fieldset class="form-group">
-                                    <label class="form-label semibold" for="cat_id">Documento adicional</label>
-                                    <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
-                                </fieldset>
-                            </div>
-                        </form>
+                            <form method="post" id="detalle_form">
+                                <div class="row">
+                                    <div class="col-lg-4">
+                                        <fieldset class="form-group">
+                                            <label class="form-label semibold" for="cat_id">Documento adicional</label>
+                                            <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                        </fieldset>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <fieldset class="form-group">
+                                            <label class="form-label semibold" for="answer_id">Respuesta rapida</label>
+                                            <select class="form-control" id="answer_id" name="answer_id" placeholder="Seleccione la prioridad">
+                                            </select>
+                                        </fieldset>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <fieldset class="form-group">
+                                            <label class="form-label semibold" for="dest_id">Destinatario</label>
+                                            <select class="form-control" id="dest_id" name="dest_id" placeholder="Seleccione la prioridad">
+                                            </select>
+                                        </fieldset>
+                                    </div>
+                                </div>
+                            </form>
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tickd_descrip">Descripcion</label>
                                 <div class="summernote-theme-1">
