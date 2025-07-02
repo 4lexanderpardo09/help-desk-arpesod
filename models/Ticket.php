@@ -21,7 +21,17 @@ class Ticket extends Conectar
         $sql1 = $conectar->prepare($sql1);
         $sql1->execute();   
 
-        return $resultado = $sql1->fetchAll();
+        $resultado = $sql1->fetchAll(PDO::FETCH_ASSOC);
+        $tick_id = $resultado[0]['tick_id'];
+
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
+                VALUES (?, ?, NULL, NOW(), 'Ticket abierto', 1);";
+        $sql2 = $conectar->prepare($sql2);
+        $sql2->bindValue(1,$tick_id);
+        $sql2->bindValue(2,$usu_asig);
+        $sql2->execute();
+
+        return $resultado;
     }
 
     public function listar_ticket_x_usuario($usu_id)
@@ -334,6 +344,18 @@ class Ticket extends Conectar
         $sql1->bindValue(3, $tick_id);
 
         $sql1->execute();
+
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
+                VALUES (?, ?, ?, NOW(), 'Ticket trasladado')";
+        $sql2 = $conectar->prepare($sql2);        
+        $sql2->bindValue(1, $tick_id);
+        $sql2->bindValue(2, $usu_asig);
+        $sql2->bindValue(3, $how_asig);
+       
+        $sql2->execute();
+
+        return $resultado = $sql->fetchAll();
+
     }
 
     public function insert_ticket_detalle_cerrar($tick_id, $usu_id)
