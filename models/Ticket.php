@@ -190,6 +190,97 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function listar_historial_completo($tick_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "
+            (SELECT
+                d.fech_crea AS fecha_evento,
+                'comentario' AS tipo,
+                u.usu_nom,
+                u.usu_ape,
+                u.rol_id,
+                d.tickd_descrip AS descripcion,
+                NULL AS nom_receptor,
+                NULL AS ape_receptor,
+                doc.det_nom,
+                d.tickd_id
+            FROM td_ticketdetalle d
+            INNER JOIN tm_usuario u ON d.usu_id = u.usu_id
+            LEFT JOIN td_documento_detalle doc ON d.tickd_id = doc.tickd_id
+            WHERE d.tick_id = ?)
+
+            UNION ALL
+
+            (SELECT
+                a.fech_asig AS fecha_evento,
+                'asignacion' AS tipo,
+                IFNULL(u_origen.usu_nom, 'Sistema') AS usu_nom,
+                IFNULL(u_origen.usu_ape, '(Acción Automática)') AS usu_ape,
+                IFNULL(u_origen.rol_id, 0) AS rol_id,
+                a.asig_comentario AS descripcion,
+                u_nuevo.usu_nom AS nom_receptor,
+                u_nuevo.usu_ape AS ape_receptor,
+                NULL AS det_nom,
+                NULL AS tickd_id
+            FROM th_ticket_asignacion a
+            LEFT JOIN tm_usuario u_origen ON a.how_asig = u_origen.usu_id
+            INNER JOIN tm_usuario u_nuevo ON a.usu_asig = u_nuevo.usu_id
+            WHERE a.tick_id = ?)
+
+            UNION ALL
+
+            (SELECT
+                t.fech_cierre AS fecha_evento,
+                'cierre' AS tipo,
+                u_cierre.usu_nom,
+                u_cierre.usu_ape,
+                u_cierre.rol_id,
+                'Ticket cerrado' AS descripcion,
+                NULL AS nom_receptor,
+                NULL AS ape_receptor,
+                NULL AS det_nom,
+                NULL AS tickd_id
+            FROM tm_ticket t
+            LEFT JOIN tm_usuario u_cierre ON t.usu_asig = u_cierre.usu_id
+            WHERE t.tick_id = ? AND t.fech_cierre IS NOT NULL)
+
+            ORDER BY fecha_evento ASC
+        ";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $tick_id);
+        $sql->bindValue(3, $tick_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+        public function listar_tickets_con_historial()
+        {
+            $conectar = parent::conexion();
+            parent::set_names();
+            $sql = "SELECT
+                        t.tick_id,
+                        t.tick_titulo,
+                        t.tick_estado,
+                        t.fech_crea,
+                        cat.cat_nom,
+                        u.usu_nom,
+                        u.usu_ape
+                    FROM
+                        tm_ticket t
+                    INNER JOIN tm_categoria cat ON t.cat_id = cat.cat_id
+                    LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
+                    WHERE
+                        t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
+                    ORDER BY
+                        t.tick_id DESC";
+            $sql = $conectar->prepare($sql);
+            $sql->execute();
+            return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+        }
+
     public function listar_ticket_x_id_x_usuaarioasignado($tick_id)
     {
         $conectar = parent::conexion();

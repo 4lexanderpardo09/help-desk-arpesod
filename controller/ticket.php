@@ -267,6 +267,144 @@ switch ($_GET["op"]) {
                     ?>
             <?php
         break;
+     
+    case "listarhistorial":
+        $datos = $ticket->listar_historial_completo($_POST['tick_id']);
+        ?>
+            <?php
+            // Se itera sobre los datos originales sin filtrar
+            foreach ($datos as $row) {
+                // Determina el estilo, icono y texto según el tipo de evento
+                $box_class = '';
+                $icon_class = '';
+                $actor_name = $row['usu_nom'] . ' ' . $row['usu_ape'];
+                $rol_text = '';
+
+                if ($row['tipo'] == 'comentario') {
+                    $box_class = 'box-typical';
+                    $icon_class = 'fa fa-commenting';
+                    $rol_text = ($row['rol_id'] == 1) ? 'Usuario' : 'Soporte';
+
+                } elseif ($row['tipo'] == 'asignacion') {
+                    $box_class = 'box-typical-blue';
+                    $icon_class = 'fa fa-exchange';
+                    // Si el que asigna es el sistema (primera vez), el rol es "Sistema".
+                    // Si no, se muestra el rol del usuario que reasigna.
+                    if ($row['usu_nom'] == 'Sistema') {
+                        $rol_text = 'Sistema';
+                    } else {
+                        $rol_text = ($row['rol_id'] == 1) ? 'Usuario' : 'Soporte';
+                    }
+
+                } elseif ($row['tipo'] == 'cierre') {
+                    $box_class = 'box-typical-green';
+                    $icon_class = 'fa fa-check-square';
+                    $rol_text = 'Sistema'; // El cierre es un evento final del sistema
+                }
+            ?>
+                <article class="activity-line-item box-typical">
+                    <div class="activity-line-date">
+                        <?php echo date("d/m/Y", strtotime($row['fecha_evento'])) ?>
+                    </div>
+                    <header class="activity-line-item-header">
+                        <div class="activity-line-item-user">
+                            <div class="activity-line-item-user-photo">
+                                <a href="#">
+                                <img src="../../public/img/user-<?php echo $row['rol_id'] ?>.png" alt="">
+                                </a>
+                            </div>
+                            <div class="activity-line-item-user-name"><?php echo $actor_name; ?></div>
+                            <div class="activity-line-item-user-status"><?php echo $rol_text; ?></div>
+                        </div>
+                    </header>
+                    <div class="activity-line-action-list">
+                        <section class="activity-line-action">
+                            <div class="time"><?php echo date("h:i A", strtotime($row['fecha_evento'])) ?></div>
+                            <div class="cont">
+                                <div class="cont-in summernote-content" style="margin-bottom: 8px;">
+                                    <?php if ($row['tipo'] == 'asignacion') : ?>
+                                        <p>
+                                            <strong>Reasignación de Ticket:</strong><br>
+                                            Ticket asignado a <b><?php echo $row['nom_receptor'] . ' ' . $row['ape_receptor']; ?></b>.
+                                            <br>
+                                            <i><?php echo $row['descripcion']; ?></i>
+                                        </p>
+                                    <?php elseif ($row['tipo'] == 'cierre') : ?>
+                                        <p><strong><?php echo $row['descripcion']; ?></strong></p>
+                                    <?php else: // Es un comentario ?>
+                                        <p><?php echo $row['descripcion']; ?></p>
+                                    <?php endif; ?>
+                                </div>
+                            <?php
+                            // Muestra adjuntos solo para comentarios
+                            if ($row['tipo'] == 'comentario' && $row['det_nom'] != null) {
+                            ?>
+                                <div class="documentos-attachment p-3 border rounded bg-light">
+                                    <p class="mb-3 text-secondary" style="margin-bottom: 0;">
+                                        <i class="fa fa-paperclip"></i> Documento adjunto
+                                    </p>
+                                    <div class="d-flex justify-content-between align-items-center p-2 bg-white border rounded">
+                                        <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="text-decoration-none fw-semibold text-dark">
+                                            <i class="fa fa-file-text-o me-2"></i> <?php echo $row['det_nom']; ?>
+                                        </a>
+                                        <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <i class="fa fa-eye"></i> Ver
+                                        </a>
+                                    </div>
+                                </div>
+                            <?php
+                            }
+                            ?>
+                            </div>
+                        </section>
+                    </div>
+                </article>
+            <?php
+            }
+            ?>
+    <?php
+    break; 
+        
+    case "listar_historial_tabla":
+
+    $datos = $ticket->listar_tickets_con_historial();
+    $data = array();
+    foreach ($datos as $row) {
+        $sub_array = array();
+        $sub_array[] = $row['tick_id'];
+        $sub_array[] = $row['cat_nom'];
+        $sub_array[] = $row['tick_titulo'];
+
+        if ($row['tick_estado'] == 'Abierto') {
+            $sub_array[] = '<span class="label label-success">Abierto</span>';
+        } else {
+            $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+        }
+
+        $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
+        if ($row['usu_nom'] === null) {
+            $sub_array[] = '<span class="label label-default">Sin Asignar</span>';
+        } else {
+            $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
+        }
+        
+        $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+        
+        $data[] = $sub_array;
+    }
+
+    $result = array(
+        "sEcho" => 1,
+        "iTotalRecords" => count($data),
+        "iTotalDisplayRecords" => count($data),
+        "aaData" => $data
+    );
+    echo json_encode($result);
+    break;
+
+
+
 
     case "mostrar":
         $datos = $ticket->listar_ticket_x_id($_POST['tick_id']);
