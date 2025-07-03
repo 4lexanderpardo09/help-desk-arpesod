@@ -1,13 +1,13 @@
-function init(){
+function init() {
 
 }
 
 
-$(document).ready(function() {
+$(document).ready(function () {
 
     var rol_id = $("#rol_idx").val();
 
-    var tick_id = getUrlParameter('ID'); 
+    var tick_id = getUrlParameter('ID');
 
     listarDetalle(tick_id);
 
@@ -15,7 +15,7 @@ $(document).ready(function() {
         height: 200,
         lang: "es-ES",
         callbacks: {
-            onImageUpload: function(image) {
+            onImageUpload: function (image) {
                 console.log("Image detect...");
                 myimagetreat(image[0]);
             },
@@ -30,7 +30,7 @@ $(document).ready(function() {
             ['color', ['color']],
             ['para', ['ul', 'ol', 'paragraph']],
             ['height', ['height']]
-        ]   
+        ]
     });
 
     $('#tickd_descripusu').summernote({
@@ -51,8 +51,8 @@ $(document).ready(function() {
     tabla = $('#documentos_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
-        "searching": false,  
-        "info": false,    
+        "searching": false,
+        "info": false,
         lengthChange: false,
         colReorder: true,
         "buttons": [
@@ -64,7 +64,7 @@ $(document).ready(function() {
         "ajax": {
             url: '../../controller/documento.php?op=listar',
             type: 'post',
-            data: {tick_id: tick_id},
+            data: { tick_id: tick_id },
             dataType: 'json',
             error: function (e) {
                 console.log(e.responseText);
@@ -105,30 +105,52 @@ $(document).ready(function() {
 
 });
 
-function getRespuestasRapidas(){
+function getRespuestasRapidas() {
 
-    $.post("../../controller/respuestarapida.php?op=combo",function(data) {
+    $.post("../../controller/respuestarapida.php?op=combo", function (data) {
         $('#answer_id').html('<option value="">Seleccionar</option>' + data);
-        
+
     });
 
 }
 
-function getDestinatarios(cats_id){
-    
+function getDestinatarios(cats_id) {
+
     var dp_idx = $('#dp_idx').val();
 
     $("#answer_id").off('change').on('change', function () {
-    answer_id = $(this).val();
+        answer_id = $(this).val();
 
-    if(answer_id == 0){
-        $('#dest_id').html('<option value="">Seleccionar</option>');
-    }else{
-        $.post("../../controller/destinatarioticket.php?op=combo", {answer_id:answer_id,dp_id:dp_idx,cats_id:cats_id}, function(data) {
-            $('#dest_id').html('<option value="">Seleccionar</option>' + data);
-            
-        });
-    }
+        if (answer_id == 0) {
+            $('#dest_id').html('<option value="">Seleccionar</option>');
+            $('#tickd_descrip').summernote('code', '');
+        } else {
+
+            $.post("../../controller/destinatarioticket.php?op=combo", { answer_id: answer_id, dp_id: dp_idx, cats_id: cats_id }, function (data) {
+                $('#dest_id').html('<option value="">Seleccionar</option>' + data);
+            });
+
+            $("#dest_id").off('change').on('change', function () {
+                dest_id = $(this).val();
+
+                if (dest_id == 0) {
+                    $('#tickd_descrip').summernote('code', '');
+                } else {
+                    $.post("../../controller/respuestarapida.php?op=mostrar", { answer_id: answer_id }, function (data) {
+                        data = JSON.parse(data);
+                        respuesta = data.answer_nom
+                        $.post("../../controller/destinatarioticket.php?op=mostrar", {dest_id:dest_id}, function (data) {
+
+
+                                data = JSON.parse(data);
+                                $('#tickd_descrip').summernote('code', `${respuesta} se envio el ticekt a ${data.nombre_usuario}`);
+                        });
+                    }); 
+                }
+            })
+
+
+        }
 
 
     });
@@ -137,9 +159,9 @@ function getDestinatarios(cats_id){
 
 var getUrlParameter = function getUrlParameter(sParam) {
     var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-    sURLVariables = sPageURL.split('&'),
-    sParameterName,
-    i;
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
 
     for (i = 0; i < sURLVariables.length; i++) {
         sParameterName = sURLVariables[i].split('=');
@@ -150,16 +172,18 @@ var getUrlParameter = function getUrlParameter(sParam) {
     }
 }
 
-$(document).on('click', '#btnenviar', function() {
+$(document).on('click', '#btnenviar', function () {
 
-    if($('#tickd_descrip').summernote('isEmpty')) {
+    asignarTicket()
+
+    if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
         return false;
     }
 
     var tick_id = getUrlParameter('ID');
     var usu_id = $('#user_idx').val();
-    var tickd_descrip = $('#tickd_descrip').val();  
+    var tickd_descrip = $('#tickd_descrip').val();
 
     var formData = new FormData($('#detalle_form')[0])
 
@@ -170,33 +194,53 @@ $(document).on('click', '#btnenviar', function() {
     var totalFile = $('#fileElem').val().length;
     for (var i = 0; i < totalFile; i++) {
         formData.append('files[]', $('#fileElem')[0].files[i]);
-     }
+    }
 
-        $.ajax({
-            url: "../../controller/ticket.php?op=insertdetalle",
-            type: "POST",
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function (data) {
-                console.log(data);
-                var resultado = JSON.parse(data);
+    $.ajax({
+        url: "../../controller/ticket.php?op=insertdetalle",
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (data) {
+            console.log(data);
+            var resultado = JSON.parse(data);
 
-                listarDetalle(tick_id);
+            listarDetalle(tick_id);
 
-                swal("Correcto", "Respuesta enviada correctamente", "success");
+            swal("Correcto", "Respuesta enviada correctamente", "success");
 
-                // Limpiar el formulario 
-                $('#tickd_descrip').summernote('reset');
-                $('#fileElem').val('');
-            }
-        })
-         
+            // Limpiar el formulario 
+            $('#tickd_descrip').summernote('reset');
+            $('#fileElem').val('');
+        }
+    })
+
+
+    var tick_id = getUrlParameter('ID');
+    var usu_id = $('#user_idx').val();
+    var dest_id = $('#dest_id').val();
+
+    $.post("../../controller/destinatarioticket.php?op=mostrar", {dest_id:dest_id}, function (data) {
+        data = JSON.parse(data);
+
+        $.post("../../controller/ticket.php?op=updateasignacion",{tick_id:tick_id,usu_asig:data.usu_id,how_asig:usu_id}, function (data) {
+            
+    }); 
+            
+     })
+
+
+
 
 
 });
 
-$(document).on('click', '#btncerrarticket', function() {
+function asignarTicket(){
+    
+}
+
+$(document).on('click', '#btncerrarticket', function () {
     swal({
         title: "¿Estas seguro que quieres cerrar el ticket?",
         text: "Una vez cerrado no podrás volver a abrirlo",
@@ -208,76 +252,77 @@ $(document).on('click', '#btncerrarticket', function() {
         closeOnConfirm: false,
         closeOnCancel: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            var tick_id = getUrlParameter('ID');
-            var usu_id = $('#user_idx').val();
-            updateTicket(tick_id, usu_id);
+        function (isConfirm) {
+            if (isConfirm) {
+                var tick_id = getUrlParameter('ID');
+                var usu_id = $('#user_idx').val();
+                updateTicket(tick_id, usu_id);
 
-            setTimeout(function() {
-                $.post("../../controller/email.php?op=ticket_cerrado", { tick_id: tick_id }, function(resp) {
-                }).fail(function(err) {
-                    console.error("Error al enviar el correo:", err.responseText);
+                setTimeout(function () {
+                    $.post("../../controller/email.php?op=ticket_cerrado", { tick_id: tick_id }, function (resp) {
+                    }).fail(function (err) {
+                        console.error("Error al enviar el correo:", err.responseText);
+                    });
+                }, 0);
+
+            } else {
+                swal({
+                    title: "Cancelado",
+                    text: "El ticket sigue abierto.",
+                    type: "error",
+                    confirmButtonClass: "btn-danger"
+
                 });
-            }, 0);
-
-        } else {
-            swal({
-                title: "Cancelado",
-                text: "El ticket sigue abierto.",
-                type: "error",
-                confirmButtonClass: "btn-danger"
-                
-            });
-        }
-    });
+            }
+        });
 
 });
 
 function updateTicket(tick_id, usu_id) {
-    $.post("../../controller/ticket.php?op=update", {tick_id: tick_id, usu_id: usu_id}, function(data) {
+    $.post("../../controller/ticket.php?op=update", { tick_id: tick_id, usu_id: usu_id }, function (data) {
         swal({
             title: "Cerrado!",
             text: "El ticket ha sido cerrado correctamente.",
             type: "success",
             confirmButtonClass: "btn-success"
-        },function(){
+        }, function () {
             listarDetalle(tick_id);
         }
-    );
+        );
     });
 
 }
 
-function listarDetalle(tick_id){
+function listarDetalle(tick_id) {
 
-    $.post("../../controller/ticket.php?op=listardetalle",{tick_id: tick_id}, function(data) {
+    $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
         $('#lbldetalle').html(data);
-        
+
     });
 
-    $.post("../../controller/ticket.php?op=mostrar",{tick_id: tick_id}, function(data) {
+    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
-        
+
         $('#lbltickestado').html(data.tick_estado);
         $('#lblprioridad').html(data.pd_nom);
-        $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);    
+        $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);
         $('#lblfechacrea').html(data.fech_crea);
         $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
         $('#cat_id').val(data.cat_nom);
         $('#cats_id').val(data.cats_nom);
         $('#tick_titulo').val(data.tick_titulo);
-        $('#tickd_descripusu').summernote('code',data.tick_descrip);
-        if(data.tick_estado_texto == 'Cerrado'){
+        $('#tickd_descripusu').summernote('code', data.tick_descrip);
+        if (data.tick_estado_texto == 'Cerrado') {
             $('#boxdetalleticket').hide();
         };
 
         var usu_id = $('#user_idx').val();
-        if(usu_id != data.usu_asig){
+        if (usu_id != data.usu_asig) {
             $("#btncerrarticket").addClass('hidden');
         };
 
         getDestinatarios(data.cats_id);
+        
 
     });
 

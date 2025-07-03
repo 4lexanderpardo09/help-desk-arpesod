@@ -346,7 +346,7 @@ class Ticket extends Conectar
         $sql1->execute();
 
         $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
-                VALUES (?, ?, ?, NOW(), 'Ticket trasladado')";
+                VALUES (?, ?, ?, NOW(), 'Ticket trasladado',1)";
         $sql2 = $conectar->prepare($sql2);        
         $sql2->bindValue(1, $tick_id);
         $sql2->bindValue(2, $usu_asig);

@@ -68,6 +68,7 @@ switch ($_GET["op"]) {
                     $output['dp_id'] = $row['dp_id'];
                     $output['cat_id'] = $row['cat_id'];
                     $output['cats_id'] = $row['cats_id'];
+                    $output['nombre_usuario'] = $row['nombre_usuario'];
                 }
                 echo json_encode($output);
             }    
