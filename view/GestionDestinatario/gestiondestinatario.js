@@ -100,12 +100,26 @@ function getCombos(){
     $.post("../../controller/respuestarapida.php?op=combo",function (data) {
         $('#answer_id').html('<option value="">Seleccionar</option>' + data);
     });
-    $.post("../../controller/usuario.php?op=usuariosxrol",function (data) {
-        $('#usu_id').html('<option value="">Seleccionar</option>' + data);
-    });
+
+
     $.post("../../controller/departamento.php?op=combo",function (data) {
         $('#dp_id').html('<option value="">Seleccionar</option>' + data);
     });
+
+    $('#usu_id').html('<option value="">Seleccionar</option>');
+    $("#dp_id").off('change').on('change', function () {
+        var dp_id = $(this).val();
+
+        if(dp_id == 0){
+            $('#usu_id').html('<option value="">Seleccionar</option>');
+        }else{
+            $.post("../../controller/usuario.php?op=usuariosxdepartamento", { dp_id: dp_id }, function (data) {
+                $("#usu_id").html('<option value="">Seleccionar</option>' + data);
+            });
+        }
+
+    });
+
 
     $.post("../../controller/categoria.php?op=getcombo",function (data) {
         $('#cat_id').html('<option value="">Seleccionar</option>' + data);

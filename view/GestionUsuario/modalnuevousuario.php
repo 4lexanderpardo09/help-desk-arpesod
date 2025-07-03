@@ -38,12 +38,10 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label semibold" for="emp_id">Empresa</label>
-                        <select class="select2" id="emp_id" multiple name="emp_id" placeholder="Seleccione una subcategoria">
+                        <select class="select2" id="emp_id" multiple name="emp_id[]" placeholder="Seleccione una subcategoria">
                             <option value="">Todas</option>
                         </select>
-                    </div>  
-                    <input type="hidden" name="emp_id" id="emp_id_string">
-                    <div class="form-group">
+                    </div>                      <div class="form-group">
                         <label for="form-label" for="rol_id">Rol</label>
                         <select class="select2" id="rol_id" name="rol_id" required>
                             <option value="1">Usuario</option>

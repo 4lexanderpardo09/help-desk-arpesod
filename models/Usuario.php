@@ -154,7 +154,7 @@ class Usuario extends Conectar{
 
             
 
-            return $resultado = $sql->fetchAll();
+            return $usu_id;
     }
 
     public function delete_usuario($usu_id){

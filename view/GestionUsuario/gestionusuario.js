@@ -1,14 +1,14 @@
 var tabla;
 
 function init() {
-    $("#usuario_form").on("submit", function(e){
+    $("#usuario_form").on("submit", function (e) {
         console.log("Enviando empresas: ", $('#emp_id_string').val());
 
         guardaryeditar(e);
     })
 }
 
-function guardaryeditar(e){
+function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($("#usuario_form")[0])
     $.ajax({
@@ -17,7 +17,7 @@ function guardaryeditar(e){
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos){
+        success: function (datos) {
             $("#usuario_form")[0].reset();
             $("#modalnuevousuario").modal('hide');
             $("#user_data").DataTable().ajax.reload();
@@ -26,7 +26,7 @@ function guardaryeditar(e){
                 text: "Se ha guardado correctamente el nuevo registro.",
                 type: "success",
                 confirmButtonClass: "btn-success"
-            });          
+            });
         }
     })
 }
@@ -98,23 +98,12 @@ $(document).ready(function () {
         $('#emp_id').html(data);
     });
 
-    $('#emp_id').on('change', function() {
-    const select = $(this);
-    let values = select.val() || [];
-
-    if (!Array.isArray(values)) {
-        values = [values]; // convierte string a array si no es múltiple
-    }
-    
-    $('#emp_id_string').val(values.join(','));
-});
-
 })
 
 function editar(usu_id) {
     $("#mdltitulo").html('Editar registro');
 
-    $.post("../../controller/usuario.php?op=mostrar", {usu_id:usu_id}, function(data) {
+    $.post("../../controller/usuario.php?op=mostrar", { usu_id: usu_id }, function (data) {
         data = JSON.parse(data);
         $('#usu_id').val(data.usu_id);
         $('#usu_nom').val(data.usu_nom);
@@ -123,7 +112,7 @@ function editar(usu_id) {
         $('#emp_id').val(data.emp_ids.split(',')).trigger('change')
         $('#rol_id').val(data.rol_id).trigger('change');
         $('#dp_id').val(data.dp_id).trigger('change');
-    });    
+    });
 
     $("#modalnuevousuario").modal("show");
 }
@@ -139,27 +128,27 @@ function eliminar(usu_id) {
         closeOnConfirm: false,
         closeOnCancel: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/usuario.php?op=eliminar", {usu_id:usu_id}, function(data) {
-                $('#user_data').DataTable().ajax.reload(); 
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/usuario.php?op=eliminar", { usu_id: usu_id }, function (data) {
+                    $('#user_data').DataTable().ajax.reload();
+                    swal({
+                        title: "Eliminado!",
+                        text: "Usuario eliminado correctamente",
+                        type: "success",
+                        confirmButtonClass: "btn-success"
+                    });
+                });
+            } else {
                 swal({
-                    title: "Eliminado!",
-                    text: "Usuario eliminado correctamente",
-                    type: "success",
-                    confirmButtonClass: "btn-success"
-                }); 
-            });
-        } else {
-            swal({
-                title: "Cancelado",
-                text: "El ticket sigue abierto.",
-                type: "error",
-                confirmButtonClass: "btn-danger"
-                
-            });
-        }
-    });
+                    title: "Cancelado",
+                    text: "El ticket sigue abierto.",
+                    type: "error",
+                    confirmButtonClass: "btn-danger"
+
+                });
+            }
+        });
 }
 
 function toggleDepartamento() {
@@ -172,7 +161,7 @@ function toggleDepartamento() {
     }
 }
 
-$(document).on("click", "#btnnuevoregistro", function(){
+$(document).on("click", "#btnnuevoregistro", function () {
     $("#mdltitulo").html('Nuevo registro');
     $("#usuario_form")[0].reset();
     $("#modalnuevousuario").modal("show");

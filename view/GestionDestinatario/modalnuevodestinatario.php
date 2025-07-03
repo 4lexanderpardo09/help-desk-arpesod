@@ -22,13 +22,13 @@
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
-                        <label class="form-label semibold" for="usu_id">Destinatario</label>
-                        <select class="form-control" id="usu_id" name="usu_id" placeholder="Seleccione una categoria">
+                        <label class="form-label semibold" for="dp_id">Departamento</label>
+                        <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione una categoria">
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
-                        <label class="form-label semibold" for="dp_id">Departamento</label>
-                        <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione una categoria">
+                        <label class="form-label semibold" for="usu_id">Destinatario</label>
+                        <select class="form-control" id="usu_id" name="usu_id" placeholder="Seleccione una categoria">
                         </select>
                     </fieldset>
                     <fieldset class="form-group">

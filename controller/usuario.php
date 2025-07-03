@@ -15,7 +15,8 @@ switch ($_GET["op"]) {
             $usu_id = $usuario->insert_usuario( $_POST["usu_nom"],$_POST["usu_ape"],$_POST["usu_correo"],$_POST["usu_pass"],$_POST["rol_id"], $_POST['dp_id']);
             $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
         }else{
-            $usuario->update_usuario($_POST["usu_id"], $_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id']);
+            $usu_id = $usuario->update_usuario($_POST["usu_id"], $_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id']);
+            $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
         }
     break;
 

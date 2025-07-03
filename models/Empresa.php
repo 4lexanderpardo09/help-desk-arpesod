@@ -88,31 +88,34 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function insert_empresa_for_usu($usu_id,$emp_id){
-            $conectar = parent::Conexion();
-            parent::set_names();
+        public function insert_empresa_for_usu($usu_id, $emp_id){
+        $conectar = parent::Conexion();
+        parent::set_names();
 
-            // Borra las asociaciones anteriores
-            $del = $conectar->prepare("DELETE FROM empresa_usuario WHERE usu_id = ?");
-            $del->execute([$usu_id]);
+        // Eliminar asociaciones anteriores
+        $del = $conectar->prepare("DELETE FROM empresa_usuario WHERE usu_id = ?");
+        $del->execute([$usu_id]);
 
-            // Si $emp_id contiene comas, lo convertimos en array
-            $emp_ids = strpos($emp_id, ',') !== false ? explode(',', $emp_id) : [$emp_id];
-
-            var_dump($emp_ids);
-
-            $sql = $conectar->prepare("INSERT INTO empresa_usuario (usu_id, emp_id) VALUES (?, ?)");
-
-            foreach ($emp_ids as $id) {
-                // Evita insertar si está vacío
-                if (trim($id) === "") continue;
-
-                $sql->bindValue(1, $usu_id);
-                $sql->bindValue(2, $id);
-                $sql->execute();
-            }
-
-            return true;
+        // Convertir emp_id en array si viene como string
+        if (!is_array($emp_id)) {
+            $emp_id = explode(',', $emp_id);
         }
+
+        $sql = $conectar->prepare("INSERT INTO empresa_usuario (usu_id, emp_id, fech_crea, est) VALUES (?, ?, NOW(), 1)");
+
+        foreach ($emp_id as $id) {
+            $id = trim($id);
+            if ($id === "") continue;
+
+            $sql->bindValue(1, $usu_id, PDO::PARAM_INT);
+            $sql->bindValue(2, $id, PDO::PARAM_INT);
+
+            $sql->execute();
+        
+        }
+
+        return true;
+}
+
     }
 ?>
