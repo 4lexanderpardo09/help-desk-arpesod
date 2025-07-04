@@ -1,11 +1,11 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $usu_asig)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,fech_crea,usu_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',NOW(),?,'1' )  ";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,'1' )  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
@@ -13,7 +13,8 @@ class Ticket extends Conectar
         $sql->bindValue(4, $pd_id);
         $sql->bindValue(5, $tick_titulo);
         $sql->bindValue(6, $tick_descrip);
-        $sql->bindValue(7, $usu_asig);
+        $sql->bindValue(7, $error_proceso);
+        $sql->bindValue(8, $usu_asig);
 
         $sql->execute();
 

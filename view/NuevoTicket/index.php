@@ -16,7 +16,6 @@ if (isset($_SESSION["usu_id"])) {
 
         <?php require_once('../MainNav/nav.php') ?>
 
-        <!-- contenido -->
         <div class="page-content">
             <div class="container-fluid">
 
@@ -106,13 +105,23 @@ if (isset($_SESSION["usu_id"])) {
                                 </div>
                             </fieldset>
                         </div>
-                        <div class="col-lg-12">
-                            <button type="submit"  name="action" value="add" class="btn btn-inline">Guardar</button>
-                        </div>
-                    </form>
-                </div><!--.row-->
 
-            </div>
+                        <div class="col-lg-5">
+                            <div class="d-flex align-items-end">
+                                <div id="error_procesodiv" class="form-group mr-3 hidden">
+                                    <div class="checkbox-toggle">
+                                        <input type="hidden" name="error_proceso" value="0">
+                                        <input type="checkbox" id="error_proceso" name="error_proceso" value="1">
+                                        <label for="error_proceso" class="form-label semibold">Error de Proceso</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" name="action" value="add" class="btn btn-inline">Guardar</button>
+                                </div>
+                            </div>
+                        </div>
+                        </form>
+                </div></div>
 
 
         </div>

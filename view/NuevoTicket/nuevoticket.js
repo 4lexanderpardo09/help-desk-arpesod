@@ -5,6 +5,7 @@ function init() {
 }
 
 $(document).ready(function () {
+
     $('#tick_descrip').summernote({
         height: 200,
         lang: "es-ES",
@@ -100,11 +101,13 @@ function categoriasAnidadas() {
 
                                         if(cats_id==0){
                                             $('#tick_descrip').summernote('code', '');
+                                            $("#error_procesodiv").addClass('hidden')
                                         }else{
                                             $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                                                 data = JSON.parse(data);
                                                 $('#tick_descrip').summernote('code', data.cats_descrip);
                                             });
+                                            $("#error_procesodiv").removeClass('hidden')
                                         }
 
                                     })
@@ -164,6 +167,8 @@ function guardaryeditar(e) {
             $('#pd_id').val('');
             $('#tick_descrip').summernote('reset');
             $('#usu_asig').val('');
+            $('#error_proceso').prop('checked', false);
+            $("#error_procesodiv").addClass('hidden')
             swal("Correcto", "Registrado correctamente ", "success");
         }
     })
