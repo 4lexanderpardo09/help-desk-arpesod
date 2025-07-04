@@ -40,6 +40,7 @@ if (isset($_SESSION["usu_id"])) {
                             <tr role="row">
                                 <th style="width: 25%;">Categoria</th>
                                 <th style="width: 25%;">Nombre</th>
+                                <th style="width: 25%;">Prioridad</th>
                                 <th style="width: 2%;">Editar</th>
                                 <th style="width: 2%;">Eliminar</th>
                             </tr>

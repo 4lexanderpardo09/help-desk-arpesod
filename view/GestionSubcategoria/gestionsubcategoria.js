@@ -18,6 +18,7 @@ function guardaryeditar(e){
         success: function(datos){
             console.log(datos);
             $("#cats_nom").html('');
+            $("#cats_id").val('');
             $("#modalnuevasubcategoria").modal('hide');
             $("#cats_data").DataTable().ajax.reload();
             swal({
@@ -34,6 +35,8 @@ function guardaryeditar(e){
 $(document).ready(function () {
 
     mostrarcategoria();
+    mostrarprioridad();
+
     descripcionSubcategoria();
 
     tabla = $('#cats_data').dataTable({
@@ -101,6 +104,7 @@ function editar(cats_id) {
         $("#cat_id").val(data.cat_id);
         $('#cats_id').val(data.cats_id);
         $('#cats_nom').val(data.cats_nom);
+        $('#pd_id').val(data.pd_id);
         $('#cats_descrip').summernote('code',data.cats_descrip);
 
     });    
@@ -172,6 +176,12 @@ function mostrarcategoria(){
     });
 }
 
+function mostrarprioridad(){
+    $.post("../../controller/prioridad.php?op=combo", function (data) {
+        $('#pd_id').html(data);
+    });
+}
+
 $(document).on("click", "#btnnuevasubcategoria", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#cats_form")[0].reset();
@@ -187,6 +197,7 @@ $('#modalnuevasubcategoria').on('hidden.bs.modal', function () {
 
     // Si usas selects con Select2, puedes resetear así también
     $('#cat_id').val('').trigger('change');
+    $("#cats_id").val('');
 });
 
 

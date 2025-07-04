@@ -18,9 +18,11 @@
             tm_subcategoria.cat_id,
             tm_subcategoria.cats_id,
             tm_subcategoria.cats_nom,
-            tm_categoria.cat_nom 
+            tm_categoria.cat_nom,
+            td_prioridad.pd_nom 
             FROM tm_subcategoria
             INNER JOIN tm_categoria ON tm_subcategoria.cat_id = tm_categoria.cat_id
+            INNER JOIN td_prioridad ON tm_subcategoria.pd_id = td_prioridad.pd_id
             WHERE tm_subcategoria.est = 1";
             $sql = $conectar->prepare($sql);
             $sql->execute();
@@ -29,14 +31,15 @@
         }
 
 
-        public function insert_subcategoria($cat_id,$cats_nom,$cats_descrip){
+        public function insert_subcategoria($cat_id,$pd_id,$cats_nom,$cats_descrip){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_subcategoria (cats_id, cat_id, cats_nom, cats_descrip, est) VALUES (NULL,?,?,?,1)";
+            $sql = "INSERT INTO tm_subcategoria (cats_id, cat_id, pd_id, cats_nom, cats_descrip, est) VALUES (NULL,?,?,?,?,1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$cat_id);
-            $sql->bindValue(2,$cats_nom);
-            $sql->bindValue(3,$cats_descrip);
+            $sql->bindValue(2,$pd_id);
+            $sql->bindValue(3,$cats_nom);
+            $sql->bindValue(4,$cats_descrip);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
@@ -53,15 +56,16 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_subcategoria($cats_id,$cat_id,$cats_nom,$cats_descrip){
+        public function update_subcategoria($cats_id,$cat_id,$pd_id,$cats_nom,$cats_descrip){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_subcategoria SET cat_id = ?, cats_nom = ?, cats_descrip = ? WHERE cats_id = ?";
+            $sql = "UPDATE tm_subcategoria SET cat_id = ?, pd_id = ?, cats_nom = ?, cats_descrip = ? WHERE cats_id = ?";
             $sql = $conectar->prepare($sql);    
             $sql->bindValue(1,$cat_id);
-            $sql->bindValue(2,$cats_nom);
-            $sql->bindValue(3,$cats_descrip);
-            $sql->bindValue(4,$cats_id);
+            $sql->bindValue(2,$pd_id);
+            $sql->bindValue(3,$cats_nom);
+            $sql->bindValue(4,$cats_descrip);
+            $sql->bindValue(5,$cats_id);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();

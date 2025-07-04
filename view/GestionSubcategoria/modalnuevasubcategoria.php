@@ -28,6 +28,11 @@
                             <div></div>
                         </div>
                     </div>
+                    <fieldset class="form-group">
+                        <label class="form-label semibold" for="pd_id">Prioridad</label>
+                        <select class="form-control" id="pd_id" name="pd_id" placeholder="Seleccione una prioridad">
+                        </select>
+                    </fieldset>
                     <fieldset class="form-group semibold">
                         <label class="form-label" for="cats_descrip">Descripcion</label>
                         <div class="summernote-theme-1">

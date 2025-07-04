@@ -23,9 +23,9 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['cats_id'])){
-                $subcategoria->insert_subcategoria($_POST['cat_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
+                $subcategoria->insert_subcategoria($_POST['cat_id'],$_POST['pd_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
             }else{
-                $subcategoria->update_subcategoria($_POST['cats_id'],$_POST['cat_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
+                $subcategoria->update_subcategoria($_POST['cats_id'],$_POST['cat_id'],$_POST['pd_id'],$_POST['cats_nom'],$_POST['cats_descrip']);
             }  
     
             break; 
@@ -37,6 +37,7 @@ switch ($_GET["op"]) {
                 $sub_array = array();
                 $sub_array[] = $row["cat_nom"];
                 $sub_array[] = $row["cats_nom"];
+                $sub_array[] = $row["pd_nom"];
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['cats_id'] . ');" id="' . $row['cats_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['cats_id'] . ');" id="' . $row['cats_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
                 $data[] = $sub_array;
@@ -61,6 +62,7 @@ switch ($_GET["op"]) {
                 foreach ($datos as $row) {
                     $output['cat_id'] = $row['cat_id'];
                     $output['cats_id'] = $row['cats_id'];
+                    $output['pd_id'] = $row['pd_id'];
                     $output['cats_nom'] = $row['cats_nom'];
                     $output['cats_descrip'] = $row['cats_descrip'];
                 }
