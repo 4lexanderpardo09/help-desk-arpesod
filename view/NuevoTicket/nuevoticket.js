@@ -106,6 +106,7 @@ function categoriasAnidadas() {
                                             $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                                                 data = JSON.parse(data);
                                                 $('#tick_descrip').summernote('code', data.cats_descrip);
+                                                $('#pd_id').val(data.pd_id);
                                             });
                                             $("#error_procesodiv").removeClass('hidden')
                                         }
@@ -130,11 +131,26 @@ function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($('#ticket_form')[0])
 
-    if ($('#cat_id').val() == '') {
+    if ($('#tick_titulo').val() == '') {
+        swal("Atención", "Debe ingresar un título", "warning");
+        return false;
+    } if ($('#dp_id').val('') == '') {
+        swal("Atención", "Debe seleccionar un departamento", "warning");
+        return false;
+    } if ($('#usu_asig').val('') == '') {
+        swal("Atención", "Debe seleccionar un agente", "warning");
+        return false;
+    } if ($('#emp_id').val('') == '') {
+        swal("Atención", "Debe seleccionar una empresa", "warning");
+        return false;
+    } if ($('#cat_id').val() == '') {
         swal("Atención", "Debe seleccionar una categoría", "warning");
         return false;
-    } if ($('#tick_titulo').val() == '') {
-        swal("Atención", "Debe ingresar un título", "warning");
+    } if ($('#cats_id').val() == '') {
+        swal("Atención", "Debe seleccionar una subcategoria", "warning");
+        return false;
+    } if ($('pd_id').val() == '') {
+        swal("Atención", "Debe seleccionar una prioridad", "warning");
         return false;
     } if ($('#tick_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una descripción", "warning");
@@ -155,14 +171,12 @@ function guardaryeditar(e) {
         processData: false,
         success: function (data) {
             data = JSON.parse(data);
-
             $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
             $.post("../../controller/email.php?op=ticket_asignado", { tick_id: data[0].tick_id })
-
-
             $('#cat_id').val('');
             $('#tick_titulo').val('');
             $('#fileElem').val('');
+            $('#dp_id').val('');
             $('#cats_id').val('');
             $('#pd_id').val('');
             $('#tick_descrip').summernote('reset');

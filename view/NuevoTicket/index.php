@@ -52,14 +52,14 @@ if (isset($_SESSION["usu_id"])) {
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="dp_id">Departamento</label>
-                                <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione una subcategoria">
+                                <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione un departamento">
                                 </select>
                             </fieldset>
                         </div>
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="usu_asig">Agente</label>
-                                <select class="form-control" id="usu_asig" name="usu_asig" placeholder="Seleccione una subcategoria">
+                                <select class="form-control" id="usu_asig" name="usu_asig" placeholder="Seleccione un agente">
                                 </select>
                             </fieldset>
                         </div>
