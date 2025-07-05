@@ -51,12 +51,16 @@ class Ticket extends Conectar
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
-                td_prioridad.pd_nom
+                tm_subcategoria.cats_nom,
+                pd.pd_nom as prioridad_usuario,
+                pdd.pd_nom as prioridad_defecto
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER join tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id 
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
-                INNER join td_prioridad on tm_ticket.pd_id = td_prioridad.pd_id
+                INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
                 WHERE 
                 tm_ticket.est = 1
                 AND tm_usuario.usu_id=?";
@@ -83,12 +87,17 @@ class Ticket extends Conectar
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
-                td_prioridad.pd_nom
+                tm_subcategoria.cats_nom,
+                pd.pd_nom as prioridad_usuario,
+                pdd.pd_nom as prioridad_defecto
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
-                INNER join td_prioridad on tm_ticket.pd_id = td_prioridad.pd_id
+                INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
+
                 WHERE 
                 tm_ticket.est = 1
                 AND tm_ticket.usu_asig=?";
@@ -115,12 +124,16 @@ class Ticket extends Conectar
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_categoria.cat_nom,
-                td_prioridad.pd_nom
+                tm_subcategoria.cats_nom,
+                pd.pd_nom as prioridad_usuario,
+                pdd.pd_nom as prioridad_defecto
                 FROM 
                 tm_ticket
                 INNER join tm_categoria on tm_ticket.cat_id = tm_categoria.cat_id
+                INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
                 INNER join tm_usuario on tm_ticket.usu_id = tm_usuario.usu_id
-                INNER join td_prioridad on tm_ticket.pd_id = td_prioridad.pd_id
+                INNER join td_prioridad as pd on tm_ticket.pd_id = pd.pd_id
+                INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
                 WHERE 
                 tm_ticket.est = 1";
         $sql = $conectar->prepare($sql);

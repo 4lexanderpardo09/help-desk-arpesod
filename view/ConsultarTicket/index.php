@@ -38,9 +38,11 @@ if (isset($_SESSION["usu_id"])) {
                             <tr role="row">
                                 <th style="width: 5%;">N° Ticket</th>
                                 <th style="width: 15%;">Categoria</th>
+                                <th style="width: 15%;">Subcategoria</th>
                                 <th style="width: 40%;">Titulo</th>
                                 <th style="width: 5%;">Estado</th>
-                                <th style="width: 5%;">Prioridad</th>
+                                <th style="width: 5%;">Prioridad Usuario</th>
+                                <th style="width: 5%;">Prioridad Defecto</th>
                                 <th style="width: 10%;">Fecha creacion</th>
                                 <th id="lblusertable" style="width: 5%;">Soporte</th>
                                 <th id="lblusucrea" style="width: 5%;">Usuario</th>

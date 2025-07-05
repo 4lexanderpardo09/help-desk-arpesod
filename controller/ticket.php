@@ -52,6 +52,7 @@ switch ($_GET["op"]) {
             $sub_array = array();
             $sub_array[] = $row['tick_id'];
             $sub_array[] = $row['cat_nom'];
+            $sub_array[] = $row['cats_nom'];
             $sub_array[] = $row['tick_titulo'];
 
             if ($row['tick_estado'] == 'Abierto') {
@@ -60,13 +61,22 @@ switch ($_GET["op"]) {
                 $sub_array[] = '<a onClick="cambiarEstado(' . $row['tick_id'] . ')" ><span class="label label-danger">Cerrado</span></a>';
             }
 
-            if ($row['pd_nom'] == 'Baja') {
+            if ($row['prioridad_usuario'] == 'Baja') {
                 $sub_array[] = '<span class="label label-default">Baja</span>';
-            } elseif ($row['pd_nom'] == 'Media') {
+            } elseif ($row['prioridad_usuario'] == 'Media') {
                 $sub_array[] = '<span class="label label-warning">Media</span>';
             } else {
                 $sub_array[] = '<span class="label label-danger">Alta</span>';
             }
+
+            if ($row['prioridad_defecto'] == 'Baja') {
+                $sub_array[] = '<span class="label label-default">Baja</span>';
+            } elseif ($row['prioridad_defecto'] == 'Media') {
+                $sub_array[] = '<span class="label label-warning">Media</span>';
+            } else {
+                $sub_array[] = '<span class="label label-danger">Alta</span>';
+            }
+
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
@@ -99,6 +109,7 @@ switch ($_GET["op"]) {
                 $sub_array = array();
                 $sub_array[] = $row['tick_id'];
                 $sub_array[] = $row['cat_nom'];
+                $sub_array[] = $row['cats_nom'];
                 $sub_array[] = $row['tick_titulo'];
     
                 if ($row['tick_estado'] == 'Abierto') {
@@ -107,9 +118,17 @@ switch ($_GET["op"]) {
                     $sub_array[] = '<a onClick="cambiarEstado(' . $row['tick_id'] . ')" ><span class="label label-danger">Cerrado</span></a>';
                 }
     
-                if ($row['pd_nom'] == 'Baja') {
+                if ($row['prioridad_usuario'] == 'Baja') {
+                $sub_array[] = '<span class="label label-default">Baja</span>';
+                } elseif ($row['prioridad_usuario'] == 'Media') {
+                    $sub_array[] = '<span class="label label-warning">Media</span>';
+                } else {
+                    $sub_array[] = '<span class="label label-danger">Alta</span>';
+                }
+
+                if ($row['prioridad_defecto'] == 'Baja') {
                     $sub_array[] = '<span class="label label-default">Baja</span>';
-                } elseif ($row['pd_nom'] == 'Media') {
+                } elseif ($row['prioridad_defecto'] == 'Media') {
                     $sub_array[] = '<span class="label label-warning">Media</span>';
                 } else {
                     $sub_array[] = '<span class="label label-danger">Alta</span>';
@@ -150,6 +169,7 @@ switch ($_GET["op"]) {
             $sub_array = array();
             $sub_array[] = $row['tick_id'];
             $sub_array[] = $row['cat_nom'];
+            $sub_array[] = $row['cats_nom'];
             $sub_array[] = $row['tick_titulo'];
 
             if ($row['tick_estado'] == 'Abierto') {
@@ -158,13 +178,23 @@ switch ($_GET["op"]) {
                 $sub_array[] = '<a onClick="cambiarEstado(' . $row['tick_id'] . ')" ><span class="label label-danger">Cerrado</span></a>';
             }
 
-            if ($row['pd_nom'] == 'Baja') {
+            if ($row['prioridad_usuario'] == 'Baja') {
                 $sub_array[] = '<span class="label label-default">Baja</span>';
-            } elseif ($row['pd_nom'] == 'Media') {
+            } elseif ($row['prioridad_usuario'] == 'Media') {
                 $sub_array[] = '<span class="label label-warning">Media</span>';
             } else {
                 $sub_array[] = '<span class="label label-danger">Alta</span>';
             }
+
+            if ($row['prioridad_defecto'] == 'Baja') {
+                $sub_array[] = '<span class="label label-default">Baja</span>';
+            } elseif ($row['prioridad_defecto'] == 'Media') {
+                $sub_array[] = '<span class="label label-warning">Media</span>';
+            } else {
+                $sub_array[] = '<span class="label label-danger">Alta</span>';
+            }
+
+            
 
             $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
 
@@ -432,7 +462,7 @@ switch ($_GET["op"]) {
                 $output['cats_nom'] = $row['cats_nom'];
 
                 if ($row['pd_nom'] == 'Baja') {
-                    $output['pd_nom'] = '<span class="label label-default">Baja</span>';
+                    $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';
                 } elseif ($row['pd_nom'] == 'Media') {
                     $output['pd_nom'] = '<span class="label label-warning">Media</span>';
                 } else {
