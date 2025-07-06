@@ -53,8 +53,6 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
             </div>
         </div>
-        <?php require_once('../ConsultarTicket/modalasignar.php') ?>
-
         <?php require_once('../MainJs/js.php') ?>
 
         <script type="text/javascript" src="../ConsultarTicket/consultarticket.js"></script>
