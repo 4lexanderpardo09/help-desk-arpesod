@@ -20,7 +20,6 @@ $(document).ready(function() {
     
     if(rol_id == 1 && rol_real_id != 3){
 
-        $('#lblreasignartable').remove();
         $('#lblusucrea').remove();
 
         tabla=$('#ticket_data').dataTable({

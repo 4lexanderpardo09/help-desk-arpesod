@@ -146,7 +146,6 @@ switch ($_GET["op"]) {
                 }
     
     
-                $sub_array[] = '<button type="button" onClick="asignar(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-success btn-sm ladda-button"><i class="fa fa-sync-alt"></i></button>';
                 $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
 
                 $data[] = $sub_array;
@@ -214,7 +213,6 @@ switch ($_GET["op"]) {
                     $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
                 }
             }
-            $sub_array[] = '<button type="button" onClick="asignar(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-success btn-sm ladda-button"><i class="fa fa-sync-alt"></i></button>';
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
         }
@@ -394,6 +392,43 @@ switch ($_GET["op"]) {
             ?>
     <?php
     break; 
+
+    case "listar_historial_tabla_x_agente":
+        $datos = $ticket->listar_tickets_involucrados_por_usuario($_POST['usu_id']);
+        $data = array();
+        foreach ($datos as $row) {
+            $sub_array = array();
+            $sub_array[] = $row['tick_id'];
+            $sub_array[] = $row['cats_nom'];
+            $sub_array[] = $row['tick_titulo'];
+
+            if ($row['tick_estado'] == 'Abierto') {
+                $sub_array[] = '<span class="label label-success">Abierto</span>';
+            } else {
+                $sub_array[] = '<span class="label label-danger">Cerrado</span>';
+            }
+
+            $sub_array[] = date("d/m/Y H:i:s", strtotime($row["fech_crea"]));
+
+            if ($row['usu_nom'] === null) {
+                $sub_array[] = '<span class="label label-default">Sin Asignar</span>';
+            } else {
+                $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
+            }
+            
+            $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
+            
+            $data[] = $sub_array;
+        }
+
+        $result = array(
+            "sEcho" => 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        );
+        echo json_encode($result);
+    break;
         
     case "listar_historial_tabla":
 
@@ -402,7 +437,7 @@ switch ($_GET["op"]) {
     foreach ($datos as $row) {
         $sub_array = array();
         $sub_array[] = $row['tick_id'];
-        $sub_array[] = $row['cat_nom'];
+        $sub_array[] = $row['cats_nom'];
         $sub_array[] = $row['tick_titulo'];
 
         if ($row['tick_estado'] == 'Abierto') {

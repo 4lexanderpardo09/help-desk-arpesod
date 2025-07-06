@@ -46,7 +46,6 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 10%;">Fecha creacion</th>
                                 <th id="lblusertable" style="width: 5%;">Soporte</th>
                                 <th id="lblusucrea" style="width: 5%;">Usuario</th>
-                                <th id="lblreasignartable" style="width: 5%;">Reasignar</th>
                                 <th style="width: 5%;">Accion</th>
                             </tr>
                         </thead>

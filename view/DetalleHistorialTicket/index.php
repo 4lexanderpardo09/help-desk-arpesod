@@ -1,43 +1,45 @@
 <?php
-  require_once("../../config/conexion.php");
-  if(isset($_SESSION["usu_id"])){
+require_once("../../config/conexion.php");
+if (isset($_SESSION["usu_id"])) {
 ?>
-<!DOCTYPE html>
-<html>
-    <?php require_once("../MainHead/head.php");?>
-    <title>Detalle Ticket</title>   
-</head>
-<body class="with-side-menu">
+    <!DOCTYPE html>
+    <html>
+    <?php require_once("../MainHead/head.php"); ?>
+    <title>Detalle Ticket</title>
+    </head>
 
-    <?php require_once("../MainHeader/header.php");?>
+    <body class="with-side-menu">
 
-    <div class="mobile-menu-left-overlay"></div>
+        <?php require_once("../MainHeader/header.php"); ?>
 
-    <?php require_once("../MainNav/nav.php");?>
+        <div class="mobile-menu-left-overlay"></div>
 
-    <!-- Contenido -->
-    <div class="page-content">
-        <div class="container-fluid">
+        <?php require_once("../MainNav/nav.php"); ?>
 
-            <header class="section-header">
-                <div class="tbl">
-                    <div class="tbl-row">
-                        <div class="tbl-cell">
-                            <h3 id="lblnomidticket"></h3>
-                            <div id="lblestado"></div>
-                            <span class="label label-pill label-primary" id="lblnomusuario"></span>
-                            <span class="label label-pill label-default" id="lblfechcrea"></span>
-                            <ol class="breadcrumb breadcrumb-simple">
-                                <li><a href="#">Home</a></li>
-                                <li class="active">Detalle Ticket</li>
-                            </ol>
+        <!-- Contenido -->
+        <div class="page-content">
+            <div class="container-fluid">
+
+                <header class="section-header">
+                    <div class="tbl">
+                        <div class="tbl-row">
+                            <div class="tbl-cell">
+                                <h3 id="lblticketidh"></h3>
+                                <span id="lbltickestadoh"></span>
+                                <span class="label label-primary" id="lblnomusuarioh"></span>
+                                <span class="label label-default" id="lblfechacreah"></span>
+                                <span id="lblprioridadh"></span>
+                                <ol class="breadcrumb breadcrumb-simple">
+                                    <li><a href="#">Home</a></li>
+                                    <li class="active">Detalle Ticket</li>
+                                </ol>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </header>
+                </header>
 
-            <div class="box-typical box-typical-padding">
-                <div class="row">
+                <div class="box-typical box-typical-padding">
+                    <div class="row">
                         <div class="col-lg-12">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="tick_titulo">Título</label>
@@ -46,20 +48,14 @@
                         </div>
                         <div class="col-lg-4">
                             <fieldset class="form-group">
-                                <label class="form-label semibold" for="cat_nom">Categoría</label>
+                                <label class="form-label semibold" for="cat_nom">Categoria</label>
                                 <input type="text" class="form-control" id="cat_nom" name="cat_nom" readonly>
                             </fieldset>
                         </div>
                         <div class="col-lg-4">
                             <fieldset class="form-group">
-                                <label class="form-label semibold" for="cats_nom">SubCategoría</label>
+                                <label class="form-label semibold" for="cats_nom">Subcategoria</label>
                                 <input type="text" class="form-control" id="cats_nom" name="cats_nom" readonly>
-                            </fieldset>
-                        </div>
-                         <div class="col-lg-4">
-                            <fieldset class="form-group">
-                                <label class="form-label semibold" for="prio_nom">Prioridad</label>
-                                <input type="text" class="form-control" id="prio_nom" name="prio_nom" readonly>
                             </fieldset>
                         </div>
                         <div class="col-lg-12">
@@ -70,26 +66,27 @@
                                 </div>
                             </fieldset>
                         </div>
+                    </div>
                 </div>
+
+                <!-- Aquí se dibujará la línea de tiempo -->
+                <section class="activity-line" id="lbldetalle">
+                    <!-- El contenido se cargará aquí con JavaScript -->
+                </section>
+
             </div>
-
-            <!-- Aquí se dibujará la línea de tiempo -->
-            <section class="activity-line" id="lbldetalle">
-                <!-- El contenido se cargará aquí con JavaScript -->
-            </section>
-
         </div>
-    </div>
-    <!-- Contenido -->
+        <!-- Contenido -->
 
-    <?php require_once("../MainJs/js.php");?>
-    <script type="text/javascript" src="detallehistorialticket.js"></script>
+        <?php require_once("../MainJs/js.php"); ?>
+        <script type="text/javascript" src="detallehistorialticket.js"></script>
 
-</body>
-</html>
+    </body>
+
+    </html>
 <?php
-  } else {
+} else {
     $conectar = new Conectar();
-    header("Location:".$conectar->ruta()."index.php");
-  }
+    header("Location:" . $conectar->ruta() . "index.php");
+}
 ?>

@@ -35,7 +35,7 @@ if (isset($_SESSION["usu_id"])) {
                         <thead>
                             <tr>
                                 <th style="width: 5%;">N° Ticket</th>
-                                <th style="width: 15%;">Categoría</th>
+                                <th style="width: 15%;">Subategoria</th>
                                 <th style="width: 40%;">Título</th>
                                 <th style="width: 10%;">Estado</th>
                                 <th style="width: 10%;">Fecha Creación</th>

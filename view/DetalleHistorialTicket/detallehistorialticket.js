@@ -9,14 +9,14 @@ $(document).ready(function(){
     // Cargar la cabecera del ticket (título, estado, etc.)
     $.post("../../controller/ticket.php?op=mostrar", { tick_id : tick_id }, function (data) {
         data = JSON.parse(data);
-        $('#lblestado').html(data.tick_estado);
-        $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);
-        $('#lblfechcrea').html(new Date(data.fech_crea).toLocaleString());
-        $('#lblnomidticket').html("Detalle Ticket - " + data.tick_id);
-        $('#cat_nom').val(data.cat_nom);
-        $('#cats_nom').val(data.cats_nom);
+        $('#lbltickestadoh').html(data.tick_estado);
+        $('#lblprioridadh').html(data.pd_nom);
+        $('#lblnomusuarioh').html(data.usu_nom + ' ' + data.usu_ape);
+        $('#lblfechacreah').html(data.fech_crea);
+        $('#lblticketidh').html("Detalle del tikect #" + data.tick_id);
+        $('#cat_id').val(data.cat_nom);
+        $('#cats_id').val(data.cats_nom);
         $('#tick_titulo').val(data.tick_titulo);
-        $('#prio_nom').val(data.pd_nom);
         // Usamos summernote para mostrar la descripción con formato
         $('#tickd_descripusu').summernote('code', data.tick_descrip);
     });

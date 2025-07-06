@@ -52,6 +52,12 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                     <span class="lbl">Consultar Ticket Creados</span>
                 </a>
             </li>
+            <li class="blue-dirty">
+                <a href="..\ConsultarHistorialTicket\">
+                    <i class="tag-color grey-blue"></i>
+                    <span class="lbl">Consultar Ticket Historial</span>
+                </a>
+            </li>
         </ul>
     </nav>
 <?php

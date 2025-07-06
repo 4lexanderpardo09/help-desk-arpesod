@@ -270,30 +270,56 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-        public function listar_tickets_con_historial()
-        {
-            $conectar = parent::conexion();
-            parent::set_names();
-            $sql = "SELECT
-                        t.tick_id,
-                        t.tick_titulo,
-                        t.tick_estado,
-                        t.fech_crea,
-                        cat.cat_nom,
-                        u.usu_nom,
-                        u.usu_ape
-                    FROM
-                        tm_ticket t
-                    INNER JOIN tm_categoria cat ON t.cat_id = cat.cat_id
-                    LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
-                    WHERE
-                        t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
-                    ORDER BY
-                        t.tick_id DESC";
-            $sql = $conectar->prepare($sql);
-            $sql->execute();
-            return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
-        }
+    public function listar_tickets_con_historial()
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT
+                    t.tick_id,
+                    t.tick_titulo,
+                    t.tick_estado,
+                    t.fech_crea,
+                    cats.cats_nom,
+                    u.usu_nom,
+                    u.usu_ape
+                FROM
+                    tm_ticket t
+                INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
+                LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
+                WHERE
+                    t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
+                ORDER BY
+                    t.tick_id DESC";
+        $sql = $conectar->prepare($sql);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function listar_tickets_involucrados_por_usuario($usu_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT
+                    t.tick_id,
+                    t.tick_titulo,
+                    t.tick_estado,
+                    t.fech_crea,
+                    cats.cats_nom,
+                    u.usu_nom,
+                    u.usu_ape
+                FROM
+                    tm_ticket t
+                INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
+                LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
+                WHERE
+                    t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = ?)
+                ORDER BY
+                    t.tick_id DESC";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     public function listar_ticket_x_id_x_usuaarioasignado($tick_id)
     {
