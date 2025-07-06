@@ -5,9 +5,6 @@ var rol_id = $('#rol_idx').val()
 var rol_real_id = $('#rol_real_idx').val()
 
 function init(){
-    $("#ticket_form").on("submit", function(e){
-        guardar(e);
-    })
 }
 
 
@@ -187,47 +184,10 @@ $(document).ready(function() {
 
 })
 
-function asignar(tick_id){
-    $.post("../../controller/ticket.php?op=mostrar", {tick_id:tick_id}, function(data) {
-        data = JSON.parse(data);
-        $("#tick_id").val(data.tick_id);
-        $("#how_asig").val(usu_id);
-        $("#mdltitulo").html('Asignar');        
-        $("#modalasignar").modal('show')
-    });  
-}
-
 function ver(tick_id){
     window.location.href = '/view/DetalleTicket/?ID='+ tick_id
 }
 
-function guardar(e){
-    e.preventDefault();
-
-    var formData = new FormData($("#ticket_form")[0])
-    var tick_id = $("#tick_id").val(); 
-    $.ajax({
-        url: "../../controller/ticket.php?op=updateasignacion",
-        type: "POST",
-        data: formData,
-        contentType: false,
-        processData: false,
-        success: function(){
-
-            $.post("../../controller/email.php?op=ticket_reasignado", { tick_id: tick_id });
-
-            $("#ticket_form")[0].reset();
-            $("#modalasignar").modal('hide');
-            $("#ticket_data").DataTable().ajax.reload();
-            swal({
-                title: "Guardado!",
-                text: "Se ha asignado correctamente.",
-                type: "success",
-                confirmButtonClass: "btn-success"
-            });          
-        }
-    })
-}
 
 function cambiarEstado(tick_id){
     swal({
