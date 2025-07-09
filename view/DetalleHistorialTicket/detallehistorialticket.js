@@ -14,8 +14,8 @@ $(document).ready(function(){
         $('#lblnomusuarioh').html(data.usu_nom + ' ' + data.usu_ape);
         $('#lblfechacreah').html(data.fech_crea);
         $('#lblticketidh').html("Detalle del tikect #" + data.tick_id);
-        $('#cat_id').val(data.cat_nom);
-        $('#cats_id').val(data.cats_nom);
+        $('#cat_nom').val(data.cat_nom);
+        $('#cats_nom').val(data.cats_nom);
         $('#tick_titulo').val(data.tick_titulo);
         // Usamos summernote para mostrar la descripción con formato
         $('#tickd_descripusu').summernote('code', data.tick_descrip);
