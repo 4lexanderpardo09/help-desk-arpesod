@@ -74,7 +74,11 @@
         public function get_subcategoria_x_id($cats_id){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT * FROM tm_subcategoria WHERE cats_id = ? AND est = 1;";
+            $sql = "SELECT  sca.*,
+                        ca.dp_id,
+                        ca.emp_id
+                 FROM tm_subcategoria as sca LEFT JOIN tm_categoria as ca ON sca.cat_id = ca.cat_id
+                 WHERE cats_id = ? AND sca.est = 1";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$cats_id);
             $sql->execute();

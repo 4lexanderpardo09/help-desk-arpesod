@@ -60,6 +60,8 @@ switch ($_GET["op"]) {
             $datos = $subcategoria->get_subcategoria_x_id($_POST['cats_id']);
             if(is_array($datos) and count($datos) >0){
                 foreach ($datos as $row) {
+                    $output['emp_id'] = $row['emp_id'];
+                    $output['dp_id'] = $row['dp_id'];
                     $output['cat_id'] = $row['cat_id'];
                     $output['cats_id'] = $row['cats_id'];
                     $output['pd_id'] = $row['pd_id'];
