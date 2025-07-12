@@ -16,8 +16,11 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
-            $("#cats_nom").html('');
+            $("#cats_form")[0].reset();
+            $('#cats_descrip').summernote('code', '');
+            $('#emp_id').val('');
+            $('#dp_id').val('');
+            $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
             $("#cats_id").val('');
             $("#modalnuevasubcategoria").modal('hide');
             $("#cats_data").DataTable().ajax.reload();

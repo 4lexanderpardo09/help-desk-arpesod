@@ -18,6 +18,10 @@ function guardaryeditar(e){
         success: function(datos){
             $("#cat_form")[0].reset();
             $("#modalnuevacategoria").modal('hide');
+            $('#cat_id').val('').trigger('change');
+            $('#cat_nom').html('');
+            $('#dp_id').val('').trigger('change');
+            $('#emp_id').val('').trigger('change');
             $("#cat_data").DataTable().ajax.reload();
             swal({
                 title: "Guardado!",
@@ -151,5 +155,13 @@ $(document).on("click", "#btnnuevacategoria", function(){
     $("#cat_form")[0].reset();
     $("#modalnuevacategoria").modal("show");
 })
+
+$('#modalnuevacategoria').on('hidden.bs.modal', function() {
+    $("#cat_form")[0].reset();
+    $('#cat_id').val('').trigger('change');
+    $('#cat_nom').html('');
+    $('#dp_id').val('').trigger('change');
+    $('#emp_id').val('').trigger('change');
+});
 
 init();

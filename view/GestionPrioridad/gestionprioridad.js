@@ -17,7 +17,9 @@ function guardaryeditar(e){
         processData: false,
         success: function(datos){
             console.log(datos);
+            $("#pd_form")[0].reset();
             $("#pd_nom").html('');
+            $("#pd_id").val('');
             $("#modalnuevaprioridad").modal('hide');
             $("#pd_data").DataTable().ajax.reload();
             swal({
@@ -141,6 +143,13 @@ $(document).on("click", "#btnnuevaprioridad", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#pd_form")[0].reset();
     $("#modalnuevaprioridad").modal("show");
-})
+});
+
+$('#modalnuevaempresa').on('hidden.bs.modal', function () {
+    $("#pd_form")[0].reset();
+    $("#pd_nom").html('');
+    $("#pd_id").val('');
+});
+
 
 init();

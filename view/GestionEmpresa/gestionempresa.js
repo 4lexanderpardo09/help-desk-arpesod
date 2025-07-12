@@ -16,8 +16,9 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
+            $("#emp_form")[0].reset();
             $("#emp_nom").html('');
+            $("#emp_id").val('');
             $("#modalnuevaempresa").modal('hide');
             $("#emp_data").DataTable().ajax.reload();
             swal({
@@ -142,5 +143,11 @@ $(document).on("click", "#btnnuevoempresa", function(){
     $("#emp_form")[0].reset();
     $("#modalnuevaempresa").modal("show");
 })
+
+$('#modalnuevaempresa').on('hidden.bs.modal', function () {
+    $("#emp_form")[0].reset();
+    $("#emp_nom").html('');
+    $("#emp_id").val('');
+});
 
 init();

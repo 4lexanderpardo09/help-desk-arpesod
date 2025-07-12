@@ -16,8 +16,9 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
+            $("#dp_form")[0].reset();
             $("#pd_nom").html('');
+            $('#dp_id').val('');
             $("#modalnuevodepartamento").modal('hide');
             $("#dp_data").DataTable().ajax.reload();
             swal({
@@ -94,7 +95,7 @@ function editar(dp_id) {
     $.post("../../controller/departamento.php?op=mostrar", {dp_id:dp_id}, function(data) {
         data = JSON.parse(data);
         $('#dp_id').val(data.dp_id);
-        $('#pd_nom').val(data.pd_nom);
+        $('#dp_nom').val(data.dp_nom);
 
         
 
@@ -141,6 +142,12 @@ $(document).on("click", "#btnnuevodepartamento", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#dp_form")[0].reset();
     $("#modalnuevodepartamento").modal("show");
-})
+});
+
+$('#modalnuevodepartamento').on('hidden.bs.modal', function() {
+    $("#dp_form")[0].reset();
+    $("#pd_nom").html('');
+    $('#dp_id').val('');
+});
 
 init();

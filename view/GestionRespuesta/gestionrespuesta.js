@@ -20,6 +20,7 @@ function guardaryeditar(e){
             answer_id
             $("#answer_form")[0].reset();
             $("#answer_id").val('');
+            $('#answer_nom').html('');
             $("#modalnuevarespuesta").modal('hide');
             $("#answer_data").DataTable().ajax.reload();
             swal({
@@ -149,6 +150,7 @@ $('#modalnuevarespuesta').on('hidden.bs.modal', function () {
     // Limpiar el formulario al cerrar el modal
     $("#answer_form")[0].reset();
     $("#answer_id").val('');
+    $('#answer_nom').html('');
 });
 
 

@@ -19,6 +19,13 @@ function guardaryeditar(e) {
         processData: false,
         success: function (datos) {
             $("#usuario_form")[0].reset();
+            $('#usu_id').val('');
+            $('#usu_nom').html('');
+            $('#usu_ape').html('');
+            $('#usu_correo').html('');
+            $('#emp_id').val('').trigger('change')
+            $('#rol_id').val('').trigger('change');
+            $('#dp_id').val('').trigger('change');
             $("#modalnuevousuario").modal('hide');
             $("#user_data").DataTable().ajax.reload();
             swal({
@@ -165,6 +172,18 @@ $(document).on("click", "#btnnuevoregistro", function () {
     $("#mdltitulo").html('Nuevo registro');
     $("#usuario_form")[0].reset();
     $("#modalnuevousuario").modal("show");
-})
+});
+
+$('#modalnuevousuario').on('hidden.bs.modal', function() {
+    $("#usuario_form")[0].reset();
+    $('#usu_id').val('');
+    $('#usu_nom').html('');
+    $('#usu_ape').html('');
+    $('#usu_correo').html('');
+    $('#emp_id').val('').trigger('change')
+    $('#rol_id').val('').trigger('change');
+    $('#dp_id').val('').trigger('change');
+});
+
 
 init();
