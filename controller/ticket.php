@@ -495,6 +495,8 @@ switch ($_GET["op"]) {
                 $output['usu_ape'] = $row['usu_ape'];
                 $output['cat_nom'] = $row['cat_nom'];
                 $output['cats_nom'] = $row['cats_nom'];
+                $output['emp_nom'] = $row['emp_nom'];
+                $output['dp_nom'] = $row['dp_nom'];
 
                 if ($row['pd_nom'] == 'Baja') {
                     $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';

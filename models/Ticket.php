@@ -187,11 +187,15 @@ class Ticket extends Conectar
         tm_usuario.usu_correo,
         tm_categoria.cat_nom,
         tm_subcategoria.cats_nom,
-        td_prioridad.pd_nom
+        td_prioridad.pd_nom,
+        tm_departamento.dp_nom,
+        td_empresa.emp_nom
         FROM
         tm_ticket
         INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
+        INNER JOIN td_empresa ON tm_ticket.cat_id = td_empresa.emp_id
         INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+        LEFT JOIN tm_departamento ON tm_usuario.dp_id = tm_departamento.dp_id     
         INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
         INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
 

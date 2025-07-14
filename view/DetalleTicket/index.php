@@ -53,10 +53,22 @@ if (isset($_SESSION["usu_id"])) {
                                 <input class="form-control" id="cat_id" name="cat_id" readonly>
                             </fieldset>
                         </div>
-                        <div class="col-lg-3    ">
+                        <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cats_id">Subcategoria</label>
                                 <input class="form-control" id="cats_id" name="cats_id" readonly>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="emp_id">Empresa</label>
+                                <input class="form-control" id="emp_id" name="emp_id" readonly>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="dp_id">Departamento</label>
+                                <input class="form-control" id="dp_id" name="dp_id" readonly>
                             </fieldset>
                         </div>
                         <div class="col-lg-12">

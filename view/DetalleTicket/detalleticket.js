@@ -310,6 +310,8 @@ function listarDetalle(tick_id) {
         $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
         $('#cat_id').val(data.cat_nom);
         $('#cats_id').val(data.cats_nom);
+        $('#emp_id').val(data.emp_nom);
+        $('#dp_id').val(data.dp_nom);
         $('#tick_titulo').val(data.tick_titulo);
         $('#tickd_descripusu').summernote('code', data.tick_descrip);
         if (data.tick_estado_texto == 'Cerrado') {
