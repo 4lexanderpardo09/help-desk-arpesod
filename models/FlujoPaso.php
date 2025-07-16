@@ -13,72 +13,68 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function get_flujopaso_x_usu($flujo_id){
+        public function get_pasos_por_flujo($flujo_id){
             $conectar = parent::Conexion();
             parent::set_names();
             $sql = "SELECT tm_flujo_paso.*,
-                           tm_flujo.flujo_id, 
-                           tm_subcategoria.cats_id
+            tm_usuario.usu_nom,
+            tm_usuario.usu_ape
             FROM tm_flujo_paso 
-            INNER JOIN tm_flujo ON tm_flujo_paso.flujo_id = tm_flujo.flujo_id
-            INNER JOIN tm_subcategoria ON tm_flujo.cats_id = tm_subcategoria.cats_id
-            WHERE tm_flujo_paso.flujo_id = ? AND tm_flujo_paso.est = 1";
+            INNER JOIN tm_usuario ON tm_flujo_paso.usu_asig = tm_usuario.usu_id   
+            WHERE flujo_id = ? AND tm_flujo_paso.est = 1 ORDER BY paso_orden ASC";
             $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$flujo_id);
+            $sql->bindValue(1, $flujo_id);
+            $sql->execute();
+            return $resultado = $sql->fetchAll();
+        }
+
+
+        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $usu_asig){
+            $conectar = parent::Conexion();
+            parent::set_names();
+            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, usu_asig, est) VALUES (NULL, ?, ?, ?, ?, 1)";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, $flujo_id);
+            $sql->bindValue(2, $paso_orden);
+            $sql->bindValue(3, $paso_nombre);
+            $sql->bindValue(4, $usu_asig);
+            $sql->execute();
+            return $conectar->lastInsertId();
+        }
+
+        public function delete_paso($paso_id){
+            $conectar = parent::Conexion();
+            parent::set_names();
+            $sql = "UPDATE tm_flujo_paso SET est = 0 WHERE paso_id = ?";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1,$paso_id);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
         }
 
-        public function get_flujotodo(){
+        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $usu_asig){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT * FROM td_flujo
-            WHERE est = 1";
+            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, usu_asig = ? WHERE paso_id = ?";
             $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, $flujo_id);
+            $sql->bindValue(2, $paso_orden);
+            $sql->bindValue(3, $paso_nombre);
+            $sql->bindValue(4, $usu_asig);    
+            $sql->bindValue(5, $paso_id);
             $sql->execute();
-
-            return $resultado = $sql->fetchAll();
+            return $conectar->lastInsertId();
         }
 
-        public function insert_flujo($emp_nom){
+        public function get_paso_x_id($emp_id){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO td_flujo (emp_id, emp_nom, est) VALUES (NULL,?,1)";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$emp_nom);
-            $sql->execute();
-
-            return $resultado = $sql->fetchAll();
-        }
-
-        public function delete_flujo($emp_id){
-            $conectar = parent::Conexion();
-            parent::set_names();
-            $sql = "UPDATE td_flujo SET est = 0 WHERE emp_id = ?";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$emp_id);
-            $sql->execute();
-
-            return $resultado = $sql->fetchAll();
-        }
-
-        public function update_flujo($emp_id,$emp_nom){
-            $conectar = parent::Conexion();
-            parent::set_names();
-            $sql = "UPDATE td_flujo SET emp_nom = ? WHERE emp_id = ?";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$emp_nom);
-            $sql->bindValue(2,$emp_id);
-            $sql->execute();
-
-            return $resultado = $sql->fetchAll();
-        }
-
-        public function get_flujo_x_id($emp_id){
-            $conectar = parent::Conexion();
-            parent::set_names();
-            $sql = "SELECT * FROM td_flujo WHERE emp_id = ? AND est = 1;";
+            $sql = "SELECT tm_flujo_paso.*,
+            tm_usuario.usu_id
+            FROM tm_flujo_paso 
+            INNER JOIN tm_usuario ON tm_flujo_paso.usu_asig = tm_usuario.usu_id 
+            WHERE paso_id = ? AND tm_flujo_paso.est = 1;";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$emp_id);
             $sql->execute();

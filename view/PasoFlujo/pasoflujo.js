@@ -1,30 +1,28 @@
 var tabla;
 
 function init() {
-    $("#flujo_form").on("submit", function(e){
+    $("#paso_form").on("submit", function(e){
         guardaryeditar(e);
     })
 }
 
 function guardaryeditar(e){
     e.preventDefault();
-    var formData = new FormData($("#flujo_form")[0])
+    var formData = new FormData($("#paso_form")[0])
     $.ajax({
-        url: "../../controller/flujo.php?op=guardaryeditar",
+        url: "../../controller/flujopaso.php?op=guardaryeditar",
         type: "POST",
         data: formData,
         contentType: false,
         processData: false,
         success: function(datos){
-            $("#flujo_form")[0].reset();
-            $("#flujo_nom").html('');
-            $("#flujo_id").val('');
-            $("#cats_id").val('');
-            $('#cat_id').val('');
-            $('#emp_id').val('');
-            $('#dp_id').val('');
-            $("#modalnuevoflujo").modal('hide');
-            $("#flujo_data").DataTable().ajax.reload();
+            $("#paso_form")[0].reset();
+            $("#paso_id").val('');
+            $("#paso_orden").val('');
+            $('#paso_nombre').val('');
+            $('#usu_asig').val('');
+            $("#modalnuevopaso").modal('hide');
+            $("#paso_data").DataTable().ajax.reload();
             swal({
                 title: "Guardado!",
                 text: "Se ha guardado correctamente el nuevo registro.",
@@ -39,12 +37,28 @@ function ver(flujo_id) {
     window.location.href = '/view/PasoFlujo/?ID='+ flujo_id
 }
 
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+}
 
 $(document).ready(function () {
 
-    configurarCombos();
+    cargarUsuarios();
 
-    tabla = $('#flujo_data').dataTable({
+    $('#flujo_id').val(getUrlParameter('ID'));
+
+    tabla = $('#paso_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
         dom: 'Bfrtip',
@@ -58,8 +72,9 @@ $(document).ready(function () {
             'pdfHtml5',
         ],
         "ajax": {
-            url: '../../controller/flujo.php?op=listar',
+            url: '../../controller/flujopaso.php?op=listar',
             type: 'post',
+            data: {flujo_id: getUrlParameter('ID')},
             dataType: 'json',
             error: function (e) {
                 console.log(e.responseText);
@@ -99,28 +114,19 @@ $(document).ready(function () {
 
 })
 
-function editar(flujo_id) {
+function editar(paso_id) {
     $("#mdltitulo").html('Editar registro');
 
-    $.post("../../controller/flujo.php?op=mostrar", {flujo_id:flujo_id}, function(data) {
+    $.post("../../controller/flujopaso.php?op=mostrar", {paso_id:paso_id}, function(data) {
         data = JSON.parse(data);
-        $('#flujo_id').val(data.flujo_id);
-        $('#flujo_nom').val(data.flujo_nom);
-        $('#emp_id').val(data.emp_id);
-        $('#dp_id').val(data.dp_id);
-
-        $.post("../../controller/categoria.php?op=combo", { dp_id: data.dp_id, emp_id: data.emp_id }, function(categooriadata) {
-            $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + categooriadata);
-            $("#cat_id").val(data.cat_id);
-            $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.cat_id }, function (subcategoriadata) {
-                $('#cats_id').html('<option value="">Seleccionar</option>' + subcategoriadata);
-                $("#cats_id").val(data.cats_id);
-            });
-        });
+        $('#paso_id').val(data.paso_id);
+        $('#paso_orden').val(data.paso_orden);
+        $('#paso_nombre').val(data.paso_nombre);
+        $('#usu_asig').val(data.usu_id);
 
     });    
 
-    $("#modalnuevoflujo").modal("show");
+    $("#modalnuevopaso").modal("show");
 }
 function eliminar(flujo_id) {
     swal({
@@ -137,7 +143,7 @@ function eliminar(flujo_id) {
     function(isConfirm) {
         if (isConfirm) {
             $.post("../../controller/flujo.php?op=eliminar", {flujo_id:flujo_id}, function(data) {
-                $('#flujo_data').DataTable().ajax.reload(); 
+                $('#paso_data').DataTable().ajax.reload(); 
                 swal({
                     title: "Eliminado!",
                     text: "flujo eliminada correctamente",
@@ -157,63 +163,26 @@ function eliminar(flujo_id) {
     });
 }
 
-$(document).on("click", "#btnnuevoflujo", function(){
+$(document).on("click", "#btnnuevopaso", function(){
     $("#mdltitulo").html('Nuevo registro');
-    $("#flujo_form")[0].reset();
-    $("#modalnuevoflujo").modal("show");
+    $("#paso_form")[0].reset();
+    $("#modalnuevopaso").modal("show");
 });
 
-function configurarCombos() {
-
-    // 1. Cargar el combo de Empresas
-    $.post("../../controller/empresa.php?op=combo", function(data) {
-        $('#emp_id').html('<option value="">Seleccionar Empresa</option>' + data);
+function cargarUsuarios() {
+    $.post("../../controller/usuario.php?op=usuariosxrol", function(data) {
+        $('#usu_asig').html('<option value="">Seleccionar un usuario</option>' + data);
     });
 
-    // 2. Cargar el combo de Departamentos
-    $.post("../../controller/departamento.php?op=combo", function(data) {
-        $('#dp_id').html('<option value="">Seleccionar Departamento</option>' + data);
-    });
-
-    // 3. Función que se encargará de cargar las categorías
-    function cargarCategorias() {
-        var emp_id = $("#emp_id").val();
-        var dp_id = $("#dp_id").val();
-
-        if (emp_id && dp_id) {
-            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function(data) {
-                $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + data);
-            });
-
-            $("#cat_id").off('change').on('change', function () {
-                cat_id = $(this).val();
-
-                $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
-                    $('#cats_id').html('<option value="">Seleccionar</option>' + data);
-                });
-
-            });
-
-        } else {
-            $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
-        }
-    }
-
-    // 4. Asignamos el evento 'change' a los combos de Empresa y Departamento.
-    // Cada vez que uno de ellos cambie, se ejecutará la función cargarCategorias.
-    $("#emp_id").on('change', cargarCategorias);
-    $("#dp_id").on('change', cargarCategorias);
 }
 
-$('#modalnuevoflujo').on('hidden.bs.modal', function () {
-    $("#flujo_form")[0].reset();
-    $("#flujo_nom").html('');
-    $("#flujo_id").val('');
-    $("#cats_id").val('');
-    $('#cat_id').val('');
-    $('#emp_id').val('');
-    $('#dp_id').val('');
 
+$('#modalnuevopaso').on('hidden.bs.modal', function () {
+    $("#paso_form")[0].reset();
+    $("#paso_id").val('');
+    $("#paso_orden").val('');
+    $('#paso_nombre').val('');
+    $('#usu_asig').val('');
 });
 
 init();
