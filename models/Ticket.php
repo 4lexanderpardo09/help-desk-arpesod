@@ -1,11 +1,11 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,'1' )  ";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?, '1')";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
@@ -15,7 +15,7 @@ class Ticket extends Conectar
         $sql->bindValue(6, $tick_descrip);
         $sql->bindValue(7, $error_proceso);
         $sql->bindValue(8, $usu_asig);
-
+        $sql->bindValue(9, $paso_actual_id);
         $sql->execute();
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
@@ -33,6 +33,32 @@ class Ticket extends Conectar
         $sql2->execute();
 
         return $resultado;
+    }
+
+    public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id,$quien_asigno_id) {
+        $conectar = parent::Conexion();
+        // Actualiza el usuario asignado y el ID del paso actual en el ticket
+        $sql = "UPDATE tm_ticket 
+                SET 
+                    usu_asig = ?,
+                    paso_actual_id = ?
+                WHERE
+                    tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_asig);
+        $sql->bindValue(2, $paso_actual_id);
+        $sql->bindValue(3, $tick_id);
+        $sql->execute();
+
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
+                VALUES (?, ?, ?, NOW(), 'Reasignado por avance en el flujo', 1);";
+        $sql2 = $conectar->prepare($sql2);
+        $sql2->bindValue(1, $tick_id);                 // El ticket afectado
+        $sql2->bindValue(2, $usu_asig);                // El NUEVO usuario asignado
+        $sql2->bindValue(3, $quien_asigno_id);         // El usuario que HIZO la reasignación
+        $sql2->execute();
+
+        return $sql->fetchAll();
     }
 
     public function listar_ticket_x_usuario($usu_id)
@@ -182,6 +208,7 @@ class Ticket extends Conectar
         tm_ticket.fech_crea,
         tm_ticket.usu_asig,
         tm_ticket.pd_id,
+        tm_ticket.paso_actual_id, -- Se añade el ID del paso
         tm_usuario.usu_nom,
         tm_usuario.usu_ape,
         tm_usuario.usu_correo,
@@ -189,7 +216,8 @@ class Ticket extends Conectar
         tm_subcategoria.cats_nom,
         td_prioridad.pd_nom,
         tm_departamento.dp_nom,
-        td_empresa.emp_nom
+        td_empresa.emp_nom,
+        paso.paso_nombre -- Se añade el NOMBRE del paso
         FROM
         tm_ticket
         INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
@@ -198,6 +226,7 @@ class Ticket extends Conectar
         LEFT JOIN tm_departamento ON tm_usuario.dp_id = tm_departamento.dp_id     
         INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
         INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+        LEFT JOIN tm_flujo_paso AS paso ON tm_ticket.paso_actual_id = paso.paso_id
 
 
         WHERE

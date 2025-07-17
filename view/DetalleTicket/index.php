@@ -6,6 +6,64 @@ if (isset($_SESSION["usu_id"])) {
     <html>
     <?php require_once('../MainHead/head.php') ?>
     <title>Detalle ticket</title>
+    <style>
+        /* Estilos para la Línea de Tiempo del Flujo */
+        .timeline-wrapper {
+            padding-left: 20px;
+        }
+        .timeline {
+            list-style: none;
+            padding: 10px 0;
+            position: relative;
+        }
+        /* La línea vertical central */
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 6px;
+            width: 2px;
+            background-color: #e5e5e5;
+        }
+        .timeline li {
+            margin-bottom: 25px;
+            position: relative;
+            padding-left: 30px;
+        }
+        /* El círculo en cada paso */
+        .timeline li:before {
+            content: '';
+            background: white;
+            border-radius: 50%;
+            border: 2px solid #e5e5e5;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 15px;
+            height: 15px;
+            z-index: 1;
+        }
+        /* Estilos para cada estado */
+        .timeline li.timeline-step-completed:before {
+            border-color: #5cb85c; /* Verde para completado */
+            background-color: #5cb85c;
+        }
+        .timeline li.timeline-step-active:before {
+            border-color: #337ab7; /* Azul para el paso actual */
+            transform: scale(1.2); /* Lo hacemos un poco más grande */
+        }
+        .timeline li.timeline-step-pending:before {
+            border-color: #e5e5e5; /* Gris para pendiente */
+        }
+        .timeline li .step-name {
+            font-size: 16px;
+        }
+        .timeline li.timeline-step-active .step-name {
+            font-weight: bold;
+            color: #337ab7;
+        }
+    </style>
     </head>
 
     <body class="with-side-menu">
@@ -37,6 +95,14 @@ if (isset($_SESSION["usu_id"])) {
                         </div>
                     </div>
                 </header>
+
+                <div id="panel_linea_tiempo" class="box-typical box-typical-padding" style="display:none;">
+                    <h5 class="m-t-lg with-border">Progreso del Flujo de Trabajo</h5>
+                    <div class="timeline-wrapper">
+                        <ul id="timeline_flujo" class="timeline">
+                        </ul>
+                    </div>
+                </div>
 
                 <div class="box-typical box-typical-padding">
                     <div class="row">
@@ -141,7 +207,16 @@ if (isset($_SESSION["usu_id"])) {
                                     <textarea id="tickd_descrip" name="tickd_descrip" class="summernote" name="name"></textarea>
                                 </div>
                             </fieldset>
+                            <div id="panel_checkbox_flujo" class="form-group" style="display: none;">
+                                <div class="checkbox-toggle">
+                                    <input type="checkbox" id="checkbox_avanzar_flujo" name="avanzar_flujo">
+                                    <label for="checkbox_avanzar_flujo" class="form-label semibold">
+                                        Completar este paso y avanzar al siguiente flujo
+                                    </label>
+                                </div>
+                            </div> 
                         </div>
+
                         <div style="display: inline-flex;">
                             <div class="col-lg-12">
                                 <button type="button" id="btnenviar" class="btn btn-inline">Enviar</button>

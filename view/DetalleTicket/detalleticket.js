@@ -174,8 +174,6 @@ var getUrlParameter = function getUrlParameter(sParam) {
 
 $(document).on('click', '#btnenviar', function () {
 
-    asignarTicket()
-
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
         return false;
@@ -191,6 +189,15 @@ $(document).on('click', '#btnenviar', function () {
     formData.append("usu_id", usu_id);
     formData.append("tickd_descrip", tickd_descrip);
 
+     if ($('#checkbox_avanzar_flujo').is(':visible') && $('#checkbox_avanzar_flujo').is(':checked')) {
+        
+        // Si está marcado, obtenemos el ID del siguiente paso.
+        var siguiente_paso_id = $('#panel_checkbox_flujo').data('siguiente-paso-id');
+        
+        // Y lo añadimos a los datos que se envían al servidor.
+        formData.append("siguiente_paso_id", siguiente_paso_id);
+    }
+    
     var totalFile = $('#fileElem').val().length;
     for (var i = 0; i < totalFile; i++) {
         formData.append('files[]', $('#fileElem')[0].files[i]);
@@ -217,28 +224,9 @@ $(document).on('click', '#btnenviar', function () {
     })
 
 
-    var tick_id = getUrlParameter('ID');
-    var usu_id = $('#user_idx').val();
-    var dest_id = $('#dest_id').val();
-
-    $.post("../../controller/destinatarioticket.php?op=mostrar", {dest_id:dest_id}, function (data) {
-        data = JSON.parse(data);
-
-        $.post("../../controller/ticket.php?op=updateasignacion",{tick_id:tick_id,usu_asig:data.usu_id,how_asig:usu_id}, function (data) {
-            
-    }); 
-            
-     })
-
-
-
 
 
 });
-
-function asignarTicket(){
-    
-}
 
 $(document).on('click', '#btncerrarticket', function () {
     swal({
@@ -322,11 +310,61 @@ function listarDetalle(tick_id) {
         if (usu_id != data.usu_asig) {
             $("#btncerrarticket").addClass('hidden');
         };
-
-        getDestinatarios(data.cats_id);
         
 
     });
+
+     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
+        data = JSON.parse(data);
+        console.log(data);
+        // ... tu código para llenar el resto de la vista ...
+
+        // Lógica para construir la línea de tiempo
+        if (data.timeline_steps && data.timeline_steps.length > 0) {
+            $('#panel_linea_tiempo').show();
+            var timeline_html = '';
+
+            data.timeline_steps.forEach(function(paso) {
+                var status_class = '';
+                if (paso.estado === 'Completado') {
+                    status_class = 'timeline-step-completed';
+                } else if (paso.estado === 'Actual') {
+                    status_class = 'timeline-step-active';
+                } else { // Pendiente
+                    status_class = 'timeline-step-pending';
+                }
+                
+                timeline_html += '<li class="' + status_class + '">';
+                timeline_html += '  <div class="step-name">' + paso.paso_nombre + '</div>';
+                timeline_html += '</li>';
+            });
+            
+            $('#timeline_flujo').html(timeline_html);
+        } else {
+            $('#panel_linea_tiempo').hide();
+        }
+
+        $('#panel_checkbox_flujo').hide(); // Ocultamos por defecto
+
+        if (data.siguiente_paso) {
+            // Si el servidor nos dice que hay un siguiente paso, mostramos el checkbox
+            $('#panel_checkbox_flujo').show();
+            // Y guardamos el ID del siguiente paso para usarlo después
+            $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso.paso_id);
+        }
+
+        if (data.siguiente_paso) {
+            // SI hay un siguiente paso, el flujo NO ha terminado.
+            // Deshabilitamos el botón de cerrar.
+            $('#btncerrarticket').prop('disabled', true);
+        } else {
+            // SI NO hay un siguiente paso (o el ticket no está en un flujo),
+            // el botón debe estar habilitado.
+            $('#btncerrarticket').prop('disabled', false);
+        }
+    });
+
+
 
 }
 

@@ -128,7 +128,7 @@ function editar(paso_id) {
 
     $("#modalnuevopaso").modal("show");
 }
-function eliminar(flujo_id) {
+function eliminar(paso_id) {
     swal({
         title: "¿Estas que quieres eliminar esta flujo?",
         text: "Una vez eliminado no podrás volver a recuperarlo",
@@ -142,7 +142,7 @@ function eliminar(flujo_id) {
     },
     function(isConfirm) {
         if (isConfirm) {
-            $.post("../../controller/flujo.php?op=eliminar", {flujo_id:flujo_id}, function(data) {
+            $.post("../../controller/flujopaso.php?op=eliminar", {paso_id:paso_id}, function(data) {
                 $('#paso_data').DataTable().ajax.reload(); 
                 swal({
                     title: "Eliminado!",

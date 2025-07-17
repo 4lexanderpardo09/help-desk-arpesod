@@ -82,6 +82,46 @@
             return $resultado = $sql->fetchAll();
         }
 
+        public function get_flujo_id_from_paso($paso_id) {
+        $conectar = parent::Conexion();
+        $sql = "SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['flujo_id'] : null;
+      }
+
+      public function get_paso_por_id($paso_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_flujo_paso WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        // Usamos fetch() porque solo esperamos un resultado
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function get_siguiente_paso($paso_actual_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_flujo_paso 
+                WHERE 
+                    flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
+                    AND 
+                    paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?) + 1
+                    AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_actual_id);
+        $sql->bindValue(2, $paso_actual_id);
+        $sql->execute();
+        // Usamos fetch() para obtener solo una fila (o false si no hay siguiente paso)
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
 
     }
 ?>

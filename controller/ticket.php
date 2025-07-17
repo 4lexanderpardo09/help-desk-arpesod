@@ -9,11 +9,63 @@ $usuario = new Usuario();
 require_once('../models/Documento.php');
 $documento = new Documento();
 
+require_once('../models/Flujo.php');
+$flujoModel = new Flujo();
+
+require_once('../models/FlujoPaso.php');
+$flujoPasoModel = new FlujoPaso();
+
+
 switch ($_GET["op"]) {
 
     case "insert":
 
-        $datos = $ticket->insert_ticket($_POST['usu_id'], $_POST['cat_id'], $_POST['cats_id'], $_POST['pd_id'], $_POST['tick_titulo'], $_POST['tick_descrip'],$_POST['error_proceso'], $_POST['usu_asig']);
+            // 2. Se recopilan todos los datos del formulario.
+            $usu_id = $_POST['usu_id'];
+            $cat_id = $_POST['cat_id'];
+            $cats_id = $_POST['cats_id'];
+            $pd_id = $_POST['pd_id'];
+            $tick_titulo = $_POST['tick_titulo'];
+            $tick_descrip = $_POST['tick_descrip'];
+            $error_proceso = $_POST['error_proceso'];
+            $usu_asig_manual = $_POST['usu_asig']; // La selección manual del formulario.
+
+            // 3. Se busca la asignación automática que sugiere el flujo.
+            $usu_asig_flujo = null;
+            $paso_actual_id_final = null;
+            $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+
+            if ($flujo) {
+                $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+                if ($paso_inicial) {
+                    $paso_actual_id_final = $paso_inicial["paso_id"];
+                    $usu_asig_flujo = $paso_inicial["usu_asig"];
+                }
+            }
+
+            // 4. Se toma la decisión final sobre a quién asignar el ticket.
+            $usu_asig_final = $usu_asig_manual; // Por defecto, la selección manual tiene prioridad.
+
+            if (empty($usu_asig_manual) && !empty($usu_asig_flujo)) {
+                // PERO, si no se seleccionó a nadie manualmente Y el flujo sí sugiere a alguien,
+                // entonces se usa la asignación del flujo.
+                $usu_asig_final = $usu_asig_flujo;
+            }
+
+            // 5. Se crea el ticket UNA SOLA VEZ con los datos correctos.
+            // Asegúrate de que tu función insert_ticket en el modelo acepte el parámetro $paso_actual_id.
+            $datos = $ticket->insert_ticket(
+                $usu_id, 
+                $cat_id, 
+                $cats_id, 
+                $pd_id, 
+                $tick_titulo, 
+                $tick_descrip, 
+                $error_proceso, 
+                $usu_asig_final,
+                $paso_actual_id_final
+            );
+
         if (is_array($datos) == true and count($datos) > 0) {
             foreach ($datos as $row) {
                 $output['tick_id'] = $row['tick_id'];
@@ -497,6 +549,8 @@ switch ($_GET["op"]) {
                 $output['cats_nom'] = $row['cats_nom'];
                 $output['emp_nom'] = $row['emp_nom'];
                 $output['dp_nom'] = $row['dp_nom'];
+                $output['paso_actual_id'] = $row['paso_actual_id'];
+                $output['paso_nombre'] = $row['paso_nombre'];
 
                 if ($row['pd_nom'] == 'Baja') {
                     $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';
@@ -505,41 +559,102 @@ switch ($_GET["op"]) {
                 } else {
                     $output['pd_nom'] = '<span class="label label-danger">Alta</span>';
                 }
+
+                $output["siguiente_paso"] = null; // Valor por defecto
+                if (!empty($row["paso_actual_id"])) {
+                    // Instanciamos el modelo del flujo
+                    
+                    // Llamamos a la función que ya confirmamos que funciona
+                    $siguiente_paso = $flujoPasoModel->get_siguiente_paso($row["paso_actual_id"]);
+                    
+                    // Añadimos el resultado al output
+                    if ($siguiente_paso) {
+                        $output["siguiente_paso"] = $siguiente_paso;
+                    }
+                }
+
+                $output["timeline_steps"] = []; // Array vacío por defecto
+                if (!empty($row["paso_actual_id"])) {
+                    
+                    // 1. Obtenemos el flujo_id del ticket actual
+                    $flujo_id = $flujoPasoModel->get_flujo_id_from_paso($row["paso_actual_id"]);
+                    
+                    if ($flujo_id) {
+                        // 2. Obtenemos TODOS los pasos de ese flujo
+                        $todos_los_pasos = $flujoPasoModel->get_pasos_por_flujo($flujo_id);
+                        
+                        // 3. Obtenemos el orden del paso actual para comparar
+                        $paso_actual_info = $flujoPasoModel->get_paso_por_id($row["paso_actual_id"]);
+                        $orden_actual = $paso_actual_info['paso_orden'];
+
+                        // 4. Añadimos el estado a cada paso (Completado, Actual, Pendiente)
+                        foreach ($todos_los_pasos as $paso) {
+                            $estado = '';
+                            if ($paso['paso_orden'] < $orden_actual) {
+                                $estado = 'Completado';
+                            } elseif ($paso['paso_orden'] == $orden_actual) {
+                                $estado = 'Actual';
+                            } else {
+                                $estado = 'Pendiente';
+                            }
+                            $paso['estado'] = $estado;
+                            $output["timeline_steps"][] = $paso;
+                        }
+                    }
+                }
             }
             echo json_encode($output);
         }
         break;
 
     case "insertdetalle":
-        $datos = $ticket->insert_ticket_detalle($_POST['tick_id'], $_POST['usu_id'], $_POST['tickd_descrip']);
-            if (is_array($datos) == true and count($datos) > 0) {
-                foreach ($datos as $row) {
-                    $output['tickd_id'] = $row['tickd_id'];
+    // 1. Obtenemos el tick_id directamente de $_POST para usarlo después.
+    $tick_id = $_POST['tick_id'];
 
-                    if (empty($_FILES['files'])) {
-                    } else {
-                        $countfiles = is_countable($_FILES['files']['name'] ?? null) ? count($_FILES['files']['name']) : 0;
-                        $ruta = '../public/document/detalle/' . $output['tickd_id'] . '/';
-                        $files_arr = array();
+    // 2. Se guarda el comentario del agente.
+    $datos = $ticket->insert_ticket_detalle($tick_id, $_POST['usu_id'], $_POST['tickd_descrip']);
 
-                        if (!file_exists($ruta)) {
-                            mkdir($ruta, 0777, true);
-                        }
+    // 3. Se maneja la subida de archivos.
+    if (is_array($datos) && count($datos) > 0) {
+        $row = $datos[0];
+        $tickd_id = $row['tickd_id']; // Se usa el ID del detalle recién creado.
 
-                        for ($index = 0; $index < $countfiles; $index++) {
-                            $doc1 = $_FILES['files']['name'][$index];
-                            $tmp_name = $_FILES['files']['tmp_name'][$index];
-                            $destino = $ruta . $doc1;
-
-                            $documento->insert_documento_detalle($output['tickd_id'], $doc1);
-
-                            move_uploaded_file($tmp_name, $destino);
-                        }
-                    }
-                }
+        if (!empty($_FILES['files']['name'][0])) {
+            $countfiles = count($_FILES['files']['name']);
+            $ruta = '../public/document/detalle/' . $tickd_id . '/';
+            if (!file_exists($ruta)) {
+                mkdir($ruta, 0777, true);
             }
-            echo json_encode($datos);
-        break;
+            for ($index = 0; $index < $countfiles; $index++) {
+                $doc1 = $_FILES['files']['name'][$index];
+                $tmp_name = $_FILES['files']['tmp_name'][$index];
+                $destino = $ruta . $doc1;
+                $documento->insert_documento_detalle($tickd_id, $doc1);
+                move_uploaded_file($tmp_name, $destino);
+            }
+        }
+    }
+
+    // 4. Se revisa si debemos avanzar en el flujo.
+    if (isset($_POST["siguiente_paso_id"]) && !empty($_POST["siguiente_paso_id"])) {
+        // 5. Instanciamos el modelo FlujoPaso aquí, solo si es necesario.
+        require_once("../models/FlujoPaso.php");
+        $flujoModel = new FlujoPaso();
+        
+        $siguiente_paso_id = $_POST["siguiente_paso_id"];
+        $datos_siguiente_paso = $flujoModel->get_paso_por_id($siguiente_paso_id);
+
+        if ($datos_siguiente_paso) {
+            $nuevo_usuario_asignado = $datos_siguiente_paso["usu_asig"];
+            $quien_asigno_id = $_SESSION["usu_id"];
+            
+            // 6. Se llama a la función para actualizar el ticket.
+            $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+        }
+    }
+
+    echo json_encode(["status" => "success"]);
+    break;    
 
     case "update":
         $ticket->update_ticket($_POST['tick_id']);
