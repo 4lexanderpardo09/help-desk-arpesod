@@ -654,15 +654,18 @@ switch ($_GET["op"]) {
 
                         // 4. Añadimos el estado a cada paso (Completado, Actual, Pendiente)
                         foreach ($todos_los_pasos as $paso) {
-                            $estado = '';
-                            if ($paso['paso_orden'] < $orden_actual) {
-                                $estado = 'Completado';
-                            } elseif ($paso['paso_orden'] == $orden_actual) {
-                                $estado = 'Actual';
+                            // Si el ticket está cerrado, todos los pasos se marcan como "Completado"
+                            if ($row['tick_estado'] == 'Cerrado') {
+                                $paso['estado'] = 'Completado';
                             } else {
-                                $estado = 'Pendiente';
+                                if ($paso['paso_orden'] < $orden_actual) {
+                                    $paso['estado'] = 'Completado';
+                                } elseif ($paso['paso_orden'] == $orden_actual) {
+                                    $paso['estado'] = 'Actual';
+                                } else {
+                                    $paso['estado'] = 'Pendiente';
+                                }
                             }
-                            $paso['estado'] = $estado;
                             $output["timeline_steps"][] = $paso;
                         }
                     }

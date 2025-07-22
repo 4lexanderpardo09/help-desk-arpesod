@@ -1,8 +1,7 @@
 function init() {
 
 }
-
-
+boxdetalleticket
 $(document).ready(function () {
 
     var rol_id = $("#rol_idx").val();
@@ -139,13 +138,13 @@ function getDestinatarios(cats_id) {
                     $.post("../../controller/respuestarapida.php?op=mostrar", { answer_id: answer_id }, function (data) {
                         data = JSON.parse(data);
                         respuesta = data.answer_nom
-                        $.post("../../controller/destinatarioticket.php?op=mostrar", {dest_id:dest_id}, function (data) {
+                        $.post("../../controller/destinatarioticket.php?op=mostrar", { dest_id: dest_id }, function (data) {
 
 
-                                data = JSON.parse(data);
-                                $('#tickd_descrip').summernote('code', `${respuesta} se envio el ticekt a ${data.nombre_usuario}`);
+                            data = JSON.parse(data);
+                            $('#tickd_descrip').summernote('code', `${respuesta} se envio el ticekt a ${data.nombre_usuario}`);
                         });
-                    }); 
+                    });
                 }
             })
 
@@ -189,15 +188,15 @@ $(document).on('click', '#btnenviar', function () {
     formData.append("usu_id", usu_id);
     formData.append("tickd_descrip", tickd_descrip);
 
-     if ($('#checkbox_avanzar_flujo').is(':visible') && $('#checkbox_avanzar_flujo').is(':checked')) {
-        
+    if ($('#checkbox_avanzar_flujo').is(':visible') && $('#checkbox_avanzar_flujo').is(':checked')) {
+
         // Si está marcado, obtenemos el ID del siguiente paso.
         var siguiente_paso_id = $('#panel_checkbox_flujo').data('siguiente-paso-id');
-        
+
         // Y lo añadimos a los datos que se envían al servidor.
         formData.append("siguiente_paso_id", siguiente_paso_id);
     }
-    
+
     var totalFile = $('#fileElem').val().length;
     for (var i = 0; i < totalFile; i++) {
         formData.append('files[]', $('#fileElem')[0].files[i]);
@@ -267,7 +266,7 @@ $(document).on('click', '#btncerrarticket', function () {
 });
 
 
-$(document).on("click", "#btn_aprobar_flujo", function() {
+$(document).on("click", "#btn_aprobar_flujo", function () {
     swal({
         title: "¿Estás seguro de aprobar este ticket?",
         text: "Una vez aprobado, el ticket avanzará al siguiente paso del flujo y será reasignado automáticamente.",
@@ -278,30 +277,30 @@ $(document).on("click", "#btn_aprobar_flujo", function() {
         cancelButtonText: "No, cancelar",
         closeOnConfirm: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            var tick_id = getUrlParameter('ID');
-            // Se envía la petición al controlador de tickets
-            $.post("../../controller/ticket.php?op=aprobar_ticket_jefe", { tick_id: tick_id }, function(data) {
-                swal({
-                    title: "¡Aprobado!",
-                    text: "El ticket ha sido reasignado y el flujo continúa.",
-                    type: "success",
-                    confirmButtonClass: "btn-success"
+        function (isConfirm) {
+            if (isConfirm) {
+                var tick_id = getUrlParameter('ID');
+                // Se envía la petición al controlador de tickets
+                $.post("../../controller/ticket.php?op=aprobar_ticket_jefe", { tick_id: tick_id }, function (data) {
+                    swal({
+                        title: "¡Aprobado!",
+                        text: "El ticket ha sido reasignado y el flujo continúa.",
+                        type: "success",
+                        confirmButtonClass: "btn-success"
+                    });
+
+                    // Recargamos la página después de un momento para ver los cambios.
+                    // El ticket ahora tendrá otro asignado y el botón de aprobar ya no será visible.
+                    setTimeout(function () {
+                        location.reload();
+                    }, 1800);
+
+                }).fail(function (jqXHR) {
+                    // Si el backend devuelve un error, lo mostramos
+                    swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
                 });
-
-                // Recargamos la página después de un momento para ver los cambios.
-                // El ticket ahora tendrá otro asignado y el botón de aprobar ya no será visible.
-                setTimeout(function() {
-                    location.reload();
-                }, 1800);
-
-            }).fail(function(jqXHR) {
-                // Si el backend devuelve un error, lo mostramos
-                swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
-            });
-        }
-    });
+            }
+        });
 });
 
 
@@ -329,6 +328,7 @@ function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
+        console.log(data.tick_estado_texto);
 
         $('#lbltickestado').html(data.tick_estado);
         $('#lblprioridad').html(data.pd_nom);
@@ -341,9 +341,6 @@ function listarDetalle(tick_id) {
         $('#dp_id').val(data.dp_nom);
         $('#tick_titulo').val(data.tick_titulo);
         $('#tickd_descripusu').summernote('code', data.tick_descrip);
-        if (data.tick_estado_texto == 'Cerrado') {
-            $('#boxdetalleticket').hide();
-        };
 
         var usu_id = $('#user_idx').val();
         if (usu_id != data.usu_asig) {
@@ -356,17 +353,18 @@ function listarDetalle(tick_id) {
         ) {
             // Si todas las condiciones se cumplen, muestra el panel
             $('#panel_aprobacion_jefe').show();
-            // Opcional: puedes ocultar el área de respuesta normal si lo deseas
             // $('#boxdetalleticket').hide(); 
         } else {
-            // Si no, asegúrate de que el área de respuesta normal esté visible
             $('#boxdetalleticket').show();
+            if (data.tick_estado_texto == 'Cerrado') {
+                $('#boxdetalleticket').hide();
+            };
         }
-        
+
 
     });
 
-     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
+    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
         console.log(data);
         // ... tu código para llenar el resto de la vista ...
@@ -376,7 +374,7 @@ function listarDetalle(tick_id) {
             $('#panel_linea_tiempo').show();
             var timeline_html = '';
 
-            data.timeline_steps.forEach(function(paso) {
+            data.timeline_steps.forEach(function (paso) {
                 var status_class = '';
                 if (paso.estado === 'Completado') {
                     status_class = 'timeline-step-completed';
@@ -385,12 +383,12 @@ function listarDetalle(tick_id) {
                 } else { // Pendiente
                     status_class = 'timeline-step-pending';
                 }
-                
+
                 timeline_html += '<li class="' + status_class + '">';
                 timeline_html += '  <div class="step-name">' + paso.paso_nombre + '</div>';
                 timeline_html += '</li>';
             });
-            
+
             $('#timeline_flujo').html(timeline_html);
         } else {
             $('#panel_linea_tiempo').hide();
@@ -405,7 +403,7 @@ function listarDetalle(tick_id) {
             $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso.paso_id);
         }
 
-        if (data.siguiente_paso || data.siguiente_paso_id == null) {
+        if (data.siguiente_paso) {
             // SI hay un siguiente paso, el flujo NO ha terminado.
             // Deshabilitamos el botón de cerrar.
             $('#btncerrarticket').prop('disabled', true);
@@ -416,7 +414,7 @@ function listarDetalle(tick_id) {
         }
     });
 
-    
+
 
 
 

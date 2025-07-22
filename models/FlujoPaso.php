@@ -123,7 +123,7 @@
 
     public function get_regla_aprobacion($creador_cargo_id_asignado) {
         $conectar = parent::Conexion();
-        $sql = "SELECT * FROM tm_regla_aprobacion WHERE creador_cargo_id_asignado = ? AND est = 1 LIMIT 1";
+        $sql = "SELECT * FROM tm_regla_aprobacion WHERE aprobador_usu_id = ? AND est = 1 LIMIT 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $creador_cargo_id_asignado);
         $sql->execute();
