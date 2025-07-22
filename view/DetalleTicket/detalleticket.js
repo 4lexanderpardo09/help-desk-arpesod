@@ -266,6 +266,45 @@ $(document).on('click', '#btncerrarticket', function () {
 
 });
 
+
+$(document).on("click", "#btn_aprobar_flujo", function() {
+    swal({
+        title: "¿Estás seguro de aprobar este ticket?",
+        text: "Una vez aprobado, el ticket avanzará al siguiente paso del flujo y será reasignado automáticamente.",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-success",
+        confirmButtonText: "Sí, ¡Aprobar ahora!",
+        cancelButtonText: "No, cancelar",
+        closeOnConfirm: false
+    },
+    function(isConfirm) {
+        if (isConfirm) {
+            var tick_id = getUrlParameter('ID');
+            // Se envía la petición al controlador de tickets
+            $.post("../../controller/ticket.php?op=aprobar_ticket_jefe", { tick_id: tick_id }, function(data) {
+                swal({
+                    title: "¡Aprobado!",
+                    text: "El ticket ha sido reasignado y el flujo continúa.",
+                    type: "success",
+                    confirmButtonClass: "btn-success"
+                });
+
+                // Recargamos la página después de un momento para ver los cambios.
+                // El ticket ahora tendrá otro asignado y el botón de aprobar ya no será visible.
+                setTimeout(function() {
+                    location.reload();
+                }, 1800);
+
+            }).fail(function(jqXHR) {
+                // Si el backend devuelve un error, lo mostramos
+                swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
+            });
+        }
+    });
+});
+
+
 function updateTicket(tick_id, usu_id) {
     $.post("../../controller/ticket.php?op=update", { tick_id: tick_id, usu_id: usu_id }, function (data) {
         swal({
@@ -310,6 +349,19 @@ function listarDetalle(tick_id) {
         if (usu_id != data.usu_asig) {
             $("#btncerrarticket").addClass('hidden');
         };
+
+        $('#panel_aprobacion_jefe').hide();
+
+        if (data.paso_actual_id === null || data.paso_actual_id == 0 && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id
+        ) {
+            // Si todas las condiciones se cumplen, muestra el panel
+            $('#panel_aprobacion_jefe').show();
+            // Opcional: puedes ocultar el área de respuesta normal si lo deseas
+            // $('#boxdetalleticket').hide(); 
+        } else {
+            // Si no, asegúrate de que el área de respuesta normal esté visible
+            $('#boxdetalleticket').show();
+        }
         
 
     });
@@ -353,7 +405,7 @@ function listarDetalle(tick_id) {
             $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso.paso_id);
         }
 
-        if (data.siguiente_paso) {
+        if (data.siguiente_paso || data.siguiente_paso_id == null) {
             // SI hay un siguiente paso, el flujo NO ha terminado.
             // Deshabilitamos el botón de cerrar.
             $('#btncerrarticket').prop('disabled', true);
@@ -363,6 +415,8 @@ function listarDetalle(tick_id) {
             $('#btncerrarticket').prop('disabled', false);
         }
     });
+
+    
 
 
 

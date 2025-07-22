@@ -15,56 +15,70 @@ $flujoModel = new Flujo();
 require_once('../models/FlujoPaso.php');
 $flujoPasoModel = new FlujoPaso();
 
+require_once('../models/Departamento.php'); // Asegúrate de que exista
+$departamento = new Departamento();
 
 switch ($_GET["op"]) {
 
     case "insert":
 
-            // 2. Se recopilan todos los datos del formulario.
-            $usu_id = $_POST['usu_id'];
-            $cat_id = $_POST['cat_id'];
-            $cats_id = $_POST['cats_id'];
-            $pd_id = $_POST['pd_id'];
-            $tick_titulo = $_POST['tick_titulo'];
-            $tick_descrip = $_POST['tick_descrip'];
-            $error_proceso = $_POST['error_proceso'];
-            $usu_asig_manual = $_POST['usu_asig']; // La selección manual del formulario.
+        $usu_id_creador = $_POST['usu_id'];
+        $cats_id = $_POST['cats_id'];
+        $usu_asig_manual = $_POST['usu_asig'];
 
-            // 3. Se busca la asignación automática que sugiere el flujo.
-            $usu_asig_flujo = null;
-            $paso_actual_id_final = null;
-            $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+        $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
+        $creador_car_id = $datos_creador['car_id'];
+        $creador_reg_id = $datos_creador['reg_id'];
+        $creador_dp_id = $datos_creador['dp_id'];
 
-            if ($flujo) {
-                $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
-                if ($paso_inicial) {
-                    $paso_actual_id_final = $paso_inicial["paso_id"];
-                    $usu_asig_flujo = $paso_inicial["usu_asig"];
+        $usu_asig_final = $usu_asig_manual; // Por defecto, la asignación manual tiene prioridad.
+        $paso_actual_id_final = null;
+
+        // --- 2. VERIFICAR SI HAY UN FLUJO Y SI REQUIERE APROBACIÓN ---
+        $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+        
+        if ($flujo) {
+            if ($flujo['requiere_aprobacion_jefe'] == 1) {
+                // --- 2A. EL FLUJO REQUIERE APROBACIÓN DE JEFE ---
+                $jefe_id = null;
+                $regla_excepcion = $flujoPasoModel->get_regla_aprobacion($creador_car_id);
+
+                if ($regla_excepcion) {
+                    // Si hay una regla de excepción (ej: Caja -> Director Financiero)
+                    $jefe_id = $regla_excepcion['aprobador_usu_id'];
+                } else {
+                    // Si no, se busca al jefe del departamento
+                    $datos_depto = $departamento->get_departamento_x_id($creador_dp_id);
+                    if ($datos_depto && !empty($datos_depto['jefe_usu_id'])) {
+                        $jefe_id = $datos_depto['jefe_usu_id'];
+                    }
+                }
+                if ($jefe_id) { $usu_asig_final = $jefe_id; }
+
+            } else {
+                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
+                $regla = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
+                if ($regla) {
+                    $asignado_car_id = $regla['asignado_car_id'];
+                    $asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
+                    
+                    if ($asignado_info) {
+                        $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+                        if (empty($usu_asig_manual)) { // Solo si no se asignó manualmente
+                            $usu_asig_final = $asignado_info['usu_id'];
+                        }
+                        $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
+                    }
                 }
             }
+        }
 
-            // 4. Se toma la decisión final sobre a quién asignar el ticket.
-            $usu_asig_final = $usu_asig_manual; // Por defecto, la selección manual tiene prioridad.
-
-            if (empty($usu_asig_manual) && !empty($usu_asig_flujo)) {
-                // PERO, si no se seleccionó a nadie manualmente Y el flujo sí sugiere a alguien,
-                // entonces se usa la asignación del flujo.
-                $usu_asig_final = $usu_asig_flujo;
-            }
-
-            // 5. Se crea el ticket UNA SOLA VEZ con los datos correctos.
-            // Asegúrate de que tu función insert_ticket en el modelo acepte el parámetro $paso_actual_id.
-            $datos = $ticket->insert_ticket(
-                $usu_id, 
-                $cat_id, 
-                $cats_id, 
-                $pd_id, 
-                $tick_titulo, 
-                $tick_descrip, 
-                $error_proceso, 
-                $usu_asig_final,
-                $paso_actual_id_final
-            );
+        // --- 3. CREAR EL TICKET ---
+        $datos = $ticket->insert_ticket(
+            $usu_id_creador, $_POST['cat_id'], $cats_id, $_POST['pd_id'], 
+            $_POST['tick_titulo'], $_POST['tick_descrip'], $_POST['error_proceso'],
+            $usu_asig_final, $paso_actual_id_final
+        );
 
         if (is_array($datos) == true and count($datos) > 0) {
             foreach ($datos as $row) {
@@ -136,9 +150,7 @@ switch ($_GET["op"]) {
                 $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
             } else {
                 $datos = $usuario->get_usuario_x_id($row['usu_asig']);
-                foreach ($datos as $row2) {
-                    $sub_array[] = '<span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span>';
-                }
+                    $sub_array[] = '<span class="label label-success">' . $datos['usu_nom'] . ' ' . $datos['usu_ape'] . '</span>';
             }
 
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
@@ -192,9 +204,7 @@ switch ($_GET["op"]) {
                     $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
                 } else {
                     $datos = $usuario->get_usuario_x_id($row['usu_id']);
-                    foreach ($datos as $row2) {
-                        $sub_array[] = '<span class="label label-primary">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span>';
-                    }
+                        $sub_array[] = '<span class="label label-primary">' . $datos['usu_nom'] . ' ' . $datos['usu_ape'] . '</span>';
                 }
     
     
@@ -211,6 +221,65 @@ switch ($_GET["op"]) {
         );
         echo json_encode($result);
         break;
+
+    case "aprobar_ticket_jefe":
+    // 1. OBTENER DATOS INICIALES
+    $tick_id = $_POST['tick_id'];
+    $jefe_id = $_SESSION['usu_id']; // El ID del jefe que está realizando la acción
+
+    // 2. OBTENER DATOS DEL TICKET Y DEL CREADOR USANDO TUS FUNCIONES
+    // Usamos listar_ticket_x_id para obtener los detalles del ticket
+    $ticket_data = $ticket->listar_ticket_x_id($tick_id);
+    if (!$ticket_data) {
+        http_response_code(404);
+        echo "Error: El ticket especificado no fue encontrado.";
+        exit();
+    }
+    $cats_id = $ticket_data['cats_id'];
+
+    // Usamos get_ticket_region para obtener la regional del creador original
+    $regional_id_creador = $ticket->get_ticket_region($tick_id);
+
+    // 3. ENCONTRAR EL FLUJO Y EL SIGUIENTE PASO
+    $flujo_data = $flujoModel->get_flujo_por_subcategoria($cats_id);
+    if (!$flujo_data) {
+        http_response_code(500);
+        echo "Error: No se encontró un flujo de trabajo para este tipo de ticket.";
+        exit();
+    }
+
+    $primer_paso = $flujoModel->get_paso_inicial_por_flujo($flujo_data['flujo_id']);
+    if (!$primer_paso) {
+        http_response_code(500);
+        echo "Error: El flujo de trabajo no tiene un primer paso configurado.";
+        exit();
+    }
+    $cargo_siguiente_paso = $primer_paso['cargo_id_asignado'];
+    $paso_id_siguiente = $primer_paso['paso_id'];
+
+    // 4. ENCONTRAR AL NUEVO USUARIO A ASIGNAR (Lógica de Rol Nacional/Regional)
+    $nuevo_asignado = null;
+    if ($cargo_siguiente_paso == 7) { // Asumimos que 7 es el ID del cargo "Coordinador CAC"
+        $nuevo_asignado = $usuario->get_usuario_por_cargo($cargo_siguiente_paso);
+    } else {
+        $nuevo_asignado = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
+    }
+
+    // 5. EJECUTAR LA APROBACIÓN
+    if ($nuevo_asignado) {
+        // a) Usamos tu función para actualizar el ticket y registrar el historial de asignación
+        $ticket->update_asignacion_y_paso($tick_id, $nuevo_asignado['usu_id'], $paso_id_siguiente, $jefe_id);
+        
+        // b) Usamos tu función para insertar un comentario de sistema
+        $ticket->insert_ticket_detalle($tick_id, $jefe_id, "Ticket aprobado por jefe. El flujo de trabajo ha comenzado.");
+
+        echo "Aprobación completada exitosamente.";
+    } else {
+        http_response_code(500);
+        echo "Error: No se encontró un agente disponible para el siguiente paso del flujo.";
+    }
+    break;
+    
 
     case "listar":
 
@@ -253,17 +322,13 @@ switch ($_GET["op"]) {
                 $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
                 $datos = $usuario->get_usuario_x_id($row['usu_asig']);
-                foreach ($datos as $row2) {
-                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
-                }
+                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $datos['usu_nom'] . ' ' . $datos['usu_ape'] . '</span></a> ';
             }
             if ($row['usu_id'] == null) {
                 $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
                 $datos = $usuario->get_usuario_x_id($row['usu_id']);
-                foreach ($datos as $row2) {
-                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $row2['usu_nom'] . ' ' . $row2['usu_ape'] . '</span></a> ';
-                }
+                    $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $datos['usu_nom'] . ' ' . $datos['usu_ape'] . '</span></a> ';
             }
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
@@ -526,7 +591,7 @@ switch ($_GET["op"]) {
     case "mostrar":
         $datos = $ticket->listar_ticket_x_id($_POST['tick_id']);
         if (is_array($datos) == true and count($datos) > 0) {
-            foreach ($datos as $row) {
+                $row = $datos;
                 $output['tick_id'] = $row['tick_id'];
                 $output['usu_id'] = $row['usu_id'];
                 $output['cat_id'] = $row['cat_id'];
@@ -602,14 +667,14 @@ switch ($_GET["op"]) {
                         }
                     }
                 }
-            }
+            
             echo json_encode($output);
         }
         break;
 
     case "insertdetalle":
-    // 1. Obtenemos el tick_id directamente de $_POST para usarlo después.
-    $tick_id = $_POST['tick_id'];
+    $tick_id = $_POST["tick_id"];
+    $usu_id_respuesta = $_POST["usu_id"];
 
     // 2. Se guarda el comentario del agente.
     $datos = $ticket->insert_ticket_detalle($tick_id, $_POST['usu_id'], $_POST['tickd_descrip']);
@@ -635,24 +700,34 @@ switch ($_GET["op"]) {
         }
     }
 
-    // 4. Se revisa si debemos avanzar en el flujo.
     if (isset($_POST["siguiente_paso_id"]) && !empty($_POST["siguiente_paso_id"])) {
-        // 5. Instanciamos el modelo FlujoPaso aquí, solo si es necesario.
         require_once("../models/FlujoPaso.php");
+        require_once("../models/Usuario.php");
         $flujoModel = new FlujoPaso();
-        
-        $siguiente_paso_id = $_POST["siguiente_paso_id"];
-        $datos_siguiente_paso = $flujoModel->get_paso_por_id($siguiente_paso_id);
+        $usuario = new Usuario();
 
-        if ($datos_siguiente_paso) {
-            $nuevo_usuario_asignado = $datos_siguiente_paso["usu_asig"];
-            $quien_asigno_id = $_SESSION["usu_id"];
-            
-            // 6. Se llama a la función para actualizar el ticket.
-            $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+        $siguiente_paso_id = $_POST["siguiente_paso_id"];
+        
+        // Obtenemos el CARGO del siguiente paso
+        $datos_siguiente_paso = $flujoModel->get_paso_por_id($siguiente_paso_id);
+        $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
+
+        // Obtenemos la REGIONAL de origen del ticket
+        $regional_origen_id = $ticket->get_ticket_region($tick_id);
+
+        if ($siguiente_cargo_id && $regional_origen_id) {
+            // Buscamos al nuevo asignado que cumpla con el CARGO y la REGIONAL
+            $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+
+            if ($nuevo_asignado_info) {
+                $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
+                $quien_asigno_id = $_SESSION["usu_id"];
+                
+                // Se actualiza el ticket al nuevo estado
+                $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+            }
         }
     }
-
     echo json_encode(["status" => "success"]);
     break;    
 
@@ -715,5 +790,40 @@ switch ($_GET["op"]) {
         $datos=$ticket->get_calendar_x_usu($_POST['usu_id']);
         echo json_encode($datos);
         break;    
+
+    case "aprobar_flujo":
+    $tick_id = $_POST['tick_id'];
+    $jefe_id = $_SESSION['usu_id']; // El jefe que está aprobando
+
+    // Obtenemos los datos del ticket para saber quién lo creó y de qué subcategoría es
+    $datos_ticket = $ticket->listar_ticket_x_id($tick_id)[0];
+    $usu_id_creador = $datos_ticket['usu_id'];
+    $cats_id = $datos_ticket['cats_id'];
+
+    // Obtenemos todos los datos del usuario creador
+    $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
+    $creador_car_id = $datos_creador['car_id'];
+    $creador_reg_id = $datos_creador['reg_id'];
+
+    // Buscamos el flujo y su primer paso
+    $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+    if ($flujo) {
+        $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+        if ($paso_inicial) {
+            $primer_paso_id = $paso_inicial['paso_id'];
+            $primer_cargo_id = $paso_inicial['cargo_id_asignado'];
+
+            // Buscamos al agente que cumple con el primer cargo y la regional del creador
+            $primer_agente_info = $usuario->get_usuario_por_cargo_y_regional($primer_cargo_id, $creador_reg_id);
+
+            if ($primer_agente_info) {
+                $primer_agente_id = $primer_agente_info['usu_id'];
+                
+                // Actualizamos el ticket: se lo asignamos al primer agente y le ponemos el primer paso
+                $ticket->update_asignacion_y_paso($tick_id, $primer_agente_id, $primer_paso_id, $jefe_id);
+            }
+        }
+    }
+    break;    
     
 }

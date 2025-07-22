@@ -220,12 +220,12 @@ class Ticket extends Conectar
         paso.paso_nombre -- Se añade el NOMBRE del paso
         FROM
         tm_ticket
-        INNER JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
-        INNER JOIN td_empresa ON tm_ticket.cat_id = td_empresa.emp_id
-        INNER JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
+        LEFT JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
+        LEFT JOIN td_empresa ON tm_ticket.cat_id = td_empresa.emp_id
+        LEFT JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
         LEFT JOIN tm_departamento ON tm_usuario.dp_id = tm_departamento.dp_id     
-        INNER JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
-        INNER JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
+        LEFT JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
+        LEFT JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
         LEFT JOIN tm_flujo_paso AS paso ON tm_ticket.paso_actual_id = paso.paso_id
 
 
@@ -234,7 +234,7 @@ class Ticket extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->execute();
-        return $resultado = $sql->fetchAll();
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
 
     public function listar_historial_completo($tick_id)
@@ -418,10 +418,9 @@ class Ticket extends Conectar
         $ticket = new Ticket();
         
         $datos  = $ticket->listar_ticket_x_id($tick_id);
-        foreach($datos as $row){
-            $usu_asig = $row['usu_asig'];
-            $usu_idx = $row['usu_id'];
-        }
+            $usu_asig = $datos['usu_asig'];
+            $usu_idx = $datos['usu_id'];
+
         
         if($_SESSION['rol_id']==1){
 
@@ -655,6 +654,21 @@ class Ticket extends Conectar
         $sql->execute();
 
         return $resultado = $sql->fetchAll();
+    }
+
+    public function get_ticket_region($tick_id){
+        $conectar = parent::conexion();
+        parent::set_names();
+        // Esta consulta busca el ticket, luego al usuario creador, y finalmente la regional de ese usuario.
+        $sql = "SELECT u.reg_id
+                FROM tm_ticket t
+                INNER JOIN tm_usuario u ON t.usu_id = u.usu_id
+                WHERE t.tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['reg_id'] : null;
     }
     
 }

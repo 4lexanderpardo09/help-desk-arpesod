@@ -213,7 +213,7 @@ class Usuario extends Conectar{
         $sql->bindValue(1, $usu_id);
         $sql->execute();
 
-        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC); 
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC); 
     }
 
     public function get_usuario_total_id($usu_id){
@@ -264,6 +264,25 @@ class Usuario extends Conectar{
         $sql->execute();
 
         return $resultado = $sql->fetchAll();
+    }
+
+    public function get_usuario_por_cargo_y_regional($car_id, $reg_id) {
+        $conectar = parent::Conexion();
+        $sql = "SELECT * FROM tm_usuario WHERE car_id = ? AND reg_id = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->bindValue(2, $reg_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    } 
+
+    public function get_usuario_por_cargo($car_id) {
+        $conectar = parent::Conexion();
+        $sql = "SELECT * FROM tm_usuario WHERE car_id = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
     }
 }
 

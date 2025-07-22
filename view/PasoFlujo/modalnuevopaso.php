@@ -28,8 +28,8 @@
                         <div></div>
                     </fieldset>
                     <fieldset class="form-group">
-                        <label class="form-label semibold" for="usu_asig">Usuario asigando</label>
-                        <select class="form-control" id="usu_asig" name="usu_asig" placeholder="Seleccione una categoria" required>
+                        <label class="form-label semibold" for="cargo_id_asignado">Cargo asigando</label>
+                        <select class="form-control" id="cargo_id_asignado" name="cargo_id_asignado" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
                 </div>

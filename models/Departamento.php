@@ -52,7 +52,7 @@
             $sql->bindValue(1,$dp_id);
             $sql->execute();
 
-            return $resultado = $sql->fetchAll();
+            return $sql->fetch(PDO::FETCH_ASSOC);
         }
     }
 ?>

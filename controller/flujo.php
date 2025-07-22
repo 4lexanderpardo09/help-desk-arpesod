@@ -34,14 +34,18 @@ switch ($_GET["op"]) {
         break;    
         
         case "guardaryeditar":
+        $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
+        $flujo_nom = $_POST["flujo_nom"];
+        $cats_id = $_POST["cats_id"];
+        // Un checkbox no se envía si no está marcado. Así verificamos su valor.
+        $req_aprob_jefe = isset($_POST["requiere_aprobacion_jefe"]) ? 1 : 0; 
 
-            if(empty($_POST['flujo_id'])){
-                $flujo->insert_flujo($_POST['flujo_nom'],$_POST['cats_id']);
-            }else{
-                $flujo->update_flujo($_POST['flujo_id'],$_POST['flujo_nom'],$_POST['cats_id']);
-            }  
-    
-            break; 
+        if (empty($flujo_id)) {
+            $flujo->insert_flujo($flujo_nom, $cats_id, $req_aprob_jefe);
+        } else {
+            $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, $req_aprob_jefe);
+        }
+        break;
     
         case "listar":
             $datos = $flujo->get_flujotodo();
@@ -50,6 +54,7 @@ switch ($_GET["op"]) {
                 $sub_array = array();
                 $sub_array[] = $row["flujo_nom"];
                 $sub_array[] = $row["cats_nom"];
+                $sub_array[] = $row["requiere_aprobacion_jefe"] ? '<span class="label label-info">Si</span>' : '<span class="label label-default">No</span>';
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['flujo_id'] . ');" id="' . $row['flujo_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['flujo_id'] . ');" id="' . $row['flujo_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
                 $sub_array[] = '<button type="button" onClick="ver(' . $row['flujo_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver pasos del flujo"><i class="fa fa-eye"></i></button>';
@@ -79,6 +84,7 @@ switch ($_GET["op"]) {
                     $output['cat_id'] = $row['cat_id'];
                     $output['emp_id'] = $row['emp_id'];
                     $output['dp_id'] = $row['dp_id'];
+                    $output['requiere_aprobacion_jefe'] = $row['requiere_aprobacion_jefe'];
                 }
                 echo json_encode($output);
             }       

@@ -14,7 +14,7 @@
             </div>
             <form method="post" id="flujo_form">
                 <div class="modal-body">
-
+                    
                     <input type="hidden" id="flujo_id" name="flujo_id">
                     <div class="form-group">
                         <label class="form-label semibold" for="flujo_nom">Nombre</label>
@@ -41,6 +41,12 @@
                         <select class="form-control" id="cats_id" name="cats_id" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
+                    <div class="checkbox">
+                            <input type="checkbox" id="requiere_aprobacion_jefe" name="requiere_aprobacion_jefe" value="1">
+                            <label for="requiere_aprobacion_jefe">Requiere Aprobación del Jefe para iniciar el flujo</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

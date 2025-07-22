@@ -60,7 +60,7 @@ switch ($_GET["op"]) {
 
         $datos = $usuario->get_usuario_x_id($_POST['usu_id']);
         if(is_array($datos)==true and count($datos)>0){
-            foreach($datos as $row){
+                $row = $datos;  
                 $output['usu_id'] = $row['usu_id'];
                 $output['emp_ids'] = $row['emp_ids'];
                 $output['usu_nom'] = $row['usu_nom'];
@@ -71,7 +71,7 @@ switch ($_GET["op"]) {
                 $output['dp_id'] = $row['dp_id'];
             }
             echo json_encode($output);
-        }
+    
         
     break;  
     

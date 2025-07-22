@@ -108,6 +108,12 @@ function editar(flujo_id) {
         $('#flujo_nom').val(data.flujo_nom);
         $('#emp_id').val(data.emp_id);
         $('#dp_id').val(data.dp_id);
+         // Marcar o desmarcar el checkbox según el valor de la BD
+        if (data.requiere_aprobacion_jefe == 1) {
+            $('#requiere_aprobacion_jefe').prop('checked', true);
+        } else {
+            $('#requiere_aprobacion_jefe').prop('checked', false);
+        }
 
         $.post("../../controller/categoria.php?op=combo", { dp_id: data.dp_id, emp_id: data.emp_id }, function(categooriadata) {
             $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + categooriadata);

@@ -20,7 +20,7 @@ function guardaryeditar(e){
             $("#paso_id").val('');
             $("#paso_orden").val('');
             $('#paso_nombre').val('');
-            $('#usu_asig').val('');
+            $('#cargo_id_asignado').val('');
             $("#modalnuevopaso").modal('hide');
             $("#paso_data").DataTable().ajax.reload();
             swal({
@@ -122,7 +122,7 @@ function editar(paso_id) {
         $('#paso_id').val(data.paso_id);
         $('#paso_orden').val(data.paso_orden);
         $('#paso_nombre').val(data.paso_nombre);
-        $('#usu_asig').val(data.usu_id);
+        $('#cargo_id_asignado').val(data.usu_id);
 
     });    
 
@@ -170,8 +170,8 @@ $(document).on("click", "#btnnuevopaso", function(){
 });
 
 function cargarUsuarios() {
-    $.post("../../controller/usuario.php?op=usuariosxrol", function(data) {
-        $('#usu_asig').html('<option value="">Seleccionar un usuario</option>' + data);
+    $.post("../../controller/cargo.php?op=combo", function(data) {
+        $('#cargo_id_asignado').html('<option value="">Seleccionar un usuario</option>' + data);
     });
 
 }
@@ -182,7 +182,7 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $("#paso_id").val('');
     $("#paso_orden").val('');
     $('#paso_nombre').val('');
-    $('#usu_asig').val('');
+    $('#cargo_id_asignado').val('');
 });
 
 init();

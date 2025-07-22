@@ -23,9 +23,9 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['paso_id'])){
-                $flujopaso->insert_paso($_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['usu_asig']);
+                $flujopaso->insert_paso($_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado']);
             }else{
-                $flujopaso->update_paso($_POST['paso_id'],$_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['usu_asig']);
+                $flujopaso->update_paso($_POST['paso_id'],$_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado']);
             }  
     
             break; 
@@ -37,7 +37,7 @@ switch ($_GET["op"]) {
                 $sub_array = array();
                 $sub_array[] = $row["paso_orden"];
                 $sub_array[] = $row["paso_nombre"];
-                $sub_array[] = $row["usu_nom"] . " " . $row["usu_ape"];
+                $sub_array[] = $row["car_nom"];
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['paso_id'] . ');" id="' . $row['paso_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['paso_id'] . ');" id="' . $row['paso_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
                 $data[] = $sub_array;

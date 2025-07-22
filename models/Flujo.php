@@ -37,16 +37,15 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function insert_flujo($flujo_nom,$cats_id){
-            $conectar = parent::Conexion();
+        public function insert_flujo($flujo_nom, $cats_id, $req_aprob_jefe) {
+            $conectar = parent::conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, est) VALUES (?,?,1)";
+            $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, requiere_aprobacion_jefe, est) VALUES (?, ?, ?, '1')";
             $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$flujo_nom);
-            $sql->bindValue(2,$cats_id);
+            $sql->bindValue(1, $flujo_nom);
+            $sql->bindValue(2, $cats_id);
+            $sql->bindValue(3, $req_aprob_jefe);
             $sql->execute();
-
-            return $resultado = $sql->fetchAll();
         }
 
         public function delete_flujo($flujo_id){
@@ -60,17 +59,21 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_flujo($flujo_id,$flujo_nom,$cats_id){
-            $conectar = parent::Conexion();
+        public function update_flujo($flujo_id, $flujo_nom, $cats_id, $req_aprob_jefe) {
+            $conectar = parent::conexion();
             parent::set_names();
-            $sql = "UPDATE tm_flujo SET flujo_nom = ?, cats_id = ? WHERE flujo_id = ?";
+            $sql = "UPDATE tm_flujo SET
+                        flujo_nom = ?,
+                        cats_id = ?,
+                        requiere_aprobacion_jefe = ?
+                    WHERE
+                        flujo_id = ?";
             $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$flujo_nom);
-            $sql->bindValue(2,$cats_id);
-            $sql->bindValue(3,$flujo_id);
+            $sql->bindValue(1, $flujo_nom);
+            $sql->bindValue(2, $cats_id);
+            $sql->bindValue(3, $req_aprob_jefe);
+            $sql->bindValue(4, $flujo_id);
             $sql->execute();
-
-            return $resultado = $sql->fetchAll();
         }
 
         public function get_flujo_x_id($flujo_id){

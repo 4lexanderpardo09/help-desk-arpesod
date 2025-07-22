@@ -17,10 +17,9 @@
             $conectar = parent::Conexion();
             parent::set_names();
             $sql = "SELECT tm_flujo_paso.*,
-            tm_usuario.usu_nom,
-            tm_usuario.usu_ape
+            tm_cargo.car_nom
             FROM tm_flujo_paso 
-            INNER JOIN tm_usuario ON tm_flujo_paso.usu_asig = tm_usuario.usu_id   
+            INNER JOIN tm_cargo ON tm_flujo_paso.cargo_id_asignado = tm_cargo.car_id   
             WHERE flujo_id = ? AND tm_flujo_paso.est = 1 ORDER BY paso_orden ASC";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
@@ -29,15 +28,15 @@
         }
 
 
-        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $usu_asig){
+        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, usu_asig, est) VALUES (NULL, ?, ?, ?, ?, 1)";
+            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, cargo_id_asignado, est) VALUES (NULL, ?, ?, ?, ?, 1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
             $sql->bindValue(2, $paso_orden);
             $sql->bindValue(3, $paso_nombre);
-            $sql->bindValue(4, $usu_asig);
+            $sql->bindValue(4, $cargo_id_asignado);
             $sql->execute();
             return $conectar->lastInsertId();
         }
@@ -53,15 +52,15 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $usu_asig){
+        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, usu_asig = ? WHERE paso_id = ?";
+            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, cargo_id_asignado = ? WHERE paso_id = ?";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
             $sql->bindValue(2, $paso_orden);
             $sql->bindValue(3, $paso_nombre);
-            $sql->bindValue(4, $usu_asig);    
+            $sql->bindValue(4, $cargo_id_asignado);    
             $sql->bindValue(5, $paso_id);
             $sql->execute();
             return $conectar->lastInsertId();
@@ -73,7 +72,7 @@
             $sql = "SELECT tm_flujo_paso.*,
             tm_usuario.usu_id
             FROM tm_flujo_paso 
-            INNER JOIN tm_usuario ON tm_flujo_paso.usu_asig = tm_usuario.usu_id 
+            INNER JOIN tm_usuario ON tm_flujo_paso.cargo_id_asignado = tm_usuario.usu_id 
             WHERE paso_id = ? AND tm_flujo_paso.est = 1;";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$emp_id);
@@ -120,6 +119,25 @@
         $sql->execute();
         // Usamos fetch() para obtener solo una fila (o false si no hay siguiente paso)
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function get_regla_aprobacion($creador_cargo_id_asignado) {
+        $conectar = parent::Conexion();
+        $sql = "SELECT * FROM tm_regla_aprobacion WHERE creador_cargo_id_asignado = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $creador_cargo_id_asignado);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function get_regla_mapeo($cats_id, $creador_cargo_id_asignado) {
+        $conectar = parent::Conexion();
+        $sql = "SELECT * FROM tm_flujo_mapeo WHERE cats_id = ? AND creador_cargo_id_asignado = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $cats_id);
+        $sql->bindValue(2, $creador_cargo_id_asignado);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
 
