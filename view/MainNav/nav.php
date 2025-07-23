@@ -134,6 +134,11 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <span class="lbl">Gestion flujo</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionMapeoFlujo\">
+                            <span class="lbl">Gestion Mapeo flujo</span>
+                        </a>
+                    </li>
 	            </ul>
 	        </li>
         </ul>
