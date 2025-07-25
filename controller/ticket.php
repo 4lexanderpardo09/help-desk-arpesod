@@ -440,34 +440,16 @@ switch ($_GET["op"]) {
         $datos = $ticket->listar_historial_completo($_POST['tick_id']);
         ?>
             <?php
-            // Se itera sobre los datos originales sin filtrar
             foreach ($datos as $row) {
-                // Determina el estilo, icono y texto según el tipo de evento
-                $box_class = '';
-                $icon_class = '';
                 $actor_name = $row['usu_nom'] . ' ' . $row['usu_ape'];
                 $rol_text = '';
 
                 if ($row['tipo'] == 'comentario') {
-                    $box_class = 'box-typical';
-                    $icon_class = 'fa fa-commenting';
                     $rol_text = ($row['rol_id'] == 1) ? 'Usuario' : 'Soporte';
-
                 } elseif ($row['tipo'] == 'asignacion') {
-                    $box_class = 'box-typical-blue';
-                    $icon_class = 'fa fa-exchange';
-                    // Si el que asigna es el sistema (primera vez), el rol es "Sistema".
-                    // Si no, se muestra el rol del usuario que reasigna.
-                    if ($row['usu_nom'] == 'Sistema') {
-                        $rol_text = 'Sistema';
-                    } else {
-                        $rol_text = ($row['rol_id'] == 1) ? 'Usuario' : 'Soporte';
-                    }
-
+                    $rol_text = ($row['usu_nom'] == 'Sistema') ? 'Sistema' : (($row['rol_id'] == 1) ? 'Usuario' : 'Soporte');
                 } elseif ($row['tipo'] == 'cierre') {
-                    $box_class = 'box-typical-green';
-                    $icon_class = 'fa fa-check-square';
-                    $rol_text = 'Sistema'; // El cierre es un evento final del sistema
+                    $rol_text = 'Sistema';
                 }
             ?>
                 <article class="activity-line-item box-typical">
@@ -497,8 +479,20 @@ switch ($_GET["op"]) {
                                             <br>
                                             <i><?php echo $row['descripcion']; ?></i>
                                         </p>
+                                        
+                                        <?php
+                                        if (!empty($row['estado_tiempo_paso']) && $row['estado_tiempo_paso'] != 'N/A') {
+                                            $clase_css = ($row['estado_tiempo_paso'] == 'Atrasado') ? 'label-danger' : 'label-success';
+                                        ?>
+                                            <small class="text-muted">
+                                                Estado del paso anterior: <span class="label <?php echo $clase_css; ?>"><?php echo $row['estado_tiempo_paso']; ?></span>
+                                            </small>
+                                        <?php
+                                        }
+                                        ?>
+
                                     <?php elseif ($row['tipo'] == 'cierre') : ?>
-                                        <p><strong><?php echo $row['descripcion']; ?></strong></p>
+                                        <p style="color:red;"><strong><?php echo $row['descripcion']; ?></strong></p>
                                     <?php else: // Es un comentario ?>
                                         <p><?php echo $row['descripcion']; ?></p>
                                     <?php endif; ?>
@@ -507,20 +501,7 @@ switch ($_GET["op"]) {
                             // Muestra adjuntos solo para comentarios
                             if ($row['tipo'] == 'comentario' && $row['det_nom'] != null) {
                             ?>
-                                <div class="documentos-attachment p-3 border rounded bg-light">
-                                    <p class="mb-3 text-secondary" style="margin-bottom: 0;">
-                                        <i class="fa fa-paperclip"></i> Documento adjunto
-                                    </p>
-                                    <div class="d-flex justify-content-between align-items-center p-2 bg-white border rounded">
-                                        <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="text-decoration-none fw-semibold text-dark">
-                                            <i class="fa fa-file-text-o me-2"></i> <?php echo $row['det_nom']; ?>
-                                        </a>
-                                        <a href="../../public/document/detalle/<?php echo $row['tickd_id']; ?>/<?php echo $row['det_nom']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
-                                            <i class="fa fa-eye"></i> Ver
-                                        </a>
-                                    </div>
-                                </div>
-                            <?php
+                                <?php
                             }
                             ?>
                             </div>
@@ -531,7 +512,7 @@ switch ($_GET["op"]) {
             }
             ?>
     <?php
-    break; 
+    break;
 
     case "listar_historial_tabla_x_agente":
         $datos = $ticket->listar_tickets_involucrados_por_usuario($_POST['usu_id']);
