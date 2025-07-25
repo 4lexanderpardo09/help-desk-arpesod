@@ -28,15 +28,17 @@
         }
 
 
-        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado){
+        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, cargo_id_asignado, est) VALUES (NULL, ?, ?, ?, ?, 1)";
+            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, cargo_id_asignado,  paso_tiempo_habil, paso_descripcion, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, 1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
             $sql->bindValue(2, $paso_orden);
             $sql->bindValue(3, $paso_nombre);
             $sql->bindValue(4, $cargo_id_asignado);
+            $sql->bindValue(5, $paso_tiempo_habil);
+            $sql->bindValue(6, $paso_descripcion);
             $sql->execute();
             return $conectar->lastInsertId();
         }
@@ -52,10 +54,10 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado){
+        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, cargo_id_asignado = ? WHERE paso_id = ?";
+            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, cargo_id_asignado = ?, paso_tiempo_habil = ?, paso_descripcion = ?  WHERE paso_id = ?";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
             $sql->bindValue(2, $paso_orden);
@@ -70,9 +72,9 @@
             $conectar = parent::Conexion();
             parent::set_names();
             $sql = "SELECT tm_flujo_paso.*,
-            tm_usuario.usu_id
+            tm_usuario.car_id
             FROM tm_flujo_paso 
-            INNER JOIN tm_usuario ON tm_flujo_paso.cargo_id_asignado = tm_usuario.usu_id 
+            INNER JOIN tm_usuario ON tm_flujo_paso.cargo_id_asignado = tm_usuario.car_id 
             WHERE paso_id = ? AND tm_flujo_paso.est = 1;";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$emp_id);
@@ -112,6 +114,24 @@
                     flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
                     AND 
                     paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?) + 1
+                    AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_actual_id);
+        $sql->bindValue(2, $paso_actual_id);
+        $sql->execute();
+        // Usamos fetch() para obtener solo una fila (o false si no hay siguiente paso)
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function get_paso_actual($paso_actual_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_flujo_paso 
+                WHERE 
+                    flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
+                    AND 
+                    paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?)
                     AND est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_actual_id);

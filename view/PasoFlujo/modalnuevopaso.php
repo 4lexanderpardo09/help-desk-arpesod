@@ -32,6 +32,14 @@
                         <select class="form-control" id="cargo_id_asignado" name="cargo_id_asignado" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
+                        <label class="form-label" for="paso_tiempo_habil">Tiempo de Resolución (Días Hábiles)</label>
+                        <input type="number" class="form-control" id="paso_tiempo_habil" name="paso_tiempo_habil" value="1" required>
+                    <fieldset class="form-group semibold">
+                        <label class="form-label" for="paso_descripcion">Descripción / Plantilla para el Agente</label>
+                        <div class="summernote-theme-1">
+                            <textarea id="paso_descripcion" name="paso_descripcion" class="summernote" name="name"></textarea>
+                        </div>
+                    </fieldset>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

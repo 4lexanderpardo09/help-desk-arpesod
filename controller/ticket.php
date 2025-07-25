@@ -18,6 +18,10 @@ $flujoPasoModel = new FlujoPaso();
 require_once('../models/Departamento.php'); // Asegúrate de que exista
 $departamento = new Departamento();
 
+require_once('../models/DateHelper.php');
+$dateHelper = new DateHelper();
+
+
 switch ($_GET["op"]) {
 
     case "insert":
@@ -638,6 +642,19 @@ switch ($_GET["op"]) {
                     }
                 }
 
+                $output["paso_actual_info"] = null; // Valor por defecto
+                if (!empty($row["paso_actual_id"])) {
+                    // Instanciamos el modelo del flujo
+                    
+                    // Llamamos a la función que ya confirmamos que funciona
+                    $paso_actual_info = $flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
+                    
+                    // Añadimos el resultado al output
+                    if ($paso_actual_info) {
+                        $output["paso_actual_info"] = $paso_actual_info;
+                    }
+                }
+
                 $output["timeline_steps"] = []; // Array vacío por defecto
                 if (!empty($row["paso_actual_id"])) {
                     
@@ -670,6 +687,37 @@ switch ($_GET["op"]) {
                         }
                     }
                 }
+
+                // 2. Recorres la lista para añadir el indicador de tiempo
+                $mi_ticket = $datos; // Usamos '&' para modificar el array original
+                    
+                    $estado_tiempo = 'N/A'; // Valor por defecto
+
+                    // Si el ticket está abierto y en un flujo
+                    if ($mi_ticket['tick_estado'] == 'Abierto' && !empty($mi_ticket['paso_actual_id'])) {
+                        
+                        // a. Obtenemos los datos necesarios
+                        $fecha_asignacion = $ticket->get_fecha_ultima_asignacion($mi_ticket['tick_id']);
+                        $paso_info = $flujoPasoModel->get_paso_por_id($mi_ticket['paso_actual_id']);
+                        $dias_habiles_permitidos = $paso_info['paso_tiempo_habil'];
+
+                        if ($fecha_asignacion && $dias_habiles_permitidos > 0) {
+                            // b. Calculamos la fecha límite
+                            $fecha_limite = $dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles_permitidos);
+                            $fecha_hoy = new DateTime();
+
+                            // c. Comparamos y definimos el estado
+                            if ($fecha_hoy > $fecha_limite) {
+                                $estado_tiempo = '<span class="label label-danger">Atrasado</span>';
+                            } else {
+                                $estado_tiempo = '<span class="label label-success">A Tiempo</span>';
+                            }
+                        }
+                    }
+                    
+                    // d. Añadimos el nuevo dato al array del ticket
+                    $output['estado_tiempo'] = $estado_tiempo;
+                
             
             echo json_encode($output);
         }

@@ -670,5 +670,20 @@ class Ticket extends Conectar
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['reg_id'] : null;
     }
+
+    public function get_fecha_ultima_asignacion($tick_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT fech_asig 
+                FROM th_ticket_asignacion 
+                WHERE tick_id = ? 
+                ORDER BY fech_asig DESC 
+                LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['fech_asig'] : null;
+    }
     
 }

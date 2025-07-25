@@ -21,6 +21,8 @@ function guardaryeditar(e){
             $("#paso_orden").val('');
             $('#paso_nombre').val('');
             $('#cargo_id_asignado').val('');
+            $('#paso_tiempo_habil').val('');
+            $('#paso_descripcion').summernote('code', '');
             $("#modalnuevopaso").modal('hide');
             $("#paso_data").DataTable().ajax.reload();
             swal({
@@ -54,6 +56,7 @@ var getUrlParameter = function getUrlParameter(sParam) {
 
 $(document).ready(function () {
 
+    descripcionPaso();
     cargarUsuarios();
 
     $('#flujo_id').val(getUrlParameter('ID'));
@@ -119,10 +122,14 @@ function editar(paso_id) {
 
     $.post("../../controller/flujopaso.php?op=mostrar", {paso_id:paso_id}, function(data) {
         data = JSON.parse(data);
+        console.log(data);
+        
         $('#paso_id').val(data.paso_id);
         $('#paso_orden').val(data.paso_orden);
         $('#paso_nombre').val(data.paso_nombre);
-        $('#cargo_id_asignado').val(data.usu_id);
+        $('#cargo_id_asignado').val(data.car_id);
+        $('#paso_tiempo_habil').val(data.paso_tiempo_habil);
+        $('#paso_descripcion').summernote('code', data.paso_descripcion);
 
     });    
 
@@ -176,6 +183,31 @@ function cargarUsuarios() {
 
 }
 
+function descripcionPaso(){
+    $('#paso_descripcion').summernote({
+        height: 200,
+        lang: "es-ES",
+        callbacks: {
+            onImageUpload: function (image) {
+                console.log("Image detect...");
+                myimagetreat(image[0]);
+            },
+            onPaste: function (e) {
+                console.log("Text detect...");
+            }
+        },
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['strikethrough', 'superscript', 'subscript']],
+            ['fontsize', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['height', ['height']]
+        ]
+    });
+}
+
+
 
 $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $("#paso_form")[0].reset();
@@ -183,6 +215,10 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $("#paso_orden").val('');
     $('#paso_nombre').val('');
     $('#cargo_id_asignado').val('');
+    $('#cargo_id_asignado').val('');
+    $('#paso_tiempo_habil').val('');
+    $('#paso_descripcion').summernote('code', '');
+
 });
 
 init();

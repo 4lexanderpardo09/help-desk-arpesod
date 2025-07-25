@@ -122,6 +122,7 @@ if (isset($_SESSION["usu_id"])) {
                             <div class="tbl-cell">
                                 <h3 id="lblticketid"></h3>
                                 <span id="lbltickestado"></span>
+                                <span id="lblestado_tiempo"></span> 
                                 <span class="label label-primary" id="lblnomusuario"></span>
                                 <span class="label label-default" id="lblfechacrea"></span>
                                 <span id="lblprioridad"></span>
@@ -141,6 +142,17 @@ if (isset($_SESSION["usu_id"])) {
                         <ul id="timeline_flujo" class="timeline">
                         </ul>
                     </div>
+                </div>
+
+                <div id="panel_guia_paso" class="alert alert-info" role="alert" style="display: none;">
+                    <h4 class="alert-heading" id="guia_paso_nombre"></h4>
+                    <p>
+                        <strong>Descripción de la Tarea:</strong> Tienes <strong id="guia_paso_tiempo"></strong> día(s) hábiles para completar este paso.
+                    </p>
+                    <hr>
+                    <p class="mb-0">
+                        A continuación, en el editor de texto, encontrarás una plantilla o guía con las instrucciones para esta tarea.
+                    </p>
                 </div>
 
                 <div class="box-typical box-typical-padding">

@@ -333,6 +333,7 @@ function listarDetalle(tick_id) {
         $('#lbltickestado').html(data.tick_estado);
         $('#lblprioridad').html(data.pd_nom);
         $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);
+        $('#lblestado_tiempo').html(data.estado_tiempo);
         $('#lblfechacrea').html(data.fech_crea);
         $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
         $('#cat_id').val(data.cat_nom);
@@ -412,10 +413,27 @@ function listarDetalle(tick_id) {
             // el botón debe estar habilitado.
             $('#btncerrarticket').prop('disabled', false);
         }
+        // Ocultamos el panel por defecto en cada recarga
+        $('#panel_guia_paso').hide();
+    
+        // Verificamos si el ticket está en un paso activo de un flujo
+        if (data.paso_actual_info) {
+            var pasoInfo = data.paso_actual_info;
+    
+            // Mostramos y llenamos el panel de guía
+            $('#panel_guia_paso').show();
+            $('#guia_paso_nombre').text('Paso Actual: ' + pasoInfo.paso_nombre);
+            $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil);
+    
+            // Llenamos el editor Summernote con la descripción del paso
+            // Si la descripción está vacía, no ponemos nada.
+            if (pasoInfo.paso_descripcion) {
+                console.log(pasoInfo.paso_descripcion);
+                
+                $('#tickd_descrip').summernote('code', pasoInfo.paso_descripcion);
+            }
+        }
     });
-
-
-
 
 
 }

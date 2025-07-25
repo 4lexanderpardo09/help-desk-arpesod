@@ -23,9 +23,9 @@ switch ($_GET["op"]) {
         case "guardaryeditar":
 
             if(empty($_POST['paso_id'])){
-                $flujopaso->insert_paso($_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado']);
+                $flujopaso->insert_paso($_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado'], $_POST['paso_tiempo_habil'], $_POST['paso_descripcion']);
             }else{
-                $flujopaso->update_paso($_POST['paso_id'],$_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado']);
+                $flujopaso->update_paso($_POST['paso_id'],$_POST['flujo_id'],$_POST['paso_orden'],$_POST['paso_nombre'],$_POST['cargo_id_asignado'], $_POST['paso_tiempo_habil'], $_POST['paso_descripcion']);
             }  
     
             break; 
@@ -63,7 +63,9 @@ switch ($_GET["op"]) {
                     $output['paso_id'] = $row['paso_id'];
                     $output['paso_nombre'] = $row['paso_nombre'];
                     $output['paso_orden'] = $row['paso_orden'];
-                    $output['usu_id'] = $row['usu_id'];
+                    $output['car_id'] = $row['car_id'];
+                    $output['paso_tiempo_habil'] = $row['paso_tiempo_habil'];
+                    $output['paso_descripcion'] = $row['paso_descripcion'];
                 }
                 echo json_encode($output);
             }       
