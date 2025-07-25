@@ -226,13 +226,14 @@ switch ($_GET["op"]) {
         echo json_encode($result);
         break;
 
+    
     case "aprobar_ticket_jefe":
-    // 1. OBTENER DATOS INICIALES
-    $tick_id = $_POST['tick_id'];
-    $jefe_id = $_SESSION['usu_id']; // El ID del jefe que está realizando la acción
+    // AÑADIDO: Incluimos los helpers necesarios
+    require_once('../models/DateHelper.php');
 
-    // 2. OBTENER DATOS DEL TICKET Y DEL CREADOR USANDO TUS FUNCIONES
-    // Usamos listar_ticket_x_id para obtener los detalles del ticket
+    // 1. OBTENER DATOS INICIALES (sin cambios)
+    $tick_id = $_POST['tick_id'];
+    $jefe_id = $_SESSION['usu_id'];
     $ticket_data = $ticket->listar_ticket_x_id($tick_id);
     if (!$ticket_data) {
         http_response_code(404);
@@ -240,10 +241,25 @@ switch ($_GET["op"]) {
         exit();
     }
     $cats_id = $ticket_data['cats_id'];
-
-    // Usamos get_ticket_region para obtener la regional del creador original
     $regional_id_creador = $ticket->get_ticket_region($tick_id);
 
+    // --- NUEVO PASO 2: CALCULAR ESTADO DEL PASO ACTUAL (APROBACIÓN) ---
+    $estado_paso_aprobacion = 'N/A';
+    // a. Obtenemos el registro de la asignación actual al jefe
+    $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
+    if ($asignacion_actual) {
+        // b. Definimos un tiempo límite para la aprobación (ej: 2 días hábiles)
+        // Este valor es fijo aquí porque la "espera de aprobación" no es un paso formal en la BD.
+        $dias_habiles_aprobacion = 2; 
+        
+        $fecha_asignacion = $asignacion_actual['fech_asig'];
+        $fecha_limite = DateHelper::calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles_aprobacion);
+        $fecha_hoy = new DateTime();
+
+        // c. Calculamos si la aprobación se hizo a tiempo o no
+        $estado_paso_aprobacion = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
+    }
+    
     // 3. ENCONTRAR EL FLUJO Y EL SIGUIENTE PASO
     $flujo_data = $flujoModel->get_flujo_por_subcategoria($cats_id);
     if (!$flujo_data) {
@@ -261,20 +277,23 @@ switch ($_GET["op"]) {
     $cargo_siguiente_paso = $primer_paso['cargo_id_asignado'];
     $paso_id_siguiente = $primer_paso['paso_id'];
 
-    // 4. ENCONTRAR AL NUEVO USUARIO A ASIGNAR (Lógica de Rol Nacional/Regional)
+    // 4. ENCONTRAR AL NUEVO USUARIO A ASIGNAR (sin cambios)
     $nuevo_asignado = null;
-    if ($cargo_siguiente_paso == 7) { // Asumimos que 7 es el ID del cargo "Coordinador CAC"
+    if ($cargo_siguiente_paso == 7) { 
         $nuevo_asignado = $usuario->get_usuario_por_cargo($cargo_siguiente_paso);
     } else {
         $nuevo_asignado = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
     }
 
-    // 5. EJECUTAR LA APROBACIÓN
+    // 5. EJECUTAR LA APROBACIÓN Y ACTUALIZAR EL HISTORIAL
     if ($nuevo_asignado) {
-        // a) Usamos tu función para actualizar el ticket y registrar el historial de asignación
+        // a) Reasignamos el ticket al siguiente paso. Esto crea una NUEVA fila en el historial.
         $ticket->update_asignacion_y_paso($tick_id, $nuevo_asignado['usu_id'], $paso_id_siguiente, $jefe_id);
         
-        // b) Usamos tu función para insertar un comentario de sistema
+        // b) ACTUALIZAMOS LA FILA ANTERIOR del historial (la del jefe) con el estado que calculamos.
+        $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_aprobacion);
+
+        // c) Insertamos un comentario de sistema (sin cambios)
         $ticket->insert_ticket_detalle($tick_id, $jefe_id, "Ticket aprobado por jefe. El flujo de trabajo ha comenzado.");
 
         echo "Aprobación completada exitosamente.";
@@ -757,8 +776,31 @@ switch ($_GET["op"]) {
         $flujoModel = new FlujoPaso();
         $usuario = new Usuario();
 
-        $siguiente_paso_id = $_POST["siguiente_paso_id"];
+        // --- INICIA LÓGICA DE MEDICIÓN DE TIEMPO ---
+        require_once("../models/DateHelper.php");
+        $dateHelper = new DateHelper();
+
+        $tick_id = $_POST["tick_id"];
+        $estado_paso_actual = 'N/A';
         
+        // a. Obtenemos la información de la asignación que está por terminar
+        $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
+        if ($asignacion_actual) {
+            $paso_actual_info = $flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
+            if ($paso_actual_info) {
+                $fecha_asignacion = $asignacion_actual['fech_asig'];
+                $dias_habiles = $paso_actual_info['paso_tiempo_habil'];
+
+                if ($dias_habiles > 0) {
+                    // b. Calculamos si se completó a tiempo
+                    $fecha_limite = $dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
+                    $fecha_hoy = new DateTime();
+                    $estado_paso_actual = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
+                }
+            }
+        }
+
+        $siguiente_paso_id = $_POST["siguiente_paso_id"];
         // Obtenemos el CARGO del siguiente paso
         $datos_siguiente_paso = $flujoModel->get_paso_por_id($siguiente_paso_id);
         $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
@@ -770,12 +812,15 @@ switch ($_GET["op"]) {
             // Buscamos al nuevo asignado que cumpla con el CARGO y la REGIONAL
             $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
 
-            if ($nuevo_asignado_info) {
-                $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
-                $quien_asigno_id = $_SESSION["usu_id"];
-                
-                // Se actualiza el ticket al nuevo estado
-                $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+                if ($nuevo_asignado_info) {
+                    $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
+                    $quien_asigno_id = $_SESSION["usu_id"];
+                    
+                    // Se actualiza el ticket al nuevo estado
+                    $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+                    if ($asignacion_actual) {
+                    $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
+                }
             }
         }
     }
@@ -783,9 +828,46 @@ switch ($_GET["op"]) {
     break;    
 
     case "update":
-        $ticket->update_ticket($_POST['tick_id']);
-        $ticket->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
-        break;
+    // --- INICIA LÓGICA DE MEDICIÓN DE TIEMPO DEL ÚLTIMO PASO ---
+    require_once('../models/DateHelper.php');
+    $dateHelper = new DateHelper();
+    require_once('../models/FlujoPaso.php');
+    $flujoPasoModel = new FlujoPaso();
+
+    $tick_id = $_POST['tick_id'];
+    $usu_id = $_POST['usu_id'];
+
+    // a. Obtenemos la información de la última asignación (el paso que está por terminar)
+    $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
+    
+    // Solo ejecutamos la lógica de tiempo si el ticket estaba en un flujo
+    if ($asignacion_actual && !empty($asignacion_actual['paso_actual_id'])) {
+        $paso_actual_info = $flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
+        
+        if ($paso_actual_info) {
+            $estado_paso_final = 'N/A';
+            $fecha_asignacion = $asignacion_actual['fech_asig'];
+            $dias_habiles = $paso_actual_info['paso_tiempo_habil'];
+
+            if ($dias_habiles > 0) {
+                // b. Calculamos si se completó a tiempo
+                $fecha_limite = $dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
+                $fecha_hoy = new DateTime();
+                $estado_paso_final = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
+            }
+
+            // c. Actualizamos el historial de ESE ÚLTIMO PASO con su estado final
+            $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_final);
+        }
+    }
+    // --- FINALIZA LÓGICA DE MEDICIÓN ---
+
+
+    // --- TU LÓGICA ORIGINAL PARA CERRAR EL TICKET (AHORA VA DESPUÉS) ---
+    $ticket->update_ticket($_POST['tick_id']);
+    $ticket->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
+
+    break;
 
     case "reabrir":
         $ticket->reabrir_ticket($_POST['tick_id']);

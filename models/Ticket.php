@@ -685,5 +685,31 @@ class Ticket extends Conectar
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['fech_asig'] : null;
     }
+
+    public function get_ultima_asignacion($tick_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        // Añadimos t.paso_actual_id para saber en qué paso estaba
+        $sql = "SELECT a.*, t.paso_actual_id
+                FROM th_ticket_asignacion a
+                INNER JOIN tm_ticket t ON a.tick_id = t.tick_id
+                WHERE a.tick_id = ? 
+                ORDER BY a.fech_asig DESC 
+                LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function update_estado_tiempo_paso($th_id, $estado) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "UPDATE th_ticket_asignacion SET estado_tiempo_paso = ? WHERE th_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $estado);
+        $sql->bindValue(2, $th_id);
+        $sql->execute();
+    }
     
 }
