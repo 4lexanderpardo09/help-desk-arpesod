@@ -1,11 +1,11 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null, $how_asig)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?, '1')";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1')";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
@@ -16,6 +16,7 @@ class Ticket extends Conectar
         $sql->bindValue(7, $error_proceso);
         $sql->bindValue(8, $usu_asig);
         $sql->bindValue(9, $paso_actual_id);
+        $sql->bindValue(10, $how_asig);
         $sql->execute();
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
@@ -348,10 +349,12 @@ class Ticket extends Conectar
                 LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
                 WHERE
                     t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = ?)
+                    OR t.how_asig = ?
                 ORDER BY
                     t.tick_id DESC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
+        $sql->bindValue(2, $usu_id);
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -29,6 +29,7 @@ switch ($_GET["op"]) {
         $usu_id_creador = $_POST['usu_id'];
         $cats_id = $_POST['cats_id'];
         $usu_asig_manual = $_POST['usu_asig'];
+        $session_usu = $_SESSION['usu_id'];
 
         $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
         $creador_car_id = $datos_creador['car_id'];
@@ -81,7 +82,7 @@ switch ($_GET["op"]) {
         $datos = $ticket->insert_ticket(
             $usu_id_creador, $_POST['cat_id'], $cats_id, $_POST['pd_id'], 
             $_POST['tick_titulo'], $_POST['tick_descrip'], $_POST['error_proceso'],
-            $usu_asig_final, $paso_actual_id_final
+            $usu_asig_final, $paso_actual_id_final, $session_usu
         );
 
         if (is_array($datos) == true and count($datos) > 0) {
