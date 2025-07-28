@@ -20,8 +20,8 @@ function guardaryeditar(e){
             $("#modalnuevacategoria").modal('hide');
             $('#cat_id').val('').trigger('change');
             $('#cat_nom').html('');
-            $('#dp_id').val('').trigger('change');
-            $('#emp_id').val('').trigger('change');
+            $('#dp_ids').val(null).trigger('change');
+            $('#emp_ids').val(null).trigger('change');
             $("#cat_data").DataTable().ajax.reload();
             swal({
                 title: "Guardado!",
@@ -89,11 +89,11 @@ $(document).ready(function () {
     }).DataTable();
 
     $.post("../../controller/departamento.php?op=combo", function (data) {
-        $('#dp_id').html(data);
+        $('#dp_ids').html(data);
     });
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html(data);
+        $('#emp_ids').html(data);
     });
 
 })
@@ -103,13 +103,11 @@ function editar(cat_id) {
 
     $.post("../../controller/categoria.php?op=mostrar", {cat_id:cat_id}, function(data) {
         data = JSON.parse(data);
-        
-        $('#cat_id').val(data.cat_id);
-        $('#cat_nom').val(data.cat_nom);
-        $('#dp_id').val(data.dp_id).trigger('change');
-        $('#emp_id').val(data.emp_id).trigger('change');
-
-        
+        $('#cat_id').val(data.categoria.cat_id);
+        $('#cat_nom').val(data.categoria.cat_nom);
+        // Se asigna el array de IDs a los combos de selección múltiple
+        $('#dp_ids').val(data.departamentos).trigger('change');
+        $('#emp_ids').val(data.empresas).trigger('change');
 
     });    
 
@@ -160,8 +158,8 @@ $('#modalnuevacategoria').on('hidden.bs.modal', function() {
     $("#cat_form")[0].reset();
     $('#cat_id').val('').trigger('change');
     $('#cat_nom').html('');
-    $('#dp_id').val('').trigger('change');
-    $('#emp_id').val('').trigger('change');
+    $('#dp_ids').val(null).trigger('change');
+    $('#emp_ids').val(null).trigger('change');
 });
 
 init();

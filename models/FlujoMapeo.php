@@ -24,15 +24,18 @@ class FlujoMapeo extends Conectar {
     public function get_flujo_mapeo_por_id($map_id) {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "SELECT fm.*,
-                tm_categoria.cat_id,    
-                tm_categoria.emp_id,
-                tm_categoria.dp_id,
-                tm_subcategoria.cats_id
-        FROM tm_flujo_mapeo AS fm 
-        INNER JOIN tm_subcategoria ON fm.cats_id = tm_subcategoria.cats_id
-        INNER JOIN tm_categoria ON tm_subcategoria.cat_id = tm_categoria.cat_id
-        WHERE map_id = ?";
+        $sql = "SELECT 
+                fm.*,
+                sc.cat_id,
+                -- Subconsulta para obtener el ID de la primera empresa asociada a la categoría
+                (SELECT emp_id FROM categoria_empresa WHERE cat_id = sc.cat_id LIMIT 1) as emp_id,
+                -- Subconsulta para obtener el ID del primer departamento asociado a la categoría
+                (SELECT dp_id FROM categoria_departamento WHERE cat_id = sc.cat_id LIMIT 1) as dp_id
+            FROM 
+                tm_flujo_mapeo fm
+            INNER JOIN tm_subcategoria sc ON fm.cats_id = sc.cats_id
+            WHERE 
+                fm.map_id = ?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $map_id);
         $sql->execute();

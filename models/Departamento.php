@@ -54,5 +54,15 @@
 
             return $sql->fetch(PDO::FETCH_ASSOC);
         }
+
+        public function get_id_por_nombre($dp_nom) {
+            $conectar = parent::conexion();
+            $sql = "SELECT dp_id FROM tm_departamento WHERE UPPER(dp_nom) = UPPER(?) AND est = 1 LIMIT 1";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, trim($dp_nom));
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+            return $resultado ? $resultado['dp_id'] : null;
+        }
     }
 ?>

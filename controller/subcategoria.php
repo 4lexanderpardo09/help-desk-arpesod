@@ -57,18 +57,16 @@ switch ($_GET["op"]) {
             break;
     
         case "mostrar":
-            $datos = $subcategoria->get_subcategoria_x_id($_POST['cats_id']);
-            if(is_array($datos) and count($datos) >0){
-                foreach ($datos as $row) {
-                    $output['emp_id'] = $row['emp_id'];
-                    $output['dp_id'] = $row['dp_id'];
-                    $output['cat_id'] = $row['cat_id'];
-                    $output['cats_id'] = $row['cats_id'];
-                    $output['pd_id'] = $row['pd_id'];
-                    $output['cats_nom'] = $row['cats_nom'];
-                    $output['cats_descrip'] = $row['cats_descrip'];
-                }
-                echo json_encode($output);
-            }       
+        // 1. Llamamos a la nueva función del modelo que devuelve el array estructurado
+        $datos = $subcategoria->get_subcategoria_x_id($_POST['cats_id']);
+
+        // 2. Si se encontraron datos, simplemente los enviamos como JSON
+        if ($datos) {
+            echo json_encode($datos);
+        } else {
+            // Opcional: manejar el caso de que no se encuentre la subcategoría
+            echo json_encode(["error" => "Subcategoría no encontrada"]);
+        }
+        break;  
 }
 ?>

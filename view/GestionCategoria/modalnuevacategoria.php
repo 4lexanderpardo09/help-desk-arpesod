@@ -23,12 +23,12 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label semibold" for="dp_id">Departamento</label>
-                        <select class="select2" id="dp_id" name="dp_id" placeholder="Seleccione una categoria">
+                        <select id="dp_ids" name="dp_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label semibold" for="emp_id">Empresa</label>
-                        <select class="select2" id="emp_id" name="emp_id" placeholder="Seleccione una empresa">
+                        <select id="emp_ids" name="emp_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </div>
                 </div>

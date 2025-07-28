@@ -48,5 +48,15 @@ class Cargo extends Conectar {
         $sql->bindValue(1, $car_id);
         $sql->execute();
     }
+
+    public function get_id_por_nombre($car_nom) {
+        $conectar = parent::conexion();
+        $sql = "SELECT car_id FROM tm_cargo WHERE UPPER(car_nom) = UPPER(?) AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, trim($car_nom));
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['car_id'] : null;
+    }
 }
 ?>

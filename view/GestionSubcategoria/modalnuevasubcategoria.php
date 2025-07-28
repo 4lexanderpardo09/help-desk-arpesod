@@ -16,16 +16,6 @@
                 <div class="modal-body">
 
                     <input type="hidden" id="cats_id" name="cats_id">
-                    <fieldset id="emplbl" class="form-group">
-                        <label class="form-label semibold" for="emp_id">Empresa</label>
-                        <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una empresa" required>
-                        </select>
-                    </fieldset>
-                    <fieldset id="dplbl" class="form-group">
-                        <label class="form-label semibold" for="dp_id">Departamento</label>
-                        <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione un departamento" required>
-                        </select>
-                    </fieldset>
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="cat_id">Categoria</label>
                         <select class="form-control" id="cat_id" name="cat_id" placeholder="Seleccione una categoria" required>

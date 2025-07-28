@@ -28,7 +28,6 @@ switch ($_GET["op"]) {
 
         $usu_id_creador = $_POST['usu_id'];
         $cats_id = $_POST['cats_id'];
-        $usu_asig_manual = $_POST['usu_asig'];
         $session_usu = $_SESSION['usu_id'];
 
         $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
@@ -36,7 +35,7 @@ switch ($_GET["op"]) {
         $creador_reg_id = $datos_creador['reg_id'];
         $creador_dp_id = $datos_creador['dp_id'];
 
-        $usu_asig_final = $usu_asig_manual; // Por defecto, la asignación manual tiene prioridad.
+        $usu_asig_final = null; // Por defecto, la asignación manual tiene prioridad.
         $paso_actual_id_final = null;
 
         // --- 2. VERIFICAR SI HAY UN FLUJO Y SI REQUIERE APROBACIÓN ---
@@ -69,9 +68,7 @@ switch ($_GET["op"]) {
                     
                     if ($asignado_info) {
                         $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
-                        if (empty($usu_asig_manual)) { // Solo si no se asignó manualmente
-                            $usu_asig_final = $asignado_info['usu_id'];
-                        }
+                        $usu_asig_final = $asignado_info['usu_id'];
                         $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
                     }
                 }

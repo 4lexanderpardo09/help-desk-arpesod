@@ -57,5 +57,15 @@
 
             return $resultado = $sql->fetchAll();
         }
+
+        public function get_id_por_nombre($pd_nom) {
+            $conectar = parent::conexion();
+            $sql = "SELECT pd_id FROM td_prioridad WHERE UPPER(pd_nom) = UPPER(?) AND est = 1 LIMIT 1";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, trim($pd_nom));
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+            return $resultado ? $resultado['pd_id'] : null;
+        }
     }
 ?>

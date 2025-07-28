@@ -18,8 +18,6 @@ function guardaryeditar(e){
         success: function(datos){
             $("#cats_form")[0].reset();
             $('#cats_descrip').summernote('code', '');
-            $('#emp_id').val('');
-            $('#dp_id').val('');
             $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
             $("#cats_id").val('');
             $("#modalnuevasubcategoria").modal('hide');
@@ -37,7 +35,9 @@ function guardaryeditar(e){
 
 $(document).ready(function () {
 
-    configurarCombos();
+    $.post("../../controller/categoria.php?op=combocat", function(data) {
+        $('#cat_id').html(data);
+    })
     mostrarprioridad();
 
     descripcionSubcategoria();
@@ -102,19 +102,11 @@ function editar(cats_id) {
 
     $.post("../../controller/subcategoria.php?op=mostrar", {cats_id:cats_id}, function(data) {
         data = JSON.parse(data);
-        
-        $("#emp_id").val(data.emp_id);
-        $('#dp_id').val(data.dp_id);
-        $("#cat_id").val(data.cat_id);  
-        $('#cats_id').val(data.cats_id);
-        $('#cats_nom').val(data.cats_nom);
-        $('#pd_id').val(data.pd_id);
-        $('#cats_descrip').summernote('code',data.cats_descrip);
-
-        $.post("../../controller/categoria.php?op=combo", { dp_id: data.dp_id, emp_id: data.emp_id }, function(categoriasData) {
-            $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + categoriasData);
-            $("#cat_id").val(data.cat_id);
-        });
+        $('#cat_id').val(data.subcategoria.cat_id).trigger('change'); 
+        $('#cats_id').val(data.subcategoria.cats_id);
+        $('#cats_nom').val(data.subcategoria.cats_nom);
+        $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
+        $('#cats_descrip').summernote('code', data.subcategoria.cats_descrip);
 
     });    
 
@@ -179,38 +171,6 @@ function descripcionSubcategoria(){
     });
 }
 
-function configurarCombos() {
-
-    // 1. Cargar el combo de Empresas
-    $.post("../../controller/empresa.php?op=combo", function(data) {
-        $('#emp_id').html('<option value="">Seleccionar Empresa</option>' + data);
-    });
-
-    // 2. Cargar el combo de Departamentos
-    $.post("../../controller/departamento.php?op=combo", function(data) {
-        $('#dp_id').html('<option value="">Seleccionar Departamento</option>' + data);
-    });
-
-    // 3. Función que se encargará de cargar las categorías
-    function cargarCategorias() {
-        var emp_id = $("#emp_id").val();
-        var dp_id = $("#dp_id").val();
-
-        if (emp_id && dp_id) {
-            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function(data) {
-                $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + data);
-            });
-        } else {
-            $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
-        }
-    }
-
-    // 4. Asignamos el evento 'change' a los combos de Empresa y Departamento.
-    // Cada vez que uno de ellos cambie, se ejecutará la función cargarCategorias.
-    $("#emp_id").on('change', cargarCategorias);
-    $("#dp_id").on('change', cargarCategorias);
-}
-
 function mostrarprioridad(){
     $.post("../../controller/prioridad.php?op=combo", function (data) {
         $('#pd_id').html(data);
@@ -218,29 +178,27 @@ function mostrarprioridad(){
 }
 
 $(document).on("click", "#btnnuevasubcategoria", function() {
+    // Limpiamos el formulario
     $("#cats_form")[0].reset();
     
+    // Reseteamos los combos y el editor de texto
+    $('#cat_id').val("").trigger('change');
+    $('#pd_id').val("").trigger('change');
     $('#cats_descrip').summernote('code', '');
-
-    $('#emp_id').val('');
-    $('#dp_id').val('');
-    $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
     
+    // Limpiamos el ID oculto de la subcategoría
     $("#cats_id").val('');
 
-    $("#mdltitulo").html('Nuevo registro');
+    // Preparamos el modal para un nuevo registro
+    $("#mdltitulo").html('Nuevo Registro');
     $("#modalnuevasubcategoria").modal("show");
 });
 
 
 $('#modalnuevasubcategoria').on('hidden.bs.modal', function() {
-    // Esta función ahora sirve como un seguro de limpieza
-    $("#cats_form")[0].reset();
-    $('#cats_descrip').summernote('code', '');
-    $('#emp_id').val('');
-    $('#dp_id').val('');
-    $('#cat_id').html('<option value="">Seleccione una Empresa y Departamento</option>');
-    $("#cats_id").val('');
+    // Al cerrar, simplemente reseteamos la selección de los combos
+    $('#cat_id').val("").trigger('change');
+    $('#pd_id').val("").trigger('change');
 });
 
 init();

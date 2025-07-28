@@ -36,96 +36,80 @@ $(document).ready(function () {
         $('#dp_id').html('<option value="">Seleccionar</option>' + data);
     });
 
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
+    });
+
     categoriasAnidadas();
 
 });
 
 function categoriasAnidadas() {
-    $('#usu_asig').html('<option value="">Seleccionar</option>');
     $('#emp_id').html('<option value="">Seleccionar</option>');
     $('#cat_id').html('<option value="">Seleccionar</option>');
     $('#cats_id').html('<option value="">Seleccionar</option>');
     $('#tick_descrip').summernote('code', '');
 
+    // Cuando cambia el departamento
     $("#dp_id").off('change').on('change', function () {
-        dp_id = $(this).val();
+        let dp_id = $(this).val();
 
         if (dp_id == 0) {
-            $('#usu_asig').html('<option value="">Seleccionar</option>');
             $('#emp_id').html('<option value="">Seleccionar</option>');
             $('#cat_id').html('<option value="">Seleccionar</option>');
             $('#cats_id').html('<option value="">Seleccionar</option>');
             $('#tick_descrip').summernote('code', '');
         } else {
-            $.post("../../controller/usuario.php?op=usuariosxdepartamento", { dp_id: dp_id }, function (data) {
-                $("#usu_asig").html(data);
-            });
+            // Cuando cambia la empresa
+            $("#emp_id").off('change').on('change', function () {
+                let emp_id = $(this).val();
 
-            $("#usu_asig").off('change').on('change', function () {
-                usu_asig = $(this).val();
-
-                if (usu_asig == 0) {
-                    $('#emp_id').html('<option value="">Seleccionar</option>');
+                if (emp_id == 0) {
                     $('#cat_id').html('<option value="">Seleccionar</option>');
                     $('#cats_id').html('<option value="">Seleccionar</option>');
                     $('#tick_descrip').summernote('code', '');
                 } else {
-                    $.post("../../controller/empresa.php?op=comboxusu", { usu_id: usu_asig }, function (data) {
-                        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
+                    // Filtrar categorías por departamento y empresa
+                    $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
+                        $('#cat_id').html('<option value="">Seleccionar</option>' + data);
                     });
-                    $("#emp_id").off('change').on('change', function () {
-                        emp_id = $(this).val();
 
-                        if (emp_id == 0) {
-                            $('#cat_id').html('<option value="">Seleccionar</option>');
+                    // Cuando cambia la categoría
+                    $("#cat_id").off('change').on('change', function () {
+                        let cat_id = $(this).val();
+
+                        if (cat_id == 0) {
                             $('#cats_id').html('<option value="">Seleccionar</option>');
                             $('#tick_descrip').summernote('code', '');
                         } else {
-                            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
-                                $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+                            $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
+                                $('#cats_id').html('<option value="">Seleccionar</option>' + data);
                             });
 
-                            $("#cat_id").off('change').on('change', function () {
-                                cat_id = $(this).val();
+                            // Cuando cambia la subcategoría
+                            $("#cats_id").off('change').on('change', function () {
+                                let cats_id = $(this).val();
 
-                                $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
-                                    $('#cats_id').html('<option value="">Seleccionar</option>' + data);
-                                });
-
-                                if (cat_id == 0) {
-                                    $('#cats_id').html('<option value="">Seleccionar</option>');
+                                if (cats_id == 0) {
                                     $('#tick_descrip').summernote('code', '');
+                                    $("#error_procesodiv").addClass('hidden');
                                 } else {
-                                    $("#cats_id").off('change').on('change', function () {
-                                        cats_id = $(this).val();
-
-                                        if(cats_id==0){
-                                            $('#tick_descrip').summernote('code', '');
-                                            $("#error_procesodiv").addClass('hidden')
-                                        }else{
-                                            $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
-                                                data = JSON.parse(data);
-                                                $('#tick_descrip').summernote('code', data.cats_descrip);
-                                                $('#pd_id').val(data.pd_id);
-                                            });
-                                            $("#error_procesodiv").removeClass('hidden')
-                                        }
-
-                                    })
+                                    $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
+                                        data = JSON.parse(data);
+                                        $('#tick_descrip').summernote('code', data.cats_descrip);
+                                        $('#pd_id').val(data.pd_id);
+                                    });
+                                    $("#error_procesodiv").removeClass('hidden');
                                 }
-
-                            })
+                            });
                         }
-
-
-                    })
-
+                    });
                 }
-
             });
         }
     });
 }
+
 
 function guardaryeditar(e) {
     e.preventDefault();
