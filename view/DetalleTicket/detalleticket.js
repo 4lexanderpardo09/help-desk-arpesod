@@ -406,7 +406,7 @@ function listarDetalle(tick_id) {
             $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso.paso_id);
         }
 
-        if (data.siguiente_paso) {
+        if (data.siguiente_paso || data.paso_actual_info == null) {
             // SI hay un siguiente paso, el flujo NO ha terminado.
             // Deshabilitamos el botón de cerrar.
             $('#btncerrarticket').prop('disabled', true);
