@@ -350,8 +350,7 @@ function listarDetalle(tick_id) {
 
         $('#panel_aprobacion_jefe').hide();
 
-        if (data.paso_actual_id === null || data.paso_actual_id == 0 && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id
-        ) {
+        if ((data.paso_actual_id === null || data.paso_actual_id == 0) && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id) {
             // Si todas las condiciones se cumplen, muestra el panel
             $('#panel_aprobacion_jefe').show();
             // $('#boxdetalleticket').hide(); 
@@ -367,6 +366,9 @@ function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
+        var usu_asigx = $('#user_idx').val();
+        console.log(usu_asigx);
+        
         console.log(data);
         // ... tu código para llenar el resto de la vista ...
 
