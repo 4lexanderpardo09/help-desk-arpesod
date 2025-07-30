@@ -275,6 +275,10 @@ if (isset($_SESSION["usu_id"])) {
                                         Completar este paso y avanzar al siguiente flujo
                                     </label>
                                 </div>
+                                <div id="panel_siguiente_asignado" class="form-group" style="display: none; margin-top: 15px; border-top: 1px solid #e5e5e5; padding-top: 15px;">
+                                    <label class="form-label semibold" for="nuevo_asignado_id">Seleccionar Siguiente Agente:</label>
+                                    <select id="nuevo_asignado_id" name="nuevo_asignado_id" class="form-control" data-placeholder="Seleccione un usuario..." style="width: 100%;"></select>
+                                </div>
                             </div> 
                         </div>
 

@@ -188,13 +188,22 @@ $(document).on('click', '#btnenviar', function () {
     formData.append("usu_id", usu_id);
     formData.append("tickd_descrip", tickd_descrip);
 
-    if ($('#checkbox_avanzar_flujo').is(':visible') && $('#checkbox_avanzar_flujo').is(':checked')) {
+     // --- MODIFICADO: Lógica para enviar los datos del flujo ---
+    if ($('#checkbox_avanzar_flujo').is(':checked')) {
+        var siguiente_paso_info = $('#panel_checkbox_flujo').data('siguiente-paso-id');
+        formData.append("siguiente_paso_id", siguiente_paso_info.paso_id);
 
-        // Si está marcado, obtenemos el ID del siguiente paso.
-        var siguiente_paso_id = $('#panel_checkbox_flujo').data('siguiente-paso-id');
-
-        // Y lo añadimos a los datos que se envían al servidor.
-        formData.append("siguiente_paso_id", siguiente_paso_id);
+        // Verificamos si el paso requiere selección manual
+        if (siguiente_paso_info.requiere_seleccion_manual == 1) {
+            var nuevo_asignado_id = $('#nuevo_asignado_id').val();
+            if (!nuevo_asignado_id) {
+                swal("Atención", "Debe seleccionar un agente para el siguiente paso.", "warning");
+                return false;
+            }
+            // Si la selección es manual, enviamos el ID del usuario seleccionado
+            formData.append("nuevo_asignado_id", nuevo_asignado_id);
+        }
+        // Si no es manual, no se envía 'nuevo_asignado_id' y el backend lo asignará automáticamente.
     }
 
     var totalFile = $('#fileElem').val().length;
@@ -319,6 +328,7 @@ function updateTicket(tick_id, usu_id) {
 
 }
 
+
 function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
@@ -403,7 +413,7 @@ function listarDetalle(tick_id) {
             // Si el servidor nos dice que hay un siguiente paso, mostramos el checkbox
             $('#panel_checkbox_flujo').show();
             // Y guardamos el ID del siguiente paso para usarlo después
-            $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso.paso_id);
+            $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso);
         }
 
         if (data.siguiente_paso || data.paso_actual_info == null) {
@@ -436,9 +446,44 @@ function listarDetalle(tick_id) {
             }
         }
     });
-
-
 }
 
+// --- NUEVO: Evento que se activa al marcar/desmarcar el checkbox de avanzar flujo ---
+$(document).on('change', '#checkbox_avanzar_flujo', function() {
+    console.clear(); // Limpiamos la consola para ver mejor
+    console.log("--- INICIANDO DEPURACIÓN DE AVANCE DE FLUJO ---");
+    console.log("Checkbox clickeado. Nuevo estado:", $(this).is(':checked') ? "Marcado" : "Desmarcado");
+
+    // Obtenemos la información completa del siguiente paso que guardamos en el panel
+    var siguiente_paso = $('#panel_checkbox_flujo').data('siguiente-paso-id');
+    console.log("1. Datos del siguiente paso encontrados en el panel:", siguiente_paso);
+
+    if ($(this).is(':checked')) {
+        // Verificamos si los datos del siguiente paso existen
+        if (siguiente_paso) {
+            console.log("2. Verificando la regla 'requiere_seleccion_manual'. Valor:", siguiente_paso.requiere_seleccion_manual);
+            
+            // Preguntamos si este paso requiere selección manual (usando el "interruptor" de la BD)
+            if (siguiente_paso.requiere_seleccion_manual == 1) {
+                console.log("3. DECISIÓN: El paso REQUIERE selección manual. Pidiendo lista de usuarios...");
+                // Si SÍ, pedimos la lista de usuarios y mostramos el combo
+                $.post("../../controller/ticket.php?op=get_usuarios_por_paso", { paso_id: siguiente_paso.paso_id }, function(data) {
+                    $('#nuevo_asignado_id').html(data).trigger('change');
+                    $('#panel_siguiente_asignado').show();
+                    console.log("4. Combo de usuarios cargado y mostrado.");
+                });
+            } else {
+                console.log("3. DECISIÓN: El paso es AUTOMÁTICO. No se muestra el combo de selección.");
+            }
+        } else {
+            console.error("Error: No se encontraron los datos del siguiente paso en el panel. Revisa la función listarDetalle.");
+        }
+    } else {
+        // Si se desmarca, siempre ocultamos el combo
+        $('#panel_siguiente_asignado').hide();
+        console.log("Checkbox desmarcado. Panel de selección oculto.");
+    }
+    console.log("--- FIN DEPURACIÓN ---");
+});
 
 init();

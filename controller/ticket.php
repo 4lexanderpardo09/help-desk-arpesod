@@ -721,18 +721,11 @@ switch ($_GET["op"]) {
         }
         break;
 
-    case "insertdetalle":
-    $tick_id = $_POST["tick_id"];
-    $usu_id_respuesta = $_POST["usu_id"];
-
-    // 2. Se guarda el comentario del agente.
-    $datos = $ticket->insert_ticket_detalle($tick_id, $_POST['usu_id'], $_POST['tickd_descrip']);
-
-    // 3. Se maneja la subida de archivos.
+        case "insertdetalle":
+    // 1. Guardar comentario y archivos (tu código existente)
+    $datos = $ticket->insert_ticket_detalle($_POST["tick_id"], $_POST["usu_id"], $_POST['tickd_descrip']);
     if (is_array($datos) && count($datos) > 0) {
-        $row = $datos[0];
-        $tickd_id = $row['tickd_id']; // Se usa el ID del detalle recién creado.
-
+        $tickd_id = $datos[0]['tickd_id'];
         if (!empty($_FILES['files']['name'][0])) {
             $countfiles = count($_FILES['files']['name']);
             $ruta = '../public/document/detalle/' . $tickd_id . '/';
@@ -749,20 +742,20 @@ switch ($_GET["op"]) {
         }
     }
 
+    // 2. Verificar si se debe avanzar en el flujo
     if (isset($_POST["siguiente_paso_id"]) && !empty($_POST["siguiente_paso_id"])) {
+        
+        // Incluimos los modelos necesarios
+        require_once("../models/DateHelper.php");
         require_once("../models/FlujoPaso.php");
         require_once("../models/Usuario.php");
-        $flujoModel = new FlujoPaso();
+        $flujoPasoModel = new FlujoPaso();
         $usuario = new Usuario();
-
-        // --- INICIA LÓGICA DE MEDICIÓN DE TIEMPO ---
-        require_once("../models/DateHelper.php");
-        $dateHelper = new DateHelper();
 
         $tick_id = $_POST["tick_id"];
         $estado_paso_actual = 'N/A';
         
-        // a. Obtenemos la información de la asignación que está por terminar
+        // a. Medir el tiempo del paso que está por terminar (tu lógica es correcta)
         $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
         if ($asignacion_actual) {
             $paso_actual_info = $flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
@@ -779,32 +772,69 @@ switch ($_GET["op"]) {
             }
         }
 
-        $siguiente_paso_id = $_POST["siguiente_paso_id"];
-        // Obtenemos el CARGO del siguiente paso
-        $datos_siguiente_paso = $flujoModel->get_paso_por_id($siguiente_paso_id);
-        $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
+        // --- INICIA LÓGICA HÍBRIDA PARA ENCONTRAR AL SIGUIENTE ASIGNADO ---
+        $nuevo_asignado_info = null;
 
-        // Obtenemos la REGIONAL de origen del ticket
-        $regional_origen_id = $ticket->get_ticket_region($tick_id);
+        if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
+            // Escenario 1: El agente seleccionó un usuario manualmente desde el combo.
+            $nuevo_asignado_id = $_POST['nuevo_asignado_id'];
+            $nuevo_asignado_info = $usuario->get_usuario_x_id($nuevo_asignado_id);
 
-        if ($siguiente_cargo_id && $regional_origen_id) {
-            // Buscamos al nuevo asignado que cumpla con el CARGO y la REGIONAL
-            $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
-
-                if ($nuevo_asignado_info) {
-                    $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
-                    $quien_asigno_id = $_SESSION["usu_id"];
-                    
-                    // Se actualiza el ticket al nuevo estado
-                    $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
-                    if ($asignacion_actual) {
-                    $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
+        } else {
+            // Escenario 2: Asignación automática por región (la lógica que ya tenías).
+            $siguiente_paso_id = $_POST["siguiente_paso_id"];
+            $datos_siguiente_paso = $flujoPasoModel->get_paso_por_id($siguiente_paso_id);
+            $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
+            $regional_origen_id = $ticket->get_ticket_region($tick_id);
+            
+            if ($siguiente_cargo_id && $regional_origen_id) {
+                if ($siguiente_cargo_id == 7) { // Rol Nacional (ej. Coordinador CAC)
+                     $nuevo_asignado_info = $usuario->get_usuario_por_cargo($siguiente_cargo_id);
+                } else { // Rol Regional
+                     $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
                 }
             }
         }
+        // --- FINALIZA LÓGICA HÍBRIDA ---
+
+        // Si se encontró un usuario (de forma manual o automática), se procede
+        if ($nuevo_asignado_info) {
+            $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
+            $quien_asigno_id = $_SESSION["usu_id"];
+            
+            // c. Se actualiza el ticket al siguiente paso
+            $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $_POST["siguiente_paso_id"], $quien_asigno_id);
+            
+            // d. Se actualiza la fila anterior del historial con su estado de tiempo
+            if ($asignacion_actual) {
+                $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
+            }
+        }
     }
-    echo json_encode(["status" => "success"]);
-    break;    
+    
+    $reassigned = isset($nuevo_asignado_info) && $nuevo_asignado_info;
+    echo json_encode(["status" => "success", "reassigned" => $reassigned]);
+    break; 
+
+    case "get_usuarios_por_paso":
+    $paso_id = $_POST['paso_id'];
+    // Obtenemos los datos del paso para saber qué cargo se necesita
+    $paso_data = $flujoPasoModel->get_paso_por_id($paso_id);
+    if ($paso_data) {
+        $cargo_id_necesario = $paso_data['cargo_id_asignado'];
+        // Buscamos a TODOS los usuarios con ese cargo
+        $usuarios = $usuario->get_usuarios_por_cargo($cargo_id_necesario);
+        
+        $html = "<option value=''>Seleccione un Agente</option>";
+        if (is_array($usuarios) && count($usuarios) > 0) {
+            foreach ($usuarios as $row) {
+                // Mostramos el nombre y su regional para poder diferenciarlos
+                $html .= "<option value='" . $row["usu_id"] . "'>" . $row["usu_nom"] . " " . $row["usu_ape"] . "</option>";
+            }
+        }
+        echo $html;
+    }
+    break;
 
     case "update":
     // --- INICIA LÓGICA DE MEDICIÓN DE TIEMPO DEL ÚLTIMO PASO ---

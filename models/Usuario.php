@@ -178,6 +178,19 @@ class Usuario extends Conectar{
             return $resultado = $sql->fetchAll();
     }
 
+    public function get_usuarios_por_cargo($car_id) {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT u.usu_id, u.usu_nom, u.usu_ape, r.reg_nom
+                FROM tm_usuario u
+                LEFT JOIN tm_regional r ON u.reg_id = r.reg_id
+                WHERE u.car_id = ? AND u.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function get_usuario_x_rol(){
         $conectar = parent::Conexion();
             parent::set_names();
