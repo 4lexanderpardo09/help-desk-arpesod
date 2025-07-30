@@ -41,7 +41,8 @@ if (isset($_SESSION["usu_id"])) {
                             <tr role="row">
                                 <th style="width: 25%;">Paso</th>
                                 <th style="width: 25%;">Nombre</th>
-                                <th style="width: 25%;">Usuario asigando</th>                               
+                                <th style="width: 25%;">Usuario asigando</th>  
+                                <th style="width: 25%;">Seleccion manual</th>                                       
                                 <th style="width: 2%;">Editar</th>
                                 <th style="width: 2%;">Eliminar</th>
                             </tr>

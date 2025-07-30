@@ -28,10 +28,10 @@
         }
 
 
-        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion){
+        public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_flujo_paso (paso_id, flujo_id, paso_orden, paso_nombre, cargo_id_asignado,  paso_tiempo_habil, paso_descripcion, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, 1)";
+            $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, est) VALUES (?, ?, ?, ?, ?, ?, ?, 1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $flujo_id);
             $sql->bindValue(2, $paso_orden);
@@ -39,6 +39,7 @@
             $sql->bindValue(4, $cargo_id_asignado);
             $sql->bindValue(5, $paso_tiempo_habil);
             $sql->bindValue(6, $paso_descripcion);
+            $sql->bindValue(7, $requiere_seleccion_manual); // Se añade el nuevo valor
             $sql->execute();
             return $conectar->lastInsertId();
         }
@@ -54,18 +55,29 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_paso($paso_id,$flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion){
+        public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_flujo_paso SET flujo_id = ?, paso_orden = ?, paso_nombre = ?, cargo_id_asignado = ?, paso_tiempo_habil = ?, paso_descripcion = ?  WHERE paso_id = ?";
+            // Se añade la nueva columna a la consulta
+            $sql = "UPDATE tm_flujo_paso 
+                    SET 
+                        paso_orden = ?, 
+                        paso_nombre = ?, 
+                        cargo_id_asignado = ?, 
+                        paso_tiempo_habil = ?, 
+                        paso_descripcion = ?,
+                        requiere_seleccion_manual = ?
+                    WHERE 
+                        paso_id = ?";
             $sql = $conectar->prepare($sql);
-            $sql->bindValue(1, $flujo_id);
-            $sql->bindValue(2, $paso_orden);
-            $sql->bindValue(3, $paso_nombre);
-            $sql->bindValue(4, $cargo_id_asignado);    
-            $sql->bindValue(5, $paso_id);
+            $sql->bindValue(1, $paso_orden);
+            $sql->bindValue(2, $paso_nombre);
+            $sql->bindValue(3, $cargo_id_asignado);    
+            $sql->bindValue(4, $paso_tiempo_habil);
+            $sql->bindValue(5, $paso_descripcion);
+            $sql->bindValue(6, $requiere_seleccion_manual); // Se añade el nuevo valor
+            $sql->bindValue(7, $paso_id); // El ID del paso va al final
             $sql->execute();
-            return $conectar->lastInsertId();
         }
 
         public function get_paso_x_id($emp_id){

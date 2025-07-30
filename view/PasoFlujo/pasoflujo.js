@@ -22,6 +22,7 @@ function guardaryeditar(e){
             $('#paso_nombre').val('');
             $('#cargo_id_asignado').val('');
             $('#paso_tiempo_habil').val('');
+            $('#requiere_seleccion_manual').prop('checked', false);
             $('#paso_descripcion').summernote('code', '');
             $("#modalnuevopaso").modal('hide');
             $("#paso_data").DataTable().ajax.reload();
@@ -122,13 +123,18 @@ function editar(paso_id) {
 
     $.post("../../controller/flujopaso.php?op=mostrar", {paso_id:paso_id}, function(data) {
         data = JSON.parse(data);
-        console.log(data);
-        
         $('#paso_id').val(data.paso_id);
         $('#paso_orden').val(data.paso_orden);
         $('#paso_nombre').val(data.paso_nombre);
-        $('#cargo_id_asignado').val(data.car_id);
+        $('#cargo_id_asignado').val(data.cargo_id_asignado);
         $('#paso_tiempo_habil').val(data.paso_tiempo_habil);
+        if (data.requiere_seleccion_manual == 1) {
+            // Si el valor es 1, marcamos la casilla
+            $('#requiere_seleccion_manual').prop('checked', true);
+        } else {
+            // Si es 0 o null, la desmarcamos
+            $('#requiere_seleccion_manual').prop('checked', false);
+        }
         $('#paso_descripcion').summernote('code', data.paso_descripcion);
 
     });    
@@ -173,6 +179,7 @@ function eliminar(paso_id) {
 $(document).on("click", "#btnnuevopaso", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#paso_form")[0].reset();
+    $('#requiere_seleccion_manual').prop('checked', false);
     $("#modalnuevopaso").modal("show");
 });
 
@@ -216,6 +223,7 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#paso_nombre').val('');
     $('#cargo_id_asignado').val('');
     $('#cargo_id_asignado').val('');
+    $('#requiere_seleccion_manual').prop('checked', false);
     $('#paso_tiempo_habil').val('');
     $('#paso_descripcion').summernote('code', '');
 
