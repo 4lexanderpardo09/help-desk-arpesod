@@ -39,7 +39,6 @@ if (isset($_SESSION["usu_id"])) {
                     <table id="flujo_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
                             <tr role="row">
-                                <th style="width: 25%;">Nombre</th>
                                 <th style="width: 25%;">Subcategoria</th>
                                 <th>Requiere Aprob. Jefe</th> 
                                 <th style="width: 2%;">Editar</th>

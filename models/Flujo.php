@@ -79,20 +79,40 @@
         public function get_flujo_x_id($flujo_id){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT tm_flujo.*,
-                    tm_subcategoria.cats_id,
-                    tm_categoria.cat_id,
-                    tm_categoria.emp_id,
-                    tm_categoria.dp_id
-            FROM tm_flujo 
-            INNER JOIN tm_subcategoria ON tm_flujo.cats_id = tm_subcategoria.cats_id
-            INNER JOIN tm_categoria ON tm_subcategoria.cat_id = tm_categoria.cat_id
-            WHERE flujo_id = ? and  tm_subcategoria.est = 1";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1,$flujo_id);
-            $sql->execute();
 
-            return $resultado = $sql->fetchAll();
+            $output = array();
+
+            // 1. Obtener los datos del flujo y el ID de la categoría padre
+            $sql_flujo = "SELECT f.*, s.cat_id 
+                        FROM tm_flujo f
+                        INNER JOIN tm_subcategoria s ON f.cats_id = s.cats_id
+                        WHERE f.flujo_id = ?";
+            $sql_flujo = $conectar->prepare($sql_flujo);
+            $sql_flujo->bindValue(1, $flujo_id);
+            $sql_flujo->execute();
+            $flujo_data = $sql_flujo->fetch(PDO::FETCH_ASSOC);
+
+            // Si encontramos el flujo, buscamos sus relaciones
+            if ($flujo_data) {
+                $output['flujo'] = $flujo_data;
+                $cat_id = $flujo_data['cat_id']; // ID de la categoría padre
+
+                // 2. Obtener la lista de IDs de empresas asociadas a esa categoría
+                $sql_emp = "SELECT emp_id FROM categoria_empresa WHERE cat_id = ?";
+                $sql_emp = $conectar->prepare($sql_emp);
+                $sql_emp->bindValue(1, $cat_id);
+                $sql_emp->execute();
+                $output['empresas'] = array_column($sql_emp->fetchAll(PDO::FETCH_ASSOC), 'emp_id');
+
+                // 3. Obtener la lista de IDs de departamentos asociados a esa categoría
+                $sql_dp = "SELECT dp_id FROM categoria_departamento WHERE cat_id = ?";
+                $sql_dp = $conectar->prepare($sql_dp);
+                $sql_dp->bindValue(1, $cat_id);
+                $sql_dp->execute();
+                $output['departamentos'] = array_column($sql_dp->fetchAll(PDO::FETCH_ASSOC), 'dp_id');
+            }
+
+            return $output;
         }
 
         public function get_paso_inicial_por_flujo($flujo_id){

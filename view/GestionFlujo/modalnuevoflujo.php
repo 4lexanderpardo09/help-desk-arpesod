@@ -16,21 +16,6 @@
                 <div class="modal-body">
                     
                     <input type="hidden" id="flujo_id" name="flujo_id">
-                    <div class="form-group">
-                        <label class="form-label semibold" for="flujo_nom">Nombre</label>
-                        <input type="text" class="form-control" id="flujo_nom" name="flujo_nom" placeholder="Ingrese un nombre" required>
-                        <div></div>
-                    </div>
-                    <fieldset class="form-group">
-                        <label class="form-label semibold" for="emp_id">Empresa</label>
-                        <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una categoria" required>
-                        </select>
-                    </fieldset>
-                    <fieldset class="form-group">
-                        <label class="form-label semibold" for="dp_id">Departamento</label>
-                        <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione una categoria" required>
-                        </select>
-                    </fieldset>
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="cat_id">Categoria</label>
                         <select class="form-control" id="cat_id" name="cat_id" placeholder="Seleccione una categoria" required>

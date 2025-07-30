@@ -52,7 +52,6 @@ switch ($_GET["op"]) {
             $data = array();
             foreach ($datos as $row) {
                 $sub_array = array();
-                $sub_array[] = $row["flujo_nom"];
                 $sub_array[] = $row["cats_nom"];
                 $sub_array[] = $row["requiere_aprobacion_jefe"] ? '<span class="label label-info">Si</span>' : '<span class="label label-default">No</span>';
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['flujo_id'] . ');" id="' . $row['flujo_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
@@ -74,19 +73,15 @@ switch ($_GET["op"]) {
     
             break;
     
-        case "mostrar":
+           case "mostrar":
+            // 1. Llamamos a la nueva función del modelo
             $datos = $flujo->get_flujo_x_id($_POST['flujo_id']);
-            if(is_array($datos) and count($datos) >0){
-                foreach ($datos as $row) {
-                    $output['flujo_id'] = $row['flujo_id'];
-                    $output['flujo_nom'] = $row['flujo_nom'];
-                    $output['cats_id'] = $row['cats_id'];
-                    $output['cat_id'] = $row['cat_id'];
-                    $output['emp_id'] = $row['emp_id'];
-                    $output['dp_id'] = $row['dp_id'];
-                    $output['requiere_aprobacion_jefe'] = $row['requiere_aprobacion_jefe'];
-                }
-                echo json_encode($output);
-            }       
+
+            // 2. Si se encontraron datos, los enviamos directamente como JSON
+            if ($datos) {
+                echo json_encode($datos);
+            }
+            break;
+ 
 }
 ?>
