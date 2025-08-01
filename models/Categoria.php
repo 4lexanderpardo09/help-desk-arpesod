@@ -239,5 +239,15 @@ class Categoria extends Conectar
         $sql->bindValue(4, $dp_id);
         $sql->execute();
     }
+
+    public function get_id_por_nombre($cat_nom) {
+            $conectar = parent::conexion();
+            $sql = "SELECT cat_id FROM tm_categoria WHERE UPPER(cat_nom) = UPPER(?) AND est = 1 LIMIT 1";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, trim($cat_nom));
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+            return $resultado ? $resultado['cat_id'] : null;
+    }
 }
 ?>

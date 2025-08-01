@@ -34,7 +34,10 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </header>
                 <div class="box-typical box-typical-padding">
-                <button type="button" id="btnnuevasubcategoria" class="btn btn-inline btn-primary">Nuevo registro</button>
+                    <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
+                        <i class="fa fa-upload"></i> Cargue Masivo
+                    </button>
+                    <button type="button" id="btnnuevasubcategoria" class="btn btn-inline btn-primary">Nuevo registro</button>
                     <table id="cats_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
                             <tr role="row">
@@ -44,7 +47,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <th style="width: 2%;">Editar</th>
                                 <th style="width: 2%;">Eliminar</th>
                             </tr>
-                        </thead>    
+                        </thead>
                     </table>
                 </div>
             </div>
