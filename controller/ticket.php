@@ -967,5 +967,38 @@ switch ($_GET["op"]) {
         }
     }
     break;    
+
+    case "registrar_error":
+    $tick_id = $_POST['tick_id'];
+    $answer_id = $_POST['answer_id'];
+    $usu_id = $_POST['usu_id']; // ID del usuario que reporta el error (el analista)
+
+    // Buscamos el nombre de la respuesta rápida
+    require_once('../models/RespuestaRapida.php');
+    $respuesta_rapida = new RespuestaRapida();
+    $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
+    $nombre_respuesta = $datos_respuesta["answer_nom"];
+    var_dump($nombre_respuesta); // Para depurar, puedes eliminarlo después
+
+    // --- LÓGICA MEJORADA ---
+    // 1. Buscamos al responsable del paso anterior
+    $responsable_anterior = $ticket->get_penultima_asignacion($tick_id);
+    
+    $comentario = "Se registró un evento: <b>" . $nombre_respuesta . "</b>.";
+    
+    // 2. Si se encuentra un responsable anterior, se añade a la descripción
+    if ($responsable_anterior) {
+        $nombre_completo = $responsable_anterior['usu_nom'] . ' ' . $responsable_anterior['usu_ape'];
+        $comentario .= "<br><small class='text-muted'>Error atribuido al paso anterior, asignado a: <b>" . $nombre_completo . "</b></small>";
+    }
+
+    // 3. Marcar el ticket con el código de error
+    $ticket->update_error_proceso($tick_id, $answer_id);
+
+    // 4. Insertar el nuevo comentario detallado en el historial
+    $ticket->insert_ticket_detalle($tick_id, $usu_id, $comentario);
+
+    echo json_encode(["status" => "success"]);
+    break;
     
 }

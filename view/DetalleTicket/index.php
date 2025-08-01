@@ -246,22 +246,23 @@ if (isset($_SESSION["usu_id"])) {
                                             <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
                                         </fieldset>
                                     </div>
-                                    <div class="col-lg-4">
-                                        <fieldset class="form-group">
-                                            <label class="form-label semibold" for="answer_id">Respuesta rapida</label>
-                                            <select class="form-control" id="answer_id" name="answer_id" placeholder="Seleccione la prioridad">
-                                            </select>
-                                        </fieldset>
-                                    </div>
-                                    <div class="col-lg-4">
-                                        <fieldset class="form-group">
-                                            <label class="form-label semibold" for="dest_id">Destinatario</label>
-                                            <select class="form-control" id="dest_id" name="dest_id" placeholder="Seleccione la prioridad">
-                                            </select>
-                                        </fieldset>
-                                    </div>
                                 </div>
                             </form>
+                            <div class="p-3 mb-3 border rounded" style="background-color: #f0f8ff;" id="panel_respuestas_rapidas">
+                                <div class="form-group">
+                                    <label class="form-label semibold" for="fast_answer_id">Registrar Evento / Respuesta Rápida:</label>
+                                    <div class="input-group">
+                                        <select class="form-control" id="fast_answer_id" name="fast_answer_id">
+                                            </select>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-secondary" type="button" id="btn_registrar_evento">
+                                                <i class="fa fa-plus-circle"></i> Registrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Usa esta opción para marcar el ticket con un estado (ej. Error de Proceso) y dejar un registro en el historial.</small>
+                                </div>
+                            </div>
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tickd_descrip">Descripcion</label>
                                 <div class="summernote-theme-1">

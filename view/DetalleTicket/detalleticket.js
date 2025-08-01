@@ -107,7 +107,7 @@ $(document).ready(function () {
 function getRespuestasRapidas() {
 
     $.post("../../controller/respuestarapida.php?op=combo", function (data) {
-        $('#answer_id').html('<option value="">Seleccionar</option>' + data);
+        $('#fast_answer_id').html('<option value="">Seleccionar</option>' + data);
 
     });
 
@@ -172,7 +172,6 @@ var getUrlParameter = function getUrlParameter(sParam) {
 }
 
 $(document).on('click', '#btnenviar', function () {
-
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
         return false;
@@ -235,6 +234,45 @@ $(document).on('click', '#btnenviar', function () {
 
 
 });
+
+$(document).on('click', '#btn_registrar_evento', function () {
+    var tick_id = getUrlParameter('ID');
+    var answer_id = $('#fast_answer_id').val();
+    var usu_id = $('#user_idx').val();
+
+    // Validamos que se haya seleccionado una opción
+    if (!answer_id) {
+        swal("Atención", "Por favor, seleccione una respuesta rápida para registrar.", "warning");
+        return;
+    }
+
+    // Pedimos confirmación al usuario
+    swal({
+        title: "¿Estás seguro?",
+        text: "Se registrará este evento en el historial del ticket y se marcará el ticket con este estado.",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-primary",
+        confirmButtonText: "Sí, registrar ahora",
+        cancelButtonText: "Cancelar",
+        closeOnConfirm: false
+    }, function(isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id })
+                .done(function() {
+                    swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
+                    // Recargamos el historial para ver el nuevo registro al instante
+                    listarDetalle(tick_id);
+                    // Reseteamos el combo
+                    $('#fast_answer_id').val('');
+                })
+                .fail(function() {
+                    swal("Error", "No se pudo registrar el evento.", "error");
+                });
+        }
+    });
+});
+
 
 $(document).on('click', '#btncerrarticket', function () {
     swal({

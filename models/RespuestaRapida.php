@@ -53,7 +53,7 @@
             $sql->bindValue(1,$answer_id);
             $sql->execute();
 
-            return $resultado = $sql->fetchAll();
+            return $resultado = $sql->fetch();
         }
     }
 ?>

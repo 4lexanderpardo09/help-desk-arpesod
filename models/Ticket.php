@@ -716,5 +716,31 @@ class Ticket extends Conectar
         $sql->bindValue(2, $th_id);
         $sql->execute();
     }
-    
+
+    public function get_penultima_asignacion($tick_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        // LIMIT 1 OFFSET 1 significa "sáltate el primer resultado y dame el siguiente"
+        $sql = "SELECT u.usu_nom, u.usu_ape
+                FROM th_ticket_asignacion a
+                INNER JOIN tm_usuario u ON a.usu_asig = u.usu_id
+                WHERE a.tick_id = ? 
+                ORDER BY a.fech_asig DESC 
+                LIMIT 1 OFFSET 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function update_error_proceso($tick_id, $error_code) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_ticket SET error_proceso = ? WHERE tick_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $error_code);
+        $sql->bindValue(2, $tick_id);
+        $sql->execute();
+    }
+        
 }
