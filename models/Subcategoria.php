@@ -118,7 +118,15 @@
             return $sql->fetch(PDO::FETCH_ASSOC);
         }
 
-        
+        public function get_id_por_nombre($cats_nom) {
+            $conectar = parent::conexion();
+            $sql = "SELECT cats_id FROM tm_subcategoria WHERE UPPER(cats_nom) = UPPER(?) AND est = 1 LIMIT 1";
+            $sql = $conectar->prepare($sql);
+            $sql->bindValue(1, trim($cats_nom));
+            $sql->execute();
+            $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+            return $resultado ? $resultado['cats_id'] : null;
+        }
     }
     
 ?>
