@@ -29,6 +29,9 @@ if (isset($_SESSION["usu_id"])) {
                 </header>
 
                 <div class="box-typical box-typical-padding">
+                    <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
+                        <i class="fa fa-upload"></i> Cargue Masivo
+                    </button>
                     <button type="button" id="btnnuevocargo" class="btn btn-inline btn-primary">Nuevo Registro</button>
                     <table id="cargo_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>

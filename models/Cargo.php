@@ -58,5 +58,15 @@ class Cargo extends Conectar {
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['car_id'] : null;
     }
+
+    public function get_cargo_por_nombre($car_nom) {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_cargo WHERE UPPER(car_nom) = UPPER(?)";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, trim($car_nom));
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
 }
 ?>
