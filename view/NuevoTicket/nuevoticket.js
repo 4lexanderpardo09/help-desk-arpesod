@@ -96,10 +96,9 @@ function categoriasAnidadas() {
                                 } else {
                                     $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                                         data = JSON.parse(data);
-                                        $('#tick_descrip').summernote('code', data.cats_descrip);
-                                        $('#pd_id').val(data.pd_id);
+                                        $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);                               
+                                        $('#pd_id').val(data.subcategoria.pd_id);
                                     });
-                                    $("#error_procesodiv").removeClass('hidden');
                                 }
                             });
                         }
