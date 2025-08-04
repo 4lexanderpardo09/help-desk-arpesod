@@ -51,8 +51,9 @@ try {
         $paso_nombre = trim($row[2]);
         $cargo_nom = trim($row[3]);
         $paso_tiempo_habil = isset($row[4]) && is_numeric($row[4]) ? intval($row[4]) : 1; // Días hábiles
-        $paso_descripcion = isset($row[5]) ? trim($row[5]) : ''; // Descripción
+        $paso_descripcion_raw = isset($row[5]) ? trim($row[5]) : ''; // Descripción
         $seleccion_manual_str = isset($row[6]) ? trim($row[6]) : 'NO'; // Selección Manual
+        $paso_descripcion = nl2br($paso_descripcion_raw);
 
         if (empty($cats_nom) || empty($paso_nombre)) continue;
 

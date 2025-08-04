@@ -43,7 +43,9 @@ try {
         $cats_nom = trim($row[0]);
         $cat_nom_padre = trim($row[1]);
         $pd_nom = trim($row[2]);
-        $cats_descrip = trim($row[3]);
+        $cats_descrip_raw = trim($row[3]);
+        $cats_descrip = nl2br($cats_descrip_raw);
+
 
         if (empty($cats_nom) || empty($cat_nom_padre)) continue;
 
