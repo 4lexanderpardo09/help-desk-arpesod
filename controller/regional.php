@@ -5,6 +5,19 @@ $regional = new Regional();
 
 switch ($_GET["op"]) {
 
+     case "combo":
+        $datos = $regional->get_regionales();
+        if(is_array($datos) and count($datos) > 0){
+            $html = "";
+            foreach($datos as $row){
+                 $html.= "<option value='".$row["reg_id"]."'>".$row["reg_nom"]."</option>";
+            }
+            echo $html;
+        }
+
+        break;
+
+
     case "guardaryeditar":
         if (empty($_POST["reg_id"])) {
             $regional->insert_regional($_POST["reg_nom"]);

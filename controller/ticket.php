@@ -277,7 +277,7 @@ switch ($_GET["op"]) {
 
     // 4. ENCONTRAR AL NUEVO USUARIO A ASIGNAR (sin cambios)
     $nuevo_asignado = null;
-    if ($cargo_siguiente_paso == 7) { 
+    if ($cargo_siguiente_paso == 178) { 
         $nuevo_asignado = $usuario->get_usuario_por_cargo($cargo_siguiente_paso);
     } else {
         $nuevo_asignado = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
@@ -788,7 +788,7 @@ switch ($_GET["op"]) {
             $regional_origen_id = $ticket->get_ticket_region($tick_id);
             
             if ($siguiente_cargo_id && $regional_origen_id) {
-                if ($siguiente_cargo_id == 7) { // Rol Nacional (ej. Coordinador CAC)
+                if ($siguiente_cargo_id == 178) { // Rol Nacional (ej. Coordinador CAC)
                      $nuevo_asignado_info = $usuario->get_usuario_por_cargo($siguiente_cargo_id);
                 } else { // Rol Regional
                      $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);

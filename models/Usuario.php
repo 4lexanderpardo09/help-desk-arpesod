@@ -68,25 +68,27 @@ class Usuario extends Conectar{
             }
         }
     }
-    public function insert_usuario($usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id){
+    public function insert_usuario($usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id,$reg_id,$car_id){
             $conectar = parent::Conexion();
             parent::set_names();
             
             $hashed_pass = password_hash($usu_pass, PASSWORD_BCRYPT);
 
-            $sql = "INSERT INTO tm_usuario (usu_id, usu_nom, usu_ape, usu_correo, usu_pass, rol_id, dp_id, fech_crea, fech_modi, fech_elim, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, NOW(), NULL, NULL, '1')";
+            $sql = "INSERT INTO tm_usuario (usu_id, usu_nom, usu_ape, usu_correo, usu_pass, rol_id, reg_id, car_id, dp_id, fech_crea, fech_modi, fech_elim, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NULL, NULL, '1')";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $usu_nom);
             $sql->bindValue(2, $usu_ape);
             $sql->bindValue(3, $usu_correo);
             $sql->bindValue(4, $hashed_pass);
             $sql->bindValue(5, $rol_id);
+            $sql->bindValue(6, $reg_id);
+            $sql->bindValue(7, $car_id);
 
             // dp_id puede ser NULL
             if (empty($dp_id)) {
-                $sql->bindValue(6, null, PDO::PARAM_NULL);
+                $sql->bindValue(8, null, PDO::PARAM_NULL);
             } else {
-                $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+                $sql->bindValue(8, $dp_id, PDO::PARAM_INT);
             }
 
             $sql->execute();
@@ -94,7 +96,7 @@ class Usuario extends Conectar{
             return $conectar->lastInsertId();
     }
 
-    public function update_usuario($usu_id,$usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id){
+    public function update_usuario($usu_id,$usu_nom,$usu_ape,$usu_correo,$usu_pass,$rol_id,$dp_id,$reg_id,$car_id){
         $conectar = parent::Conexion();
             parent::set_names();
 
@@ -107,6 +109,8 @@ class Usuario extends Conectar{
                     usu_correo = ?,
                     usu_pass = ?,
                     rol_id = ?,
+                    reg_id = ?,
+                    car_id = ?,
                     dp_id = ?
                     WHERE usu_id = ?"; 
                 $sql = $conectar->prepare($sql);
@@ -115,15 +119,17 @@ class Usuario extends Conectar{
                 $sql->bindValue(3, $usu_correo);
                 $sql->bindValue(4, $hashed_pass);
                 $sql->bindValue(5, $rol_id);
+                $sql->bindValue(6, $reg_id);
+                $sql->bindValue(7, $car_id);
 
                 // dp_id puede ser NULL
                 if (empty($dp_id)) {
-                    $sql->bindValue(6, null, PDO::PARAM_NULL);
+                    $sql->bindValue(8, null, PDO::PARAM_NULL);
                 } else {
-                    $sql->bindValue(6, $dp_id, PDO::PARAM_INT);
+                    $sql->bindValue(8, $dp_id, PDO::PARAM_INT);
                 }
 
-                $sql->bindValue(7, $usu_id);
+                $sql->bindValue(9, $usu_id);
 
                 $sql->execute();
             }else{
@@ -132,6 +138,8 @@ class Usuario extends Conectar{
                     usu_ape = ?,
                     usu_correo = ?,
                     rol_id = ?,
+                    reg_id = ?,
+                    car_id = ?,
                     dp_id = ?
                     WHERE usu_id = ?"; 
                 $sql = $conectar->prepare($sql);
@@ -139,15 +147,16 @@ class Usuario extends Conectar{
                 $sql->bindValue(2, $usu_ape);
                 $sql->bindValue(3, $usu_correo);
                 $sql->bindValue(4, $rol_id);
-
+                $sql->bindValue(5, $reg_id);
+                $sql->bindValue(6, $car_id);
                 // dp_id puede ser NULL
                 if (empty($dp_id)) {
-                    $sql->bindValue(5, null, PDO::PARAM_NULL);
+                    $sql->bindValue(7, null, PDO::PARAM_NULL);
                 } else {
-                    $sql->bindValue(5, $dp_id, PDO::PARAM_INT);
+                    $sql->bindValue(7, $dp_id, PDO::PARAM_INT);
                 }
 
-                $sql->bindValue(6, $usu_id);
+                $sql->bindValue(8, $usu_id);
 
                 $sql->execute();
             }

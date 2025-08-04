@@ -25,6 +25,8 @@ function guardaryeditar(e) {
             $('#usu_correo').html('');
             $('#emp_id').val('').trigger('change')
             $('#rol_id').val('').trigger('change');
+            $('#reg_id').val('').trigger('change');
+            $('#car_id').val('').trigger('change');
             $('#dp_id').val('').trigger('change');
             $("#modalnuevousuario").modal('hide');
             $("#user_data").DataTable().ajax.reload();
@@ -40,6 +42,11 @@ function guardaryeditar(e) {
 
 
 $(document).ready(function () {
+
+    $('#rol_id,#emp_id,#car_id,#reg_id, #creador_car_id').select2({
+        dropdownParent: $('#modalnuevousuario'),
+        placeholder: "Seleccionar",
+    });
 
     tabla = $('#user_data').dataTable({
         "aProcessing": true,
@@ -104,6 +111,14 @@ $(document).ready(function () {
     $.post("../../controller/empresa.php?op=combo", function (data) {
         $('#emp_id').html(data);
     });
+    $.post("../../controller/cargo.php?op=combo", function (data) {
+        $('#car_id').html(data);
+    });
+    $.post("../../controller/regional.php?op=combo", function (data) {
+        console.log(data);
+        
+        $('#reg_id').html(data);
+    });
 
 })
 
@@ -119,6 +134,8 @@ function editar(usu_id) {
         $('#emp_id').val(data.emp_ids.split(',')).trigger('change')
         $('#rol_id').val(data.rol_id).trigger('change');
         $('#dp_id').val(data.dp_id).trigger('change');
+        $('#reg_id').val(data.reg_id).trigger('change');
+        $('#car_id').val(data.car_id).trigger('change');
     });
 
     $("#modalnuevousuario").modal("show");
@@ -172,6 +189,8 @@ $(document).on("click", "#btnnuevoregistro", function () {
     $("#mdltitulo").html('Nuevo registro');
     $("#usuario_form")[0].reset();
     $("#modalnuevousuario").modal("show");
+    $('#reg_id').val('').trigger('change');
+    $('#car_id').val('').trigger('change');
 });
 
 $('#modalnuevousuario').on('hidden.bs.modal', function() {
@@ -182,6 +201,8 @@ $('#modalnuevousuario').on('hidden.bs.modal', function() {
     $('#usu_correo').html('');
     $('#emp_id').val('').trigger('change')
     $('#rol_id').val('').trigger('change');
+    $('#reg_id').val('').trigger('change');
+    $('#car_id').val('').trigger('change');
     $('#dp_id').val('').trigger('change');
 });
 

@@ -41,7 +41,18 @@
                         <select class="select2" id="emp_id" multiple name="emp_id[]" placeholder="Seleccione una subcategoria">
                             <option value="">Todas</option>
                         </select>
-                    </div>                      <div class="form-group">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label semibold" for="reg_id">Regional</label>
+                        <select class="select2" id="reg_id" name="reg_id" placeholder="Seleccione una subcategoria">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label semibold" for="car_id">Cargo</label>
+                        <select class="select2" id="car_id" name="car_id" placeholder="Seleccione una subcategoria">
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="form-label" for="rol_id">Rol</label>
                         <select class="select2" id="rol_id" name="rol_id" required>
                             <option value="1">Usuario</option>
