@@ -219,14 +219,31 @@ $(document).on('click', '#btnenviar', function () {
         success: function (data) {
             console.log(data);
             var resultado = JSON.parse(data);
+            // Verificamos la nueva bandera que envía el controlador
+            if (resultado.reassigned) {
+                // Si se reasignó, mostramos un mensaje de éxito y redirigimos
+                swal({
+                    title: "¡Correcto!",
+                    text: "El ticket ha sido avanzado y reasignado.",
+                    type: "success",
+                    timer: 1500, // La alerta se cierra sola después de 1.5 segundos
+                    showConfirmButton: false
+                });
 
-            listarDetalle(tick_id);
+                // Después de 1.6 segundos, redirigimos al listado principal
+                setTimeout(function() {
+                    window.location.href = "../../view/ConsultarTicket/";
+                }, 1600);
 
-            swal("Correcto", "Respuesta enviada correctamente", "success");
-
-            // Limpiar el formulario 
-            $('#tickd_descrip').summernote('reset');
-            $('#fileElem').val('');
+            } else {
+                // Si no se reasignó (solo fue un comentario), recargamos los detalles
+                $('#tickd_descrip').summernote('reset');
+                $('#fileElem').val('');
+                $('#checkbox_avanzar_flujo').prop('checked', false); // Desmarcamos el checkbox
+                $('#panel_siguiente_asignado').hide(); // Ocultamos el combo si estaba visible
+                listarDetalle(tick_id);
+                swal("Correcto", "Respuesta enviada correctamente", "success");
+            }
         }
     })
 

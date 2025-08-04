@@ -87,4 +87,20 @@
     background-color: #6c757d; /* Gris para otros estados */
 }
 
+.side-menu .jspContainer,
+.side-menu .jspPane {
+    height: 100% !important;
+}
 
+/* 2. Hacemos que la propia lista (el <ul>) sea nuestro contenedor Flex.
+      Le damos una altura mínima para que siempre ocupe todo el espacio que le da su padre. */
+.side-menu-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%; 
+}
+
+/* 3. La regla para el footer no cambia. Se empujará hasta abajo dentro del contenedor Flex. */
+.menu-footer {
+    margin-top: auto;
+}
