@@ -742,5 +742,15 @@ class Ticket extends Conectar
         $sql->bindValue(2, $tick_id);
         $sql->execute();
     }
+
+    public function update_error_code_paso($th_id, $error_code_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "UPDATE th_ticket_asignacion SET error_code_id = ? WHERE th_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $error_code_id);
+        $sql->bindValue(2, $th_id);
+        $sql->execute();
+    }
         
 }
