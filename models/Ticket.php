@@ -51,12 +51,13 @@ class Ticket extends Conectar
         $sql->bindValue(3, $tick_id);
         $sql->execute();
 
-        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
                 VALUES (?, ?, ?, NOW(), 'Reasignado por avance en el flujo', 1);";
         $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);                 // El ticket afectado
         $sql2->bindValue(2, $usu_asig);                // El NUEVO usuario asignado
         $sql2->bindValue(3, $quien_asigno_id);         // El usuario que HIZO la reasignación
+        $sql2->bindValue(4, $paso_actual_id);          // El ID del paso actual
         $sql2->execute();
 
         return $sql->fetchAll();
@@ -707,6 +708,21 @@ class Ticket extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_penultimo_historial($tick_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        // LIMIT 1 OFFSET 1 significa "sáltate el primer resultado (el más nuevo) y dame el siguiente"
+        $sql = "SELECT *
+                FROM th_ticket_asignacion
+                WHERE tick_id = ? 
+                ORDER BY fech_asig DESC 
+                LIMIT 1 OFFSET 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function update_estado_tiempo_paso($th_id, $estado) {
         $conectar = parent::conexion();
         parent::set_names();
@@ -720,13 +736,22 @@ class Ticket extends Conectar
     public function get_penultima_asignacion($tick_id) {
         $conectar = parent::conexion();
         parent::set_names();
-        // LIMIT 1 OFFSET 1 significa "sáltate el primer resultado y dame el siguiente"
-        $sql = "SELECT u.usu_nom, u.usu_ape
-                FROM th_ticket_asignacion a
-                INNER JOIN tm_usuario u ON a.usu_asig = u.usu_id
-                WHERE a.tick_id = ? 
-                ORDER BY a.fech_asig DESC 
+        
+        // --- CORREGIDO: Ahora seleccionamos a.* para traer todas las columnas del historial ---
+        $sql = "SELECT 
+                    a.*, 
+                    u.usu_nom, 
+                    u.usu_ape
+                FROM 
+                    th_ticket_asignacion a
+                INNER JOIN 
+                    tm_usuario u ON a.usu_asig = u.usu_id
+                WHERE 
+                    a.tick_id = ? 
+                ORDER BY 
+                    a.fech_asig DESC 
                 LIMIT 1 OFFSET 1";
+                
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->execute();

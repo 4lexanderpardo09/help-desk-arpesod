@@ -9,20 +9,29 @@ if (isset($_SESSION["usu_id"])) {
     <style>
         /* Estilo normal para el número en las cajas de estadísticas */
         .statistic-box .number {
-            font-size: 36px; /* Este es el tamaño de fuente grande por defecto */
-            transition: font-size 0.3s ease; /* Efecto suave al cambiar de tamaño (opcional) */
+            font-size: 36px;
+            /* Este es el tamaño de fuente grande por defecto */
+            transition: font-size 0.3s ease;
+            /* Efecto suave al cambiar de tamaño (opcional) */
         }
 
         /* NUEVA CLASE: Estilo para cuando el texto es largo */
         .statistic-box .number.texto-largo {
-            font-size: 24px;      /* Un tamaño de fuente más pequeño */
-            line-height: 1.2;     /* Mejora el espaciado si hay dos líneas */
-    padding-top: 10px;    /* Ajusta la posición verticalmente para que se vea centrado */
-}
+            font-size: 24px;
+            /* Un tamaño de fuente más pequeño */
+            line-height: 1.2;
+            /* Mejora el espaciado si hay dos líneas */
+            padding-top: 10px;
+            /* Ajusta la posición verticalmente para que se vea centrado */
+        }
     </style>
     </head>
 
     <body class="with-side-menu">
+        <input type="hidden" id="user_idx" value="<?php echo $_SESSION['usu_id']; ?>">
+        <input type="hidden" id="rol_id_real" value="<?php echo $_SESSION['rol_id_real']; ?>">
+        <input type="hidden" id="user_dp_id" value="<?php echo $_SESSION['dp_id']; ?>">
+
 
         <?php require_once('../MainHeader/header.php') ?>
         <div class="mobile-menu-left-overlay"></div>
@@ -30,12 +39,45 @@ if (isset($_SESSION["usu_id"])) {
 
         <div class="page-content">
             <div class="container-fluid">
+                <div id="panel-filtros" class="box-typical box-typical-padding" style="display: none;">
+                    <h5 class="m-t-lg with-border">Filtros del Dashboard</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="filtro_departamento">Departamento</label>
+                            <select id="filtro_departamento" class="select2 form-control"></select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="filtro_subcategoria">Subcategoría</label>
+                            <select id="filtro_subcategoria" class="select2 form-control"></select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label for="filtro_ticket_id">ID de Ticket</label>
+                            <input type="text" id="filtro_ticket_id" class="form-control" placeholder="Ej: 379">
+                        </div>
+                        <div class="col-md-1">
+                            <label>&nbsp;</label>
+                            <button id="btn_buscar_ticket" class="btn btn-primary" type="button" title="Buscar Ticket">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="col-md-1">
+                            <label>&nbsp;</label>
+                            <button id="btn_limpiar_filtros" class="btn btn-secondary btn-block" title="Limpiar Filtros">
+                                <i class="fa fa-eraser"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-sm-6 col-xl-3">
                         <article class="statistic-box purple">
                             <div>
                                 <div class="number" id="lbltotal">0</div>
-                                <div class="caption"><div>Total de Tickets</div></div>
+                                <div class="caption">
+                                    <div>Total de Tickets</div>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -43,7 +85,9 @@ if (isset($_SESSION["usu_id"])) {
                         <article class="statistic-box green">
                             <div>
                                 <div class="number" id="lblabiertos">0</div>
-                                <div class="caption"><div>Tickets Abiertos</div></div>
+                                <div class="caption">
+                                    <div>Tickets Abiertos</div>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -51,7 +95,9 @@ if (isset($_SESSION["usu_id"])) {
                         <article class="statistic-box red">
                             <div>
                                 <div class="number" id="lblcerrados">0</div>
-                                <div class="caption"><div>Tickets Cerrados</div></div>
+                                <div class="caption">
+                                    <div>Tickets Cerrados</div>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -59,7 +105,9 @@ if (isset($_SESSION["usu_id"])) {
                         <article class="statistic-box yellow">
                             <div>
                                 <div class="number" id="lblpromedio">0</div>
-                                <div class="caption"><div>Promedio Resolución (Horas)</div></div>
+                                <div class="caption">
+                                    <div>Promedio Resolución (Horas)</div>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -97,7 +145,7 @@ if (isset($_SESSION["usu_id"])) {
                                         <th>Cantidad</th>
                                     </thead>
                                     <tbody>
-                                        </tbody>
+                                    </tbody>
                                 </table>
                             </div>
                         </section>
@@ -115,17 +163,80 @@ if (isset($_SESSION["usu_id"])) {
                                         <th>Tickets Creados</th>
                                     </thead>
                                     <tbody>
-                                        </tbody>
+                                    </tbody>
                                 </table>
                             </div>
                         </section>
                     </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Tiempo Promedio de Respuesta por Agente (Horas)</h5>
+                            </div>
+                            <div class="card-block">
+                                <canvas id="bar-chart-tiempo-agente" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Tipos de Error Más Comunes</h5>
+                            </div>
+                            <div class="card-block">
+                                <canvas id="pie-chart-errores-tipo" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Rendimiento y Cuellos de Botella por Paso</h5>
+                            </div>
+                            <div class="card-block">
+                                <table id="tabla-rendimiento-paso" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre del Paso</th>
+                                            <th>Horas Promedio</th>
+                                            <th>A Tiempo</th>
+                                            <th>Atrasado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Errores Atribuidos por Agente</h5>
+                            </div>
+                            <div class="card-block">
+                                <table id="tabla-errores-agente" class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre del Agente</th>
+                                            <th>Total Errores Atribuidos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-            </div></div><?php require_once('../MainJs/js.php') ?>
+            </div>
+        </div><?php require_once('../MainJs/js.php') ?>
         <script type="text/javascript" src="../Home/home.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
     </body>
+
     </html>
 <?php
 } else {

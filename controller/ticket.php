@@ -968,49 +968,42 @@ switch ($_GET["op"]) {
     }
     break;    
 
-    case "registrar_error":
+   case "registrar_error":
     $tick_id = $_POST['tick_id'];
     $answer_id = $_POST['answer_id'];
     $usu_id = $_POST['usu_id']; // ID del usuario que reporta el error (el analista)
 
-    // Buscamos el nombre de la respuesta rápida (esto no cambia)
+    // Buscamos el nombre de la respuesta rápida
     require_once('../models/RespuestaRapida.php');
     $respuesta_rapida = new RespuestaRapida();
     $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
     $nombre_respuesta = $datos_respuesta["answer_nom"];
 
-    // --- LÓGICA AÑADIDA PARA KPIs ---
+    // --- LÓGICA UNIFICADA Y CORREGIDA ---
+
+    // 1. Buscamos el registro de la asignación ANTERIOR para saber a quién atribuirle el error.
+    $asignacion_anterior = $ticket->get_penultima_asignacion($tick_id);
     
-    // 1. Buscamos el registro de la asignación anterior para saber qué paso falló
-    $asignacion_anterior = $ticket->get_ultima_asignacion($tick_id); // Usamos la última, ya que el error se reporta sobre el paso actual
-    
-    // 2. "Sellamos" ese registro de historial con el código del error
+    $nombre_completo_responsable = null;
     if ($asignacion_anterior) {
+        $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
+        
+        // 2. "Sellamos" ese registro de historial con el código del error para los KPIs.
         $ticket->update_error_code_paso($asignacion_anterior['th_id'], $answer_id);
     }
-    // --- FIN DE LÓGICA AÑADIDA ---
 
-    
-    // --- LÓGICA EXISTENTE PARA LA VISIBILIDAD (se mantiene) ---
-
-    // Buscamos al responsable del paso anterior para el comentario
-    $responsable_anterior = $ticket->get_penultima_asignacion($tick_id);
-    
+    // 3. Construimos el comentario para el historial visible.
     $comentario = "Se registró un evento: <b>" . $nombre_respuesta . "</b>.";
-    
-    // Si se encuentra un responsable anterior, se añade a la descripción
-    if ($responsable_anterior) {
-        $nombre_completo = $responsable_anterior['usu_nom'] . ' ' . $responsable_anterior['usu_ape'];
-        $comentario .= "<br><small class='text-muted'>Error atribuido al paso anterior, asignado a: <b>" . $nombre_completo . "</b></small>";
+    if ($nombre_completo_responsable) {
+        $comentario .= "<br><small class='text-muted'>Error atribuido al paso anterior, asignado a: <b>" . $nombre_completo_responsable . "</b></small>";
     }
 
-    // Marcar el ticket con el código de error en la tabla principal
+    // 4. Marcamos el ticket con el código de error en la tabla principal (para la alerta visual).
     $ticket->update_error_proceso($tick_id, $answer_id);
 
-    // Insertar el nuevo comentario detallado en el historial
+    // 5. Insertamos el nuevo comentario detallado en el historial.
     $ticket->insert_ticket_detalle($tick_id, $usu_id, $comentario);
 
     echo json_encode(["status" => "success"]);
     break;
-    
 }
