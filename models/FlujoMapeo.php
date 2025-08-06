@@ -1,5 +1,6 @@
 <?php
-class FlujoMapeo extends Conectar {
+class FlujoMapeo extends Conectar
+{
 
     /**
      * Inserta una nueva regla de mapeo y sus relaciones con cargos creadores y asignados.
@@ -89,7 +90,7 @@ class FlujoMapeo extends Conectar {
             }
         }
     }
-    
+
     /**
      * Obtiene los datos de una regla de mapeo y las listas de sus cargos asociados.
      */
@@ -100,7 +101,7 @@ class FlujoMapeo extends Conectar {
         $output = array();
 
         // 1. Obtener datos de la regla principal
-       $sql_regla = "SELECT rm.*, s.cat_id
+        $sql_regla = "SELECT rm.*, s.cat_id
                   FROM tm_regla_mapeo rm
                   INNER JOIN tm_subcategoria s ON rm.cats_id = s.cats_id
                   WHERE rm.regla_id = ?";
@@ -149,11 +150,12 @@ class FlujoMapeo extends Conectar {
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
-    
+
     /**
      * Elimina lógicamente una regla de mapeo.
      */
-    public function delete_regla_mapeo($regla_id){
+    public function delete_regla_mapeo($regla_id)
+    {
         $conectar = parent::Conexion();
         parent::set_names();
         $sql = "UPDATE tm_regla_mapeo SET est = 0 WHERE regla_id = ?";
@@ -161,5 +163,15 @@ class FlujoMapeo extends Conectar {
         $sql->bindValue(1, $regla_id);
         $sql->execute();
     }
+
+    public function get_regla_por_subcategoria($cats_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_regla_mapeo WHERE cats_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $cats_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
 }
-?>
