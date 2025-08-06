@@ -15,35 +15,25 @@
             <form method="post" id="flujomapeo_form">
                 <div class="modal-body">
                     
-                    <input type="hidden" id="map_id" name="map_id">
+                    <input type="hidden" id="regla_id" name="regla_id">
                     <fieldset class="form-group">
-                        <label class="form-label semibold" for="emp_id">Empresa</label>
-                        <select class="form-control" id="emp_id" name="emp_id" data-placeholder="Seleccione" required>
-                        </select>
-                    </fieldset>
-                    <fieldset class="form-group">
-                        <label class="form-label semibold" for="dp_id">Departamento</label>
-                        <select class="form-control" id="dp_id" name="dp_id" data-placeholder="Seleccione" required>
-                        </select>
-                    </fieldset>
-                    <fieldset class="form-group">
-                        <label class="form-label semibold" for="cat_id">Categoria</label>
-                        <select class="form-control" id="cat_id" name="cat_id" data-placeholder="Seleccione" required>
+                        <label class="form-label" for="cat_id">Categoria</label>
+                        <select class="form-control" id="cat_id" name="cat_id" required>
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
                         <label for="cats_id"><b>Si</b> un ticket es de la subcategoría:</label>
-                        <select class="form-control" id="cats_id" name="cats_id" data-placeholder="Seleccione" required>                            
+                        <select class="form-control" id="cats_id" name="cats_id" required>                            
                         </select>                    
                     </fieldset>
                     <fieldset class="form-group">
                          <label for="creador_car_id"><b>Y</b> es creado por alguien con el cargo:</label>
-                        <select class="form-control" id="creador_car_id" name="creador_car_id" data-placeholder="Seleccione"" required>
+                        <select id="creador_car_ids" name="creador_car_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
                          <label for="asignado_car_id"><b>Entonces</b> asignar a alguien con el cargo:</label>
-                        <select class="form-control" id="asignado_car_id" name="asignado_car_id" data-placeholder="Seleccione" required>                            
+                        <select id="asignado_car_ids" name="asignado_car_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </fieldset>
                     <div class="form-group">

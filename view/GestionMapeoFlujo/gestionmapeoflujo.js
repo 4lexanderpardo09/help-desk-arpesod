@@ -1,7 +1,7 @@
 var tabla;
 
 function init() {
-    $("#flujomapeo_form").on("submit", function(e) {
+    $("#flujomapeo_form").on("submit", function (e) {
         guardaryeditar(e);
     });
 }
@@ -15,80 +15,53 @@ function guardaryeditar(e) {
         data: formData,
         contentType: false,
         processData: false,
-        success: function() {
+        success: function () {
             $('#flujomapeo_form')[0].reset();
+            // Reseteamos todos los combos de Select2
+            $('#cat_id').val(null).trigger('change');
+            $('#cats_id').val(null).trigger('change');
+            $('#creador_car_ids').val(null).trigger('change');
+            $('#asignado_car_ids').val(null).trigger('change');
             $("#modalnuevoflujomapeo").modal('hide');
             $('#flujomapeo_data').DataTable().ajax.reload();
-            swal("¡Correcto!", "Registro guardado exitosamente.", "success");
+            swal("¡Correcto!", "Regla guardada exitosamente.", "success");
         }
     });
 }
 
-function configurarCombos() {
-    // 1. Cargar combos iniciales que no dependen de otros
-    $.post("../../controller/empresa.php?op=combo", function(data) {
-        $('#emp_id').html('<option value="">Seleccionar Empresa</option>' + data);
+$(document).ready(function () {
+    // --- 1. Inicializar Select2 ---
+    $('#cat_id, #cats_id').select2({ dropdownParent: $('#modalnuevoflujomapeo'), placeholder: "Seleccione" });
+    $('#creador_car_ids, #asignado_car_ids').select2({ dropdownParent: $('#modalnuevoflujomapeo'), placeholder: "Seleccione uno o varios", multiple: true });
+
+    // --- 2. Cargar combos iniciales ---
+    // Carga la lista de categorías padre
+    $.post("../../controller/categoria.php?op=combocat", function (data) {
+        $('#cat_id').html(data);
     });
 
-    $.post("../../controller/departamento.php?op=combo", function(data) {
-        $('#dp_id').html('<option value="">Seleccionar Departamento</option>' + data);
+    // Carga la lista de todos los cargos
+    $.post("../../controller/flujomapeo.php?op=combo_cargos", function (data) {
+        $('#creador_car_ids').html(data);
+        $('#asignado_car_ids').html(data);
     });
 
-    $.post("../../controller/cargo.php?op=combo", function(data) {
-        $('#creador_car_id').html('<option value="">Seleccionar Cargo</option>' + data);
-        $('#asignado_car_id').html('<option value="">Seleccionar Cargo</option>' + data);
-    });
-
-    // 2. Definir los eventos CHANGE para los combos dependientes
-    
-    // Cuando cambie Empresa O Departamento -> Cargar Categorías
-    $("#emp_id, #dp_id").on('change', function() {
-        var emp_id = $("#emp_id").val();
-        var dp_id = $("#dp_id").val();
-
-        // Limpiamos los combos hijos
-        $('#cat_id').html('<option value="">Seleccione Empresa y Depto.</option>').trigger('change');
-        $('#cats_id').html('<option value="">Seleccione una Categoría</option>').trigger('change');
-
-        if (emp_id && dp_id) {
-            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function(data) {
-                $('#cat_id').html('<option value="">Seleccionar Categoría</option>' + data);
-            });
-        }
-    });
-
-    // Cuando cambie Categoría -> Cargar Subcategorías
-    $("#cat_id").on('change', function() {
+    // --- 3. Lógica para combos dependientes ---
+    $('#cat_id').on('change', function () {
         var cat_id = $(this).val();
         if (cat_id) {
-            $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function(data) {
-                $('#cats_id').html('<option value="">Seleccionar Subcategoría</option>' + data);
+            // Si se selecciona una categoría, se actualiza el combo de subcategorías
+            $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
+                $('#cats_id').html(data);
             });
         } else {
-            $('#cats_id').html('<option value="">Seleccione una Categoría</option>');
+            // Si no hay categoría seleccionada, se limpia el combo de subcategorías
+            $('#cats_id').html('<option value="">Seleccione una categoría primero</option>');
         }
     });
-}
 
-$(document).ready(function() {
 
-    // Inicializar Select2 en los combos del modal
-    $('#cat_id,#dp_id,#emp_id,#cats_id, #creador_car_id, #asignado_car_id').select2({
-        dropdownParent: $('#modalnuevoflujomapeo')
-    });
-    configurarCombos();
-    
-    // Cargar combo de subcategorías
-    $.post("../../controller/subcategoria.php?op=combo", function(data) {
-        $('#cats_id').html(data);
-    });
-
-    // Cargar combos de cargos
-    $.post("../../controller/cargo.php?op=combo", function(data) {
-        $('#creador_car_id').html(data);
-        $('#asignado_car_id').html(data);
-    });
-
+    // --- 4. Inicializar DataTable ---
     tabla = $('#flujomapeo_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
@@ -140,35 +113,42 @@ $(document).ready(function() {
             }
         }
     }).DataTable();
+
 });
 
-function editar(map_id) {
+function editar(regla_id) {
     $('#mdltitulo').html('Editar Regla');
-    $.post("../../controller/flujomapeo.php?op=mostrar", { map_id: map_id }, function(data) {
+    $.post("../../controller/flujomapeo.php?op=mostrar", { regla_id: regla_id }, function (data) {
         data = JSON.parse(data);
-        $('#map_id').val(data.map_id);
-        $('#cats_id').val(data.cats_id).trigger('change');
-        $('#emp_id').val(data.emp_id).trigger('change');
-        $('#dp_id').val(data.dp_id).trigger('change');
-        $('#creador_car_id').val(data.creador_car_id).trigger('change');
-        $('#asignado_car_id').val(data.asignado_car_id).trigger('change');
-        $('#modalnuevoflujomapeo').modal('show');
 
-        $.post("../../controller/categoria.php?op=combo", { dp_id: data.dp_id, emp_id: data.emp_id }, function(categooriadata) {
-            $('#cat_id').html(categooriadata);
-            $("#cat_id").val(data.cat_id);
-            $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.cat_id }, function (subcategoriadata) {
-                $('#cats_id').html(subcategoriadata);
-                $("#cats_id").val(data.cats_id);
+        // --- LÓGICA DE EDICIÓN CORREGIDA ---
+        if (data && data.regla) {
+            $('#regla_id').val(data.regla.regla_id);
+
+            // Asignamos los arrays de IDs a los combos de selección múltiple
+            $('#creador_car_ids').val(data.creadores).trigger('change');
+            $('#asignado_car_ids').val(data.asignados).trigger('change');
+
+            // Para los combos dependientes, cargamos en cascada
+            // 1. Seleccionamos la categoría padre
+            $('#cat_id').val(data.regla.cat_id);
+
+            // 2. Cargamos las subcategorías que le corresponden
+            $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.regla.cat_id }, function (subcat_data) {
+                $('#cats_id').html(subcat_data);
+
+                // 3. Una vez cargadas, seleccionamos la subcategoría correcta
+                $('#cats_id').val(data.regla.cats_id).trigger('change');
             });
-        });
+        }
+        $('#modalnuevoflujomapeo').modal('show');
     });
 }
 
-function eliminar(map_id) {
-    swal({
+function eliminar(regla_id) {
+        swal({
         title: "Advertencia",
-        text: "¿Está seguro de eliminar esta regla de asignación?",
+        text: "¿Está seguro de eliminar esta regla?",
         type: "warning",
         showCancelButton: true,
         confirmButtonClass: "btn-danger",
@@ -178,7 +158,8 @@ function eliminar(map_id) {
     },
     function(isConfirm) {
         if (isConfirm) {
-            $.post("../../controller/flujomapeo.php?op=eliminar", { map_id: map_id }, function() {
+            // --- MODIFICADO: Se envía 'regla_id' en lugar de 'map_id' ---
+            $.post("../../controller/flujomapeo.php?op=eliminar", { regla_id: regla_id }, function() {
                 $('#flujomapeo_data').DataTable().ajax.reload();
                 swal("¡Eliminado!", "La regla ha sido eliminada.", "success");
             });
@@ -186,28 +167,16 @@ function eliminar(map_id) {
     });
 }
 
-$('#btnnuevoflujomapeo').on('click', function() {
+$('#btnnuevoflujomapeo').on('click', function () {
     $('#mdltitulo').html('Nueva Regla');
     $('#flujomapeo_form')[0].reset();
-    $('#map_id').val('');
-    // Resetear los combos de select2 a su estado inicial
-    $('#cats_id').val(null).trigger('change');
-    $('#creador_car_id').val(null).trigger('change');
-    $('#asignado_car_id').val(null).trigger('change');
-    $('#emp_id').val(null).trigger('change');
-    $('#dp_id').val(null).trigger('change');
+    $('#regla_id').val('');
+    // Reseteamos todos los combos de Select2
+    $('#cat_id').val(null).trigger('change');
+    $('#cats_id').html('<option value="">Seleccione una categoría primero</option>').trigger('change');
+    $('#creador_car_ids').val(null).trigger('change');
+    $('#asignado_car_ids').val(null).trigger('change');
     $('#modalnuevoflujomapeo').modal('show');
-});
-
-$('#modalnuevoflujomapeo').on('hidden.bs.modal', function () {
-    $("#flujomapeo_form")[0].reset();
-    $("#map_id").html('');
-    $("#cats_id").val('');
-    $("#creador_car_id").val('');
-    $('#asignado_car_id').val('');
-    $('#emp_id').val('');
-    $('#dp_id').val('');
-
 });
 
 init();
