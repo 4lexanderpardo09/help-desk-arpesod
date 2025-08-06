@@ -51,6 +51,8 @@ class Usuario extends Conectar{
                         $_SESSION["rol_id"] = $rol_solicitado; 
                         $_SESSION["rol_id_real"] = $rol_real_del_usuario; 
                         $_SESSION["dp_id"] = $resultado["dp_id"];
+                        $_SESSION["car_id"] = $resultado["car_id"];
+
 
                         header ("Location: " . Conectar::ruta() . "view/Home/");
                         exit();

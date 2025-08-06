@@ -43,6 +43,7 @@ if (isset($_SESSION["usu_id"])) {
                 <div class="row">
                     <form method="post" id="ticket_form">
                         <input type="hidden" id="usu_id" name="usu_id" value="<?php echo $_SESSION["usu_id"] ?>">
+                        <input type="hidden" id="user_cargo_id" value="<?php echo $_SESSION['car_id']; ?>">
                         <div class="col-lg-3">
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tick_titulo">Titulo</label>

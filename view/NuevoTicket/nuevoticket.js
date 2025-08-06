@@ -45,6 +45,8 @@ $(document).ready(function () {
 });
 
 function categoriasAnidadas() {
+    car_id = $('#user_cargo_id').val();
+    
     $('#emp_id').html('<option value="">Seleccionar</option>');
     $('#cat_id').html('<option value="">Seleccionar</option>');
     $('#cats_id').html('<option value="">Seleccionar</option>');
@@ -82,7 +84,7 @@ function categoriasAnidadas() {
                             $('#cats_id').html('<option value="">Seleccionar</option>');
                             $('#tick_descrip').summernote('code', '');
                         } else {
-                            $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
+                            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id:car_id }, function (data) {
                                 $('#cats_id').html('<option value="">Seleccionar</option>' + data);
                             });
 
