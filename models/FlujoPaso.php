@@ -174,15 +174,31 @@ class FlujoPaso extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function get_regla_mapeo($cats_id, $creador_cargo_id_asignado)
+    public function get_regla_mapeo($cats_id, $creador_car_id)
     {
         $conectar = parent::Conexion();
-        $sql = "SELECT * FROM tm_regla_mapeo WHERE cats_id = ? AND creador_car_id = ? AND est = 1 LIMIT 1";
+        parent::set_names();
+
+        $sql = "SELECT
+                ra.asignado_car_id
+            FROM
+                tm_regla_mapeo rm
+            INNER JOIN
+                regla_creadores rc ON rm.regla_id = rc.regla_id
+            INNER JOIN
+                regla_asignados ra ON rm.regla_id = ra.regla_id
+            WHERE
+                rm.cats_id = ? AND rc.creador_car_id = ? AND rm.est = 1
+            LIMIT 1"; // Obtenemos solo el primer resultado
+
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $cats_id);
-        $sql->bindValue(2, $creador_cargo_id_asignado);
+        $sql->bindValue(2, $creador_car_id);
         $sql->execute();
-        return $sql->fetch(PDO::FETCH_ASSOC);
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+
+        // Devolvemos solo el ID, o null si no se encontró nada
+        return $resultado ? $resultado['asignado_car_id'] : null;
     }
 
     public function verificar_orden_existente($flujo_id, $paso_orden)
