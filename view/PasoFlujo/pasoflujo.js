@@ -135,6 +135,15 @@ function editar(paso_id) {
             // Si es 0 o null, la desmarcamos
             $('#requiere_seleccion_manual').prop('checked', false);
         }
+
+        if (data.es_tarea_nacional == 1) {
+            // Si el valor es 1, marcamos la casilla
+            $('#es_tarea_nacional').prop('checked', true);
+        } else {
+            // Si es 0 o null, la desmarcamos
+            $('#es_tarea_nacional').prop('checked', false);
+        }
+
         $('#paso_descripcion').summernote('code', data.paso_descripcion);
 
     });    
