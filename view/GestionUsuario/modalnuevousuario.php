@@ -65,6 +65,11 @@
                         <select class="select2" id="dp_id" name="dp_id" placeholder="Seleccione un departamento">
                         </select>
                     </div>
+                    <input type="hidden" name="es_nacional" value="0">
+                    <div class="checkbox">
+                        <input type="checkbox" id="es_nacional" name="es_nacional" value="1">
+                        <label for="es_nacional">¿Es usuario nacional?</label>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

@@ -226,10 +226,14 @@ switch ($_GET["op"]) {
 
     
     case "aprobar_ticket_jefe":
-    // AÑADIDO: Incluimos los helpers necesarios
+    // Incluimos los helpers y modelos necesarios
     require_once('../models/DateHelper.php');
+    require_once('../models/FlujoPaso.php');
+    require_once('../models/Usuario.php');
+    $flujoPasoModel = new FlujoPaso();
+    $usuario = new Usuario();
 
-    // 1. OBTENER DATOS INICIALES (sin cambios)
+    // 1. OBTENER DATOS INICIALES (tu lógica es correcta)
     $tick_id = $_POST['tick_id'];
     $jefe_id = $_SESSION['usu_id'];
     $ticket_data = $ticket->listar_ticket_x_id($tick_id);
@@ -241,24 +245,18 @@ switch ($_GET["op"]) {
     $cats_id = $ticket_data['cats_id'];
     $regional_id_creador = $ticket->get_ticket_region($tick_id);
 
-    // --- NUEVO PASO 2: CALCULAR ESTADO DEL PASO ACTUAL (APROBACIÓN) ---
+    // 2. CALCULAR ESTADO DEL PASO DE APROBACIÓN (tu lógica es correcta)
     $estado_paso_aprobacion = 'N/A';
-    // a. Obtenemos el registro de la asignación actual al jefe
     $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
     if ($asignacion_actual) {
-        // b. Definimos un tiempo límite para la aprobación (ej: 2 días hábiles)
-        // Este valor es fijo aquí porque la "espera de aprobación" no es un paso formal en la BD.
-        $dias_habiles_aprobacion = 2; 
-        
+        $dias_habiles_aprobacion = 2; // Tiempo límite para que el jefe apruebe
         $fecha_asignacion = $asignacion_actual['fech_asig'];
         $fecha_limite = DateHelper::calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles_aprobacion);
         $fecha_hoy = new DateTime();
-
-        // c. Calculamos si la aprobación se hizo a tiempo o no
         $estado_paso_aprobacion = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
     }
     
-    // 3. ENCONTRAR EL FLUJO Y EL SIGUIENTE PASO
+    // 3. ENCONTRAR EL FLUJO Y EL PRIMER PASO (tu lógica es correcta)
     $flujo_data = $flujoModel->get_flujo_por_subcategoria($cats_id);
     if (!$flujo_data) {
         http_response_code(500);
@@ -267,31 +265,39 @@ switch ($_GET["op"]) {
     }
 
     $primer_paso = $flujoModel->get_paso_inicial_por_flujo($flujo_data['flujo_id']);
-    if (!$primer_paso) {
+   if (!$primer_paso) {
         http_response_code(500);
         echo "Error: El flujo de trabajo no tiene un primer paso configurado.";
         exit();
     }
-    $cargo_siguiente_paso = $primer_paso['cargo_id_asignado'];
+    
     $paso_id_siguiente = $primer_paso['paso_id'];
+    $cargo_siguiente_paso = $primer_paso['cargo_id_asignado'];
 
-    // 4. ENCONTRAR AL NUEVO USUARIO A ASIGNAR (sin cambios)
-    $nuevo_asignado = null;
-    if ($cargo_siguiente_paso == 178) { 
-        $nuevo_asignado = $usuario->get_usuario_por_cargo($cargo_siguiente_paso);
+    // --- 4. LÓGICA DE ASIGNACIÓN AVANZADA (VERSIÓN FINAL) ---
+    $nuevo_asignado_info = null;
+
+    // a. Primero, revisamos si la TAREA en sí es nacional.
+    if (isset($primer_paso['es_tarea_nacional']) && $primer_paso['es_tarea_nacional'] == 1) {
+        // Si la tarea es nacional, buscamos al especialista nacional.
+        $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($cargo_siguiente_paso);
     } else {
-        $nuevo_asignado = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
+        // b. Si NO, la tarea es regional y usamos la lógica de siempre.
+        $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
     }
+    // --- FIN DE LÓGICA DE ASIGNACIÓN ---
 
-    // 5. EJECUTAR LA APROBACIÓN Y ACTUALIZAR EL HISTORIAL
-    if ($nuevo_asignado) {
-        // a) Reasignamos el ticket al siguiente paso. Esto crea una NUEVA fila en el historial.
-        $ticket->update_asignacion_y_paso($tick_id, $nuevo_asignado['usu_id'], $paso_id_siguiente, $jefe_id);
+    // 5. EJECUTAR LA APROBACIÓN (tu lógica es correcta)
+    if ($nuevo_asignado_info) {
+        // a) Reasignamos el ticket al siguiente paso.
+        $ticket->update_asignacion_y_paso($tick_id, $nuevo_asignado_info['usu_id'], $paso_id_siguiente, $jefe_id);
         
-        // b) ACTUALIZAMOS LA FILA ANTERIOR del historial (la del jefe) con el estado que calculamos.
-        $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_aprobacion);
+        // b) Actualizamos el historial del paso de aprobación del jefe.
+        if ($asignacion_actual) {
+            $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_aprobacion);
+        }
 
-        // c) Insertamos un comentario de sistema (sin cambios)
+        // c) Insertamos un comentario de sistema.
         $ticket->insert_ticket_detalle($tick_id, $jefe_id, "Ticket aprobado por jefe. El flujo de trabajo ha comenzado.");
 
         echo "Aprobación completada exitosamente.";
@@ -720,9 +726,9 @@ switch ($_GET["op"]) {
             echo json_encode($output);
         }
         break;
-
-        case "insertdetalle":
-    // 1. Guardar comentario y archivos (tu código existente)
+    
+    case "insertdetalle":
+    // 1. Guardar comentario y archivos (tu código existente no cambia)
     $datos = $ticket->insert_ticket_detalle($_POST["tick_id"], $_POST["usu_id"], $_POST['tickd_descrip']);
     if (is_array($datos) && count($datos) > 0) {
         $tickd_id = $datos[0]['tickd_id'];
@@ -755,7 +761,7 @@ switch ($_GET["op"]) {
         $tick_id = $_POST["tick_id"];
         $estado_paso_actual = 'N/A';
         
-        // a. Medir el tiempo del paso que está por terminar (tu lógica es correcta)
+        // Medir el tiempo del paso que está por terminar (tu lógica es correcta y no cambia)
         $asignacion_actual = $ticket->get_ultima_asignacion($tick_id);
         if ($asignacion_actual) {
             $paso_actual_info = $flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
@@ -772,40 +778,41 @@ switch ($_GET["op"]) {
             }
         }
 
-        // --- INICIA LÓGICA HÍBRIDA PARA ENCONTRAR AL SIGUIENTE ASIGNADO ---
+        // --- INICIA LÓGICA DE ASIGNACIÓN AVANZADA ---
         $nuevo_asignado_info = null;
+        $siguiente_paso_id = $_POST["siguiente_paso_id"];
+        $datos_siguiente_paso = $flujoPasoModel->get_paso_por_id($siguiente_paso_id);
 
-        if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
-            // Escenario 1: El agente seleccionó un usuario manualmente desde el combo.
-            $nuevo_asignado_id = $_POST['nuevo_asignado_id'];
-            $nuevo_asignado_info = $usuario->get_usuario_x_id($nuevo_asignado_id);
-
-        } else {
-            // Escenario 2: Asignación automática por región (la lógica que ya tenías).
-            $siguiente_paso_id = $_POST["siguiente_paso_id"];
-            $datos_siguiente_paso = $flujoPasoModel->get_paso_por_id($siguiente_paso_id);
+        if ($datos_siguiente_paso) {
             $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
-            $regional_origen_id = $ticket->get_ticket_region($tick_id);
             
-            if ($siguiente_cargo_id && $regional_origen_id) {
-                if ($siguiente_cargo_id == 7) { // Rol Nacional (ej. Coordinador CAC)
-                     $nuevo_asignado_info = $usuario->get_usuario_por_cargo($siguiente_cargo_id);
-                } else { // Rol Regional
-                     $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+            // 1. PRIMERO, revisamos si la TAREA en sí es nacional.
+            if ($datos_siguiente_paso['es_tarea_nacional'] == 1) {
+                // Si la tarea es nacional, buscamos específicamente a un usuario con ese cargo Y que sea nacional.
+                $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($siguiente_cargo_id);
+
+            } else {
+                // 2. SI NO, la tarea es regional y usamos la lógica híbrida de siempre.
+                
+                // a. Revisamos si el agente eligió a alguien manualmente
+                if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
+                    $nuevo_asignado_info = $usuario->get_usuario_x_id($_POST['nuevo_asignado_id']);
+                } else {
+                    // b. Si no, lo buscamos automáticamente por región
+                    $regional_origen_id = $ticket->get_ticket_region($tick_id);
+                    $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
                 }
             }
         }
-        // --- FINALIZA LÓGICA HÍBRIDA ---
+        // --- FINALIZA LÓGICA DE ASIGNACIÓN AVANZADA ---
 
-        // Si se encontró un usuario (de forma manual o automática), se procede
+        // Si se encontró un usuario, se procede (esta parte no cambia)
         if ($nuevo_asignado_info) {
             $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
             $quien_asigno_id = $_SESSION["usu_id"];
             
-            // c. Se actualiza el ticket al siguiente paso
-            $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $_POST["siguiente_paso_id"], $quien_asigno_id);
+            $ticket->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
             
-            // d. Se actualiza la fila anterior del historial con su estado de tiempo
             if ($asignacion_actual) {
                 $ticket->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
             }
@@ -814,7 +821,7 @@ switch ($_GET["op"]) {
     
     $reassigned = isset($nuevo_asignado_info) && $nuevo_asignado_info;
     echo json_encode(["status" => "success", "reassigned" => $reassigned]);
-    break; 
+    break;
 
     case "get_usuarios_por_paso":
     $paso_id = $_POST['paso_id'];

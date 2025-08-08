@@ -136,6 +136,11 @@ function editar(usu_id) {
         $('#dp_id').val(data.dp_id).trigger('change');
         $('#reg_id').val(data.reg_id).trigger('change');
         $('#car_id').val(data.car_id).trigger('change');
+        if (data.es_nacional == 1) {
+            $('#es_nacional').prop('checked', true);
+        } else {
+            $('#es_nacional').prop('checked', false);
+        }
     });
 
     $("#modalnuevousuario").modal("show");
