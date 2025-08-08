@@ -52,7 +52,7 @@ class Ticket extends Conectar
         $sql->execute();
 
         $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
-                VALUES (?, ?, ?, NOW(), 'Reasignado por avance en el flujo', 1);";
+                VALUES (?, ?, ?, ?, NOW(), 'Reasignado por avance en el flujo', 1);";
         $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);                 // El ticket afectado
         $sql2->bindValue(2, $usu_asig);                // El NUEVO usuario asignado
