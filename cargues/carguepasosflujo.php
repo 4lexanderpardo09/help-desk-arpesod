@@ -1,8 +1,7 @@
 <?php
 // Requerir la librería para leer Excel
 require dirname(__FILE__) . '../../vendor/autoload.php';
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 // Incluir los modelos necesarios
@@ -17,7 +16,6 @@ $flujo_model = new Flujo();
 $cargo_model = new Cargo();
 $subcategoria_model = new Subcategoria();
 
-// ... (tu código para verificar la subida del archivo y leer la hoja es correcto) ...
 if (!isset($_FILES['archivo_pasos']) || $_FILES['archivo_pasos']['error'] != UPLOAD_ERR_OK) {
     die("<h3 style='color:red;'>Error: No se subió el archivo o hubo un problema en la subida.</h3>");
 }
@@ -35,29 +33,28 @@ try {
     } else {
         die("<h3 style='color:red;'>Error: El archivo Excel no contiene una hoja llamada '{$sheet_name_esperado}'.</h3>");
     }
-    
+
     $rows = $worksheet->toArray();
     array_shift($rows);
 
     $creados = 0;
     $omitidos = 0;
-    
-    foreach ($rows as $row) {
-        // --- LÓGICA CORREGIDA Y COMPLETA ---
 
-        // 1. Asignar TODAS las columnas a variables claras
+    foreach ($rows as $row) {
+        // --- 1. Asignar TODAS las columnas a variables claras ---
         $cats_nom = trim($row[0]);
         $paso_orden = trim($row[1]);
         $paso_nombre = trim($row[2]);
         $cargo_nom = trim($row[3]);
-        $paso_tiempo_habil = isset($row[4]) && is_numeric($row[4]) ? intval($row[4]) : 1; // Días hábiles
-        $paso_descripcion_raw = isset($row[5]) ? trim($row[5]) : ''; // Descripción
-        $seleccion_manual_str = isset($row[6]) ? trim($row[6]) : 'NO'; // Selección Manual
-        $paso_descripcion = nl2br($paso_descripcion_raw);
+        $paso_tiempo_habil = isset($row[4]) && is_numeric($row[4]) ? intval($row[4]) : 1;
+        $paso_descripcion_raw = isset($row[5]) ? trim($row[5]) : '';
+        $seleccion_manual_str = isset($row[6]) ? trim($row[6]) : 'NO';
+        // --- AÑADIDO: Lectura de la nueva columna ---
+        $es_tarea_nacional_str = isset($row[7]) ? trim($row[7]) : 'NO'; // Asume que es la columna H
 
         if (empty($cats_nom) || empty($paso_nombre)) continue;
 
-        // 2. Mapear Nombres a IDs (lógica sin cambios)
+        // --- 2. Mapear Nombres a IDs y Convertir Valores ---
         $cats_id = $subcategoria_model->get_id_por_nombre($cats_nom);
         $flujo_id = null;
         if ($cats_id) {
@@ -73,11 +70,19 @@ try {
             $omitidos++;
             continue;
         }
-        
-        // Convertimos el texto "SI" a un 1 o 0 para la base de datos
-        $req_seleccion_manual = (strtoupper($seleccion_manual_str) == 'SI') ? 1 : 0;
 
-        // 4. Insertar el paso con TODOS los datos
+        if ($flujo_paso_model->verificar_orden_existente($flujo_id, $paso_orden)) {
+            echo "<p style='color:red;'>ERROR - OMITIDO: El paso '{$paso_nombre}' no se pudo crear porque el número de orden '{$paso_orden}' ya existe en este flujo.</p>";
+            $omitidos++;
+            continue; // Saltamos a la siguiente fila del Excel
+        }
+
+        $paso_descripcion = nl2br($paso_descripcion_raw);
+        $req_seleccion_manual = (strtoupper($seleccion_manual_str) == 'SI') ? 1 : 0;
+        // --- AÑADIDO: Convertimos "SI" a 1 y cualquier otra cosa a 0 ---
+        $es_tarea_nacional = (strtoupper($es_tarea_nacional_str) == 'SI') ? 1 : 0;
+
+        // --- 3. Insertar el paso con TODOS los datos ---
         $flujo_paso_model->insert_paso(
             $flujo_id,
             $paso_orden,
@@ -85,19 +90,18 @@ try {
             $cargo_id,
             $paso_tiempo_habil,
             $paso_descripcion,
-            $req_seleccion_manual
+            $req_seleccion_manual,
+            $es_tarea_nacional // <-- El nuevo parámetro
         );
-        echo "<p style='color:green;'>CREADO: Se añadió el paso '{$paso_nombre}' al flujo de la subcategoría '{$cats_nom}'.</p>";
+        echo "<p style='color:green;'>CREADO: Se añadió el paso '{$paso_nombre}' al flujo de '{$cats_nom}'.</p>";
         $creados++;
     }
-    
+
     echo "<h3>¡Cargue Masivo Finalizado!</h3>";
     echo "<ul>";
     echo "<li>Pasos de flujo nuevos creados: {$creados}</li>";
     echo "<li>Pasos omitidos (con errores): {$omitidos}</li>";
     echo "</ul>";
-
 } catch (Exception $e) {
     echo "<h3 style='color:red;'>Error al leer el archivo Excel: " . $e->getMessage() . "</h3>";
 }
-?>
