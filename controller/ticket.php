@@ -63,7 +63,7 @@ switch ($_GET["op"]) {
                 // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
                 $regla = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
                 if ($regla) {
-                    $asignado_car_id = $regla['asignado_car_id'];
+                    $asignado_car_id = $regla;
                     $asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
                     
                     if ($asignado_info) {
