@@ -177,7 +177,7 @@ class FlujoPaso extends Conectar
     public function get_regla_mapeo($cats_id, $creador_cargo_id_asignado)
     {
         $conectar = parent::Conexion();
-        $sql = "SELECT * FROM tm_flujo_mapeo WHERE cats_id = ? AND creador_car_id = ? AND est = 1 LIMIT 1";
+        $sql = "SELECT * FROM tm_regla_mapeo WHERE cats_id = ? AND creador_car_id = ? AND est = 1 LIMIT 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $cats_id);
         $sql->bindValue(2, $creador_cargo_id_asignado);
