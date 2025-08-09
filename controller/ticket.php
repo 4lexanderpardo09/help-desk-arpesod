@@ -1013,4 +1013,30 @@ switch ($_GET["op"]) {
 
     echo json_encode(["status" => "success"]);
     break;
+
+    // En controller/ticket.php
+
+    case "verificar_inicio_flujo":
+        $cats_id = $_POST['cats_id'];
+        $output = ['requiere_seleccion' => false, 'usuarios' => []];
+
+        // Buscamos el flujo asociado a la subcategoría
+        $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+        if ($flujo) {
+            // Si hay flujo, buscamos su primer paso
+            $primer_paso = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+            if ($primer_paso && $primer_paso['requiere_seleccion_manual'] == 1) {
+                // Si el primer paso requiere selección manual, preparamos la respuesta
+                $output['requiere_seleccion'] = true;
+                $cargo_id_necesario = $primer_paso['cargo_id_asignado'];
+                
+                // Buscamos a TODOS los usuarios con ese cargo
+                $usuarios = $usuario->get_usuarios_por_cargo($cargo_id_necesario);
+                $output['usuarios'] = $usuarios;
+            }
+        }
+        
+        header('Content-Type: application/json');
+        echo json_encode($output);
+        break;
 }

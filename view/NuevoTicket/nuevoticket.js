@@ -46,7 +46,7 @@ $(document).ready(function () {
 
 function categoriasAnidadas() {
     car_id = $('#user_cargo_id').val();
-    
+
     $('#emp_id').html('<option value="">Seleccionar</option>');
     $('#cat_id').html('<option value="">Seleccionar</option>');
     $('#cats_id').html('<option value="">Seleccionar</option>');
@@ -57,10 +57,11 @@ function categoriasAnidadas() {
         let dp_id = $(this).val();
 
         if (dp_id == 0) {
-            $('#emp_id').html('<option value="">Seleccionar</option>');
             $('#cat_id').html('<option value="">Seleccionar</option>');
             $('#cats_id').html('<option value="">Seleccionar</option>');
             $('#tick_descrip').summernote('code', '');
+            $('#usu_asig').html('');
+            $('#panel_asignacion_manual').hide();
         } else {
             // Cuando cambia la empresa
             $("#emp_id").off('change').on('change', function () {
@@ -70,6 +71,8 @@ function categoriasAnidadas() {
                     $('#cat_id').html('<option value="">Seleccionar</option>');
                     $('#cats_id').html('<option value="">Seleccionar</option>');
                     $('#tick_descrip').summernote('code', '');
+                    $('#usu_asig').html('');
+                    $('#panel_asignacion_manual').hide();
                 } else {
                     // Filtrar categorías por departamento y empresa
                     $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
@@ -83,8 +86,10 @@ function categoriasAnidadas() {
                         if (cat_id == 0) {
                             $('#cats_id').html('<option value="">Seleccionar</option>');
                             $('#tick_descrip').summernote('code', '');
+                            $('#usu_asig').html('');
+                            $('#panel_asignacion_manual').hide();
                         } else {
-                            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id:car_id }, function (data) {
+                            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id: car_id }, function (data) {
                                 $('#cats_id').html('<option value="">Seleccionar</option>' + data);
                             });
 
@@ -95,11 +100,27 @@ function categoriasAnidadas() {
                                 if (cats_id == 0) {
                                     $('#tick_descrip').summernote('code', '');
                                     $("#error_procesodiv").addClass('hidden');
+                                    $('#usu_asig').html('');
+                                    $('#panel_asignacion_manual').hide();
                                 } else {
                                     $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                                         data = JSON.parse(data);
-                                        $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);                               
+                                        $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);
                                         $('#pd_id').val(data.subcategoria.pd_id);
+                                    });
+
+                                    // Hacemos la pregunta silenciosa al servidor
+                                    $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
+                                        // Si la respuesta dice que se requiere selección...
+                                        if (data.requiere_seleccion) {
+                                            // ...construimos el combo con los usuarios y lo mostramos
+                                            var options = '';
+                                            data.usuarios.forEach(function (user) {
+                                                options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
+                                            });
+                                            $('#usu_asig').html(options);
+                                            $('#panel_asignacion_manual').show();
+                                        }
                                     });
                                 }
                             });

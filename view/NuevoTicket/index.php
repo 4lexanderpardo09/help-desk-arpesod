@@ -78,6 +78,12 @@ if (isset($_SESSION["usu_id"])) {
                                 </select>
                             </fieldset>
                         </div>
+                        <div class="col-lg-3" id="panel_asignacion_manual" style="display: none;">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="usu_asig">Asignar Ticket a:</label>
+                                <select id="usu_asig" name="usu_asig" class="form-control"></select>
+                            </fieldset>
+                        </div>
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Documento adicional</label>
@@ -114,8 +120,9 @@ if (isset($_SESSION["usu_id"])) {
                                 </div>
                             </div>
                         </div>
-                        </form>
-                </div></div>
+                    </form>
+                </div>
+            </div>
 
 
         </div>
