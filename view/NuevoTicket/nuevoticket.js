@@ -45,87 +45,89 @@ $(document).ready(function () {
 });
 
 function categoriasAnidadas() {
-    car_id = $('#user_cargo_id').val();
+    var user_cargo_id = 0;
+    // Inicializamos los combos con Select2
+    $('#dp_id, #emp_id, #cat_id, #cats_id, #usu_asig, #pd_id').select2();
 
-    $('#emp_id').html('<option value="">Seleccionar</option>');
-    $('#cat_id').html('<option value="">Seleccionar</option>');
-    $('#cats_id').html('<option value="">Seleccionar</option>');
-    $('#tick_descrip').summernote('code', '');
+    // Guardamos el cargo del usuario en una variable global al cargar la página
+    user_cargo_id = $('#user_cargo_id').val();
 
-    // Cuando cambia el departamento
-    $("#dp_id").off('change').on('change', function () {
-        let dp_id = $(this).val();
+    // 1. Cargar los combos iniciales que no dependen de otros
+    $.post("../../controller/departamento.php?op=combo", function (data) {
+        $('#dp_id').html('<option value="">Seleccione Departamento</option>' + data);
+    });
 
-        if (dp_id == 0) {
-            $('#cat_id').html('<option value="">Seleccionar</option>');
-            $('#cats_id').html('<option value="">Seleccionar</option>');
-            $('#tick_descrip').summernote('code', '');
-            $('#usu_asig').html('');
-            $('#panel_asignacion_manual').hide();
-        } else {
-            // Cuando cambia la empresa
-            $("#emp_id").off('change').on('change', function () {
-                let emp_id = $(this).val();
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        $('#emp_id').html('<option value="">Seleccione Empresa</option>' + data);
+    });
 
-                if (emp_id == 0) {
-                    $('#cat_id').html('<option value="">Seleccionar</option>');
-                    $('#cats_id').html('<option value="">Seleccionar</option>');
-                    $('#tick_descrip').summernote('code', '');
-                    $('#usu_asig').html('');
-                    $('#panel_asignacion_manual').hide();
-                } else {
-                    // Filtrar categorías por departamento y empresa
-                    $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
-                        $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+    // --- EVENTOS "CHANGE" INDEPENDIENTES ---
+
+    // 2. Evento para Departamento y Empresa
+    $('#dp_id, #emp_id').on('change', function () {
+        var dp_id = $('#dp_id').val();
+        var emp_id = $('#emp_id').val();
+
+        // Limpiamos los combos hijos
+        $('#cat_id').html('<option value="">Seleccione</option>');
+        $('#cats_id').html('<option value="">Seleccione</option>');
+        $('#tick_descrip').summernote('code', '');
+        $('#panel_asignacion_manual').hide();
+
+        if (dp_id && emp_id) {
+            // Si ambos tienen valor, cargamos las Categorías
+            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
+                $('#cat_id').html('<option value="">Seleccione Categoría</option>' + data);
+            });
+        }
+    });
+
+    // 3. Evento para Categoría
+    $('#cat_id').on('change', function () {
+        var cat_id = $(this).val();
+
+        // Limpiamos los combos hijos
+        $('#cats_id').html('<option value="">Seleccione</option>');
+        $('#tick_descrip').summernote('code', '');
+        $('#panel_asignacion_manual').hide();
+
+        if (cat_id) {
+            // Si se selecciona una categoría, cargamos las Subcategorías permitidas para el cargo del usuario
+            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id: user_cargo_id }, function (data) {
+                $('#cats_id').html('<option value="">Seleccione Subcategoría</option>' + data);
+            });
+        }
+    });
+
+    // 4. Evento para Subcategoría
+    $('#cats_id').on('change', function () {
+        var cats_id = $(this).val();
+
+        // Limpiamos los campos dependientes
+        $('#tick_descrip').summernote('code', '');
+        $('#panel_asignacion_manual').hide();
+        $('#usu_asig').html('');
+
+        if (cats_id) {
+            // a. Llenar la descripción por defecto
+            $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
+                data = JSON.parse(data);
+                
+                if (data.subcategoria && data.subcategoria.cats_descrip) {
+                    $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);
+                    $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
+                }
+            });
+
+            // b. Verificar si se necesita asignación manual
+            $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
+                if (data.requiere_seleccion) {
+                    var options = '<option value="">Seleccione un agente...</option>';
+                    data.usuarios.forEach(function (user) {
+                        options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
                     });
-
-                    // Cuando cambia la categoría
-                    $("#cat_id").off('change').on('change', function () {
-                        let cat_id = $(this).val();
-
-                        if (cat_id == 0) {
-                            $('#cats_id').html('<option value="">Seleccionar</option>');
-                            $('#tick_descrip').summernote('code', '');
-                            $('#usu_asig').html('');
-                            $('#panel_asignacion_manual').hide();
-                        } else {
-                            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id: car_id }, function (data) {
-                                $('#cats_id').html('<option value="">Seleccionar</option>' + data);
-                            });
-
-                            // Cuando cambia la subcategoría
-                            $("#cats_id").off('change').on('change', function () {
-                                let cats_id = $(this).val();
-
-                                if (cats_id == 0) {
-                                    $('#tick_descrip').summernote('code', '');
-                                    $("#error_procesodiv").addClass('hidden');
-                                    $('#usu_asig').html('');
-                                    $('#panel_asignacion_manual').hide();
-                                } else {
-                                    $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
-                                        data = JSON.parse(data);
-                                        $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);
-                                        $('#pd_id').val(data.subcategoria.pd_id);
-                                    });
-
-                                    // Hacemos la pregunta silenciosa al servidor
-                                    $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
-                                        // Si la respuesta dice que se requiere selección...
-                                        if (data.requiere_seleccion) {
-                                            // ...construimos el combo con los usuarios y lo mostramos
-                                            var options = '';
-                                            data.usuarios.forEach(function (user) {
-                                                options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
-                                            });
-                                            $('#usu_asig').html(options);
-                                            $('#panel_asignacion_manual').show();
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
+                    $('#usu_asig').html(options);
+                    $('#panel_asignacion_manual').show();
                 }
             });
         }
@@ -137,28 +139,33 @@ function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($('#ticket_form')[0])
 
-    if ($('#tick_titulo').val() == '') {
+    if ($('#tick_titulo').val().trim() == '') {
         swal("Atención", "Debe ingresar un título", "warning");
         return false;
-    } if ($('#dp_id').val('') == '') {
+
+    } else if ($('#dp_id').val() == null || $('#dp_id').val() == '') {
         swal("Atención", "Debe seleccionar un departamento", "warning");
         return false;
-    } if ($('#usu_asig').val('') == '') {
-        swal("Atención", "Debe seleccionar un agente", "warning");
-        return false;
-    } if ($('#emp_id').val('') == '') {
+    } else if ($('#emp_id').val() == null || $('#emp_id').val() == '') {
         swal("Atención", "Debe seleccionar una empresa", "warning");
         return false;
-    } if ($('#cat_id').val() == '') {
+
+    } else if ($('#cat_id').val() == null || $('#cat_id').val() == '') {
         swal("Atención", "Debe seleccionar una categoría", "warning");
         return false;
-    } if ($('#cats_id').val() == '') {
-        swal("Atención", "Debe seleccionar una subcategoria", "warning");
+
+    } else if ($('#cats_id').val() == null || $('#cats_id').val() == '') {
+        swal("Atención", "Debe seleccionar una subcategoría", "warning");
         return false;
-    } if ($('pd_id').val() == '') {
+    } else if ($('#panel_asignacion_manual').is(':visible') && ($('#usu_asig').val() == null || $('#usu_asig').val() == '')) {
+        swal("Atención", "Esta subcategoría requiere que seleccione un agente para la asignación.", "warning");
+        return false;
+
+    } else if ($('#pd_id').val() == null || $('#pd_id').val() == '') {
         swal("Atención", "Debe seleccionar una prioridad", "warning");
         return false;
-    } if ($('#tick_descrip').summernote('isEmpty')) {
+
+    } else if ($('#tick_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una descripción", "warning");
         return false;
     }
