@@ -411,6 +411,7 @@ function listarDetalle(tick_id) {
         var usu_id = $('#user_idx').val();
         if (usu_id != data.usu_asig) {
             $("#btncerrarticket").addClass('hidden');
+            $("#panel_respuestas_rapidas").addClass('hidden');
         };
 
         $('#panel_aprobacion_jefe').hide();
