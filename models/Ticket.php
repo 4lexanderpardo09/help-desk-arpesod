@@ -21,7 +21,7 @@ class Ticket extends Conectar
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
         $sql1 = $conectar->prepare($sql1);
-        $sql1->execute();   
+        $sql1->execute();
 
         $resultado = $sql1->fetchAll(PDO::FETCH_ASSOC);
         $tick_id = $resultado[0]['tick_id'];
@@ -29,14 +29,28 @@ class Ticket extends Conectar
         $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
                 VALUES (?, ?, NULL, NOW(), 'Ticket abierto', 1);";
         $sql2 = $conectar->prepare($sql2);
-        $sql2->bindValue(1,$tick_id);
-        $sql2->bindValue(2,$usu_asig);
+        $sql2->bindValue(1, $tick_id);
+        $sql2->bindValue(2, $usu_asig);
         $sql2->execute();
+
+        if ($how_asig != $usu_asig) {
+            // Creamos el mensaje de la notificación
+            $mensaje_notificacion = "Se te ha asignado el nuevo ticket #" . $tick_id;
+
+            // Preparamos la consulta para insertar en la tabla de notificaciones
+            $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fecha_not, est) VALUES (?, ?, ?, NOW(), 2)";
+            $sql3 = $conectar->prepare($sql3);
+            $sql3->bindValue(1, $usu_asig); // El ID del usuario a notificar
+            $sql3->bindValue(2, $mensaje_notificacion); // El mensaje
+            $sql3->bindValue(3, $tick_id); // El ID del ticket relacionado
+            $sql3->execute();
+        }
 
         return $resultado;
     }
 
-    public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id,$quien_asigno_id) {
+    public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id, $quien_asigno_id)
+    {
         $conectar = parent::Conexion();
         // Actualiza el usuario asignado y el ID del paso actual en el ticket
         $sql = "UPDATE tm_ticket 
@@ -420,27 +434,26 @@ class Ticket extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        
-        $ticket = new Ticket();
-        
-        $datos  = $ticket->listar_ticket_x_id($tick_id);
-            $usu_asig = $datos['usu_asig'];
-            $usu_idx = $datos['usu_id'];
 
-        
-        if($_SESSION['rol_id']==1){
+        $ticket = new Ticket();
+
+        $datos  = $ticket->listar_ticket_x_id($tick_id);
+        $usu_asig = $datos['usu_asig'];
+        $usu_idx = $datos['usu_id'];
+
+
+        if ($_SESSION['rol_id'] == 1) {
 
             $mensaje1 = "El usuario te ha respondido el ticket Nro " . $tick_id;
 
-            
+
             $sql2 = "INSERT INTO tm_notificacion(not_id,usu_id,not_mensaje,tick_id,fech_not,est) VALUES(NULL,$usu_asig,?,?,NOW(),'2');";
             $sql2 = $conectar->prepare($sql2);
             $sql2->bindValue(1, $mensaje1);
             $sql2->bindValue(2, $tick_id);
-            
+
             $sql2->execute();
-            
-        }else{
+        } else {
 
             $mensaje2 = "El agente de soporte te ha respondido el ticket Nro " . $tick_id;
 
@@ -451,23 +464,22 @@ class Ticket extends Conectar
             $sql3->bindValue(3, $tick_id);
 
             $sql3->execute();
-            
         }
-        
+
         $sql = "INSERT INTO td_ticketdetalle (tickd_id, tick_id, usu_id, tickd_descrip, fech_crea, est) VALUES ( NULL, ?, ?, ?, NOW(), '1')  ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->bindValue(2, $usu_id);
         $sql->bindValue(3, $tickd_descrip);
         $sql->execute();
-    
+
         $sql1 = "SELECT LAST_INSERT_ID() as tickd_id";
         $sql1 = $conectar->prepare($sql1);
-        $sql1->execute();  
-        
+        $sql1->execute();
+
         return $sql1->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
     public function update_ticket($tick_id)
     {
         $conectar = parent::Conexion();
@@ -489,9 +501,9 @@ class Ticket extends Conectar
         $sql->execute();
 
         return $resultado = $sql->fetchAll();
-    } 
+    }
 
-    public function update_ticket_asignacion($tick_id,$usu_asig,$how_asig)
+    public function update_ticket_asignacion($tick_id, $usu_asig, $how_asig)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -516,15 +528,14 @@ class Ticket extends Conectar
 
         $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
                 VALUES (?, ?, ?, NOW(), 'Ticket trasladado',1)";
-        $sql2 = $conectar->prepare($sql2);        
+        $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);
         $sql2->bindValue(2, $usu_asig);
         $sql2->bindValue(3, $how_asig);
-       
+
         $sql2->execute();
 
         return $resultado = $sql->fetchAll();
-
     }
 
     public function insert_ticket_detalle_cerrar($tick_id, $usu_id)
@@ -662,7 +673,8 @@ class Ticket extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function get_ticket_region($tick_id){
+    public function get_ticket_region($tick_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         // Esta consulta busca el ticket, luego al usuario creador, y finalmente la regional de ese usuario.
@@ -677,7 +689,8 @@ class Ticket extends Conectar
         return $resultado ? $resultado['reg_id'] : null;
     }
 
-    public function get_fecha_ultima_asignacion($tick_id) {
+    public function get_fecha_ultima_asignacion($tick_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         $sql = "SELECT fech_asig 
@@ -692,7 +705,8 @@ class Ticket extends Conectar
         return $resultado ? $resultado['fech_asig'] : null;
     }
 
-    public function get_ultima_asignacion($tick_id) {
+    public function get_ultima_asignacion($tick_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         // Añadimos t.paso_actual_id para saber en qué paso estaba
@@ -708,7 +722,8 @@ class Ticket extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function get_penultimo_historial($tick_id) {
+    public function get_penultimo_historial($tick_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         // LIMIT 1 OFFSET 1 significa "sáltate el primer resultado (el más nuevo) y dame el siguiente"
@@ -723,7 +738,8 @@ class Ticket extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function update_estado_tiempo_paso($th_id, $estado) {
+    public function update_estado_tiempo_paso($th_id, $estado)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         $sql = "UPDATE th_ticket_asignacion SET estado_tiempo_paso = ? WHERE th_id = ?";
@@ -733,10 +749,11 @@ class Ticket extends Conectar
         $sql->execute();
     }
 
-    public function get_penultima_asignacion($tick_id) {
+    public function get_penultima_asignacion($tick_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
-        
+
         // --- CORREGIDO: Ahora seleccionamos a.* para traer todas las columnas del historial ---
         $sql = "SELECT 
                     a.*, 
@@ -751,14 +768,15 @@ class Ticket extends Conectar
                 ORDER BY 
                     a.fech_asig DESC 
                 LIMIT 1 OFFSET 1";
-                
+
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->execute();
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function update_error_proceso($tick_id, $error_code) {
+    public function update_error_proceso($tick_id, $error_code)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         $sql = "UPDATE tm_ticket SET error_proceso = ? WHERE tick_id = ?";
@@ -768,7 +786,8 @@ class Ticket extends Conectar
         $sql->execute();
     }
 
-    public function update_error_code_paso($th_id, $error_code_id) {
+    public function update_error_code_paso($th_id, $error_code_id)
+    {
         $conectar = parent::conexion();
         parent::set_names();
         $sql = "UPDATE th_ticket_asignacion SET error_code_id = ? WHERE th_id = ?";
@@ -777,5 +796,4 @@ class Ticket extends Conectar
         $sql->bindValue(2, $th_id);
         $sql->execute();
     }
-        
 }
