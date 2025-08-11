@@ -74,6 +74,27 @@ class Ticket extends Conectar
         $sql2->bindValue(4, $paso_actual_id);          // El ID del paso actual
         $sql2->execute();
 
+        if ($quien_asigno_id != $usu_asig) {
+            // a. Buscamos el nombre del paso para que la notificación sea más clara
+            $sql_paso = "SELECT paso_nombre FROM tm_flujo_paso WHERE paso_id = ?";
+            $sql_paso = $conectar->prepare($sql_paso);
+            $sql_paso->bindValue(1, $paso_actual_id);
+            $sql_paso->execute();
+            $paso_data = $sql_paso->fetch(PDO::FETCH_ASSOC);
+            $nombre_paso = $paso_data ? $paso_data['paso_nombre'] : 'un nuevo paso';
+
+            // b. Creamos el mensaje de la notificación
+            $mensaje_notificacion = "Se te ha asignado el Ticket #" . $tick_id . " para la tarea: '" . $nombre_paso . "'";
+
+            // c. Preparamos la consulta para insertar en la tabla de notificaciones
+            $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), 2)";
+            $sql3 = $conectar->prepare($sql3);
+            $sql3->bindValue(1, $usu_asig); // El ID del usuario a notificar
+            $sql3->bindValue(2, $mensaje_notificacion); // El mensaje
+            $sql3->bindValue(3, $tick_id); // El ID del ticket relacionado
+            $sql3->execute();
+        }
+
         return $sql->fetchAll();
     }
 
@@ -484,12 +505,32 @@ class Ticket extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_ticket SET tick_estado = 'Cerrado', fech_cierre = NOW() WHERE tm_ticket.tick_id = ? ";
-        $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $tick_id);
-        $sql->execute();
 
-        return $resultado = $sql->fetchAll();
+        // 1. Antes de cerrar, obtenemos el ID del usuario creador del ticket.
+        $sql_get_user = "SELECT usu_id FROM tm_ticket WHERE tick_id = ?";
+        $sql_get_user = $conectar->prepare($sql_get_user);
+        $sql_get_user->bindValue(1, $tick_id);
+        $sql_get_user->execute();
+        $ticket_data = $sql_get_user->fetch(PDO::FETCH_ASSOC);
+        $usu_id_creador = $ticket_data['usu_id'];
+
+        // 2. Cerramos el ticket (tu lógica original).
+        $sql_update = "UPDATE tm_ticket SET tick_estado = 'Cerrado', fech_cierre = NOW() WHERE tick_id = ?";
+        $sql_update = $conectar->prepare($sql_update);
+        $sql_update->bindValue(1, $tick_id);
+        $sql_update->execute();
+
+        // 3. Creamos y guardamos la notificación para el usuario creador.
+        if ($usu_id_creador) {
+            $mensaje_notificacion = "Tu Ticket #" . $tick_id . " ha sido cerrado.";
+
+            $sql_notif = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), '2')";
+            $sql_notif = $conectar->prepare($sql_notif);
+            $sql_notif->bindValue(1, $usu_id_creador);
+            $sql_notif->bindValue(2, $mensaje_notificacion);
+            $sql_notif->bindValue(3, $tick_id);
+            $sql_notif->execute();
+        }
     }
     public function reabrir_ticket($tick_id)
     {
