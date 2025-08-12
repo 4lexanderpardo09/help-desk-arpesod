@@ -14,14 +14,12 @@ class Usuario extends Conectar
         if (isset($_POST["enviar"])) {
             $correo = $_POST["usu_correo"];
             $password = $_POST["usu_pass"];
-            // CORRECCIÓN 1: Convertimos el rol solicitado a un número entero (int)
             $rol_solicitado = (int)$_POST["rol_id"];
 
             if (empty($correo) || empty($password)) {
                 header("Location: " . Conectar::ruta() . "index.php?m=2");
                 exit();
             } else {
-
                 $sql = "SELECT * FROM tm_usuario WHERE usu_correo = ? AND est = 1";
                 $stmt = $conectar->prepare($sql);
                 $stmt->bindValue(1, $correo);
@@ -29,41 +27,37 @@ class Usuario extends Conectar
                 $resultado = $stmt->fetch();
 
                 if (is_array($resultado) and count($resultado) > 0 and password_verify($password, $resultado["usu_pass"])) {
-
-                    // Obtenemos el rol real del usuario (ya viene como int)
                     $rol_real_del_usuario = $resultado["rol_id"];
-
-                    $acceso_permitido = false;
-
-                    // CORRECCIÓN 2: Usamos el rol de Administrador correcto (1, según tus datos).
-                    // ¡IMPORTANTE! Si tu rol de Admin es otro número, cámbialo aquí.
                     $rol_de_administrador = 3;
 
-                    if ($rol_real_del_usuario == $rol_de_administrador) {
-                        $acceso_permitido = true;
-                    } else if ($rol_real_del_usuario == $rol_solicitado) {
-                        $acceso_permitido = true;
-                    }
+                    $acceso_permitido = ($rol_real_del_usuario == $rol_de_administrador) || ($rol_real_del_usuario == $rol_solicitado);
 
                     if ($acceso_permitido) {
+                        // Verificar si el usuario es jefe de algún departamento
+                        $es_jefe_query = "SELECT dp_id FROM tm_departamento WHERE jefe_usu_id = ? AND est = 1";
+                        $es_jefe_stmt = $conectar->prepare($es_jefe_query);
+                        $es_jefe_stmt->bindValue(1, $resultado['usu_id']);
+                        $es_jefe_stmt->execute();
+                        $departamento_jefe = $es_jefe_stmt->fetch(PDO::FETCH_ASSOC);
+
+                        $_SESSION["is_jefe"] = $departamento_jefe ? true : false;
+                        
+                        // Guardar datos en la sesión
                         $_SESSION["usu_id"] = $resultado["usu_id"];
                         $_SESSION["usu_nom"] = $resultado["usu_nom"];
                         $_SESSION["usu_ape"] = $resultado["usu_ape"];
                         $_SESSION["rol_id"] = $rol_solicitado;
                         $_SESSION["rol_id_real"] = $rol_real_del_usuario;
-                        $_SESSION["dp_id"] = $resultado["dp_id"];
+                        $_SESSION["dp_id"] = $resultado["dp_id"]; // Se mantiene el depto al que pertenece
                         $_SESSION["car_id"] = $resultado["car_id"];
-
 
                         header("Location: " . Conectar::ruta() . "view/Home/");
                         exit();
                     } else {
-                        // Acceso denegado por falta de permisos de rol
                         header("Location: " . Conectar::ruta() . "index.php?m=1");
                         exit();
                     }
                 } else {
-                    // Acceso denegado por credenciales incorrectas
                     header("Location: " . Conectar::ruta() . "index.php?m=1");
                     exit();
                 }
@@ -271,7 +265,7 @@ class Usuario extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT COUNT(*) AS TOTAL FROM tm_ticket where usu_id = ? and tick_estado = 'Abierto' and est = 1";
+        $sql = "SELECT COUNT(*) AS TOTAL FROM tm_ticket where usu_asig = ? and tick_estado = 'Abierto' and est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->execute();

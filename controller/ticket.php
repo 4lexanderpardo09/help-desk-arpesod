@@ -35,7 +35,7 @@ switch ($_GET["op"]) {
         $creador_reg_id = $datos_creador['reg_id'];
         $creador_dp_id = $datos_creador['dp_id'];
 
-        $usu_asig_final = null; // Por defecto, la asignación manual tiene prioridad.
+        $usu_asig_final = $_POST['usu_asig'] ?? null;
         $paso_actual_id_final = null;
 
         // --- 2. VERIFICAR SI HAY UN FLUJO Y SI REQUIERE APROBACIÓN ---
@@ -61,14 +61,22 @@ switch ($_GET["op"]) {
 
             } else {
                 // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
-                $regla = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
-                if ($regla) {
-                    $asignado_car_id = $regla;
-                    $asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
-                    
-                    if ($asignado_info) {
+                $asignado_car_id = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
+                
+                if ($asignado_car_id) {
+                    $nuevo_asignado_info = null;
+
+                    // 1. PRIMERO, buscamos si existe un especialista NACIONAL para ese cargo.
+                    $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
+
+                    // 2. SI NO se encontró un especialista nacional, buscamos por región.
+                    if (!$nuevo_asignado_info) {
+                        $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
+                    }
+
+                    if ($nuevo_asignado_info) {
                         $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
-                        $usu_asig_final = $asignado_info['usu_id'];
+                        $usu_asig_final = $nuevo_asignado_info['usu_id'];
                         $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
                     }
                 }
@@ -276,9 +284,10 @@ switch ($_GET["op"]) {
 
     // --- 4. LÓGICA DE ASIGNACIÓN AVANZADA (VERSIÓN FINAL) ---
     $nuevo_asignado_info = null;
+    $datos_siguiente_paso = $flujoPasoModel->get_paso_por_id($paso_id_siguiente);
 
     // a. Primero, revisamos si la TAREA en sí es nacional.
-    if (isset($primer_paso['es_tarea_nacional']) && $primer_paso['es_tarea_nacional'] == 1) {
+    if (isset($datos_siguiente_paso['es_tarea_nacional']) && $datos_siguiente_paso['es_tarea_nacional'] == 1) {
         // Si la tarea es nacional, buscamos al especialista nacional.
         $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($cargo_siguiente_paso);
     } else {

@@ -31,6 +31,7 @@ if (isset($_SESSION["usu_id"])) {
         <input type="hidden" id="user_idx" value="<?php echo $_SESSION['usu_id']; ?>">
         <input type="hidden" id="rol_id_real" value="<?php echo $_SESSION['rol_id_real']; ?>">
         <input type="hidden" id="user_dp_id" value="<?php echo $_SESSION['dp_id']; ?>">
+        <input type="hidden" id="is_jefe_depto" value="<?php echo $_SESSION['is_jefe'] ? '1' : '0'; ?>">
 
 
         <?php require_once('../MainHeader/header.php') ?>
@@ -161,6 +162,23 @@ if (isset($_SESSION["usu_id"])) {
                                         <th>Usuario</th>
                                         <th>Departamento</th>
                                         <th>Tickets Creados</th>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                    <div class="col-lg-12">
+                        <section class="card">
+                            <header class="card-header">
+                                Tickets Resueltos por Agente (Últimos 30 días)
+                            </header>
+                            <div class="card-block">
+                                <table id="tabla-resueltos-agente" class="table table-hover">
+                                    <thead>
+                                        <th>Agente</th>
+                                        <th>Tickets Resueltos</th>
                                     </thead>
                                     <tbody>
                                     </tbody>

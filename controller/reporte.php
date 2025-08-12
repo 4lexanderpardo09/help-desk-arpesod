@@ -1,6 +1,7 @@
 <?php
 require_once('../config/conexion.php');
 require_once('../models/Reporte.php');
+require_once('../models/DateHelper.php');
 
 $reporte = new Reporte();
 header('Content-Type: application/json');
@@ -108,6 +109,13 @@ switch ($_GET["op"]) {
         
     case "get_filtros_subcategoria":
         $datos = $reporte->get_subcategorias_para_filtro();
+        echo json_encode($datos);
+        break;
+
+    case "get_tickets_resueltos":
+        $usu_id = ($rol_id_real == 3 || $dp_id_sesion > 0) ? null : $usu_id_sesion;
+        $dp_id = ($rol_id_real == 3) ? $filtro_dp_id : ($dp_id_sesion > 0 ? $dp_id_sesion : null);
+        $datos = $reporte->get_tickets_resueltos_por_agente($usu_id, $dp_id, $filtro_cats_id, $filtro_tick_id);
         echo json_encode($datos);
         break;
 }

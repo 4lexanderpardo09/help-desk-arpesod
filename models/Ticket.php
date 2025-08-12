@@ -38,7 +38,7 @@ class Ticket extends Conectar
             $mensaje_notificacion = "Se te ha asignado el nuevo ticket #" . $tick_id;
 
             // Preparamos la consulta para insertar en la tabla de notificaciones
-            $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fecha_not, est) VALUES (?, ?, ?, NOW(), 2)";
+            $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), 2)";
             $sql3 = $conectar->prepare($sql3);
             $sql3->bindValue(1, $usu_asig); // El ID del usuario a notificar
             $sql3->bindValue(2, $mensaje_notificacion); // El mensaje

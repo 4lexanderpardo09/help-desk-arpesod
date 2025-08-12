@@ -5,13 +5,16 @@ var charts = {};
  * Función principal que carga o recarga todos los componentes del dashboard con los filtros aplicados.
  * @param {object} filtros - Un objeto con los filtros, ej: { dp_id: 12 }
  */
-function cargarDashboard() {
+function cargarDashboard(override_filtros = {}) {
 
-    const filtros = {
+    let filtros = {
         dp_id: $('#filtro_departamento').val(),
         cats_id: $('#filtro_subcategoria').val(),
         tick_id: $('#filtro_ticket_id').val()
     };
+
+    // Sobrescribir o añadir filtros pasados como argumentos
+    filtros = { ...filtros, ...override_filtros };
 
     console.log("Cargando dashboard con filtros:", filtros);
     cargarKPIs(filtros);
@@ -23,6 +26,7 @@ function cargarDashboard() {
     cargarGraficoErroresTipo(filtros);
     cargarTablaRendimientoPaso(filtros);
     cargarTablaErroresAgente(filtros);
+    cargarTablaResueltosAgente(filtros);
 }
 
 /**
@@ -32,47 +36,57 @@ function cargarDashboard() {
 $(document).ready(function () {
     const rol_id_real = parseInt($('#rol_id_real').val());
     const usu_id = parseInt($('#user_idx').val());
-    // IMPORTANTE: Asegúrate de tener un input oculto en tu vista con el dp_id del usuario de la sesión.
-    // Ej: <input type="hidden" id="user_dp_id" value="<?php echo $_SESSION['dp_id']; ?>">
     const dp_id = parseInt($('#user_dp_id').val());
-
-
+    const is_jefe = parseInt($('#is_jefe_depto').val());
 
     if (rol_id_real === 3) { // Es Administrador
         $('#panel-filtros').show();
         cargarFiltros();
         cargarDashboard(); // Carga inicial sin filtros
 
-        // Evento que se activa cuando el Admin cambia la selección del filtro
+        // Eventos para Admin
         $('#filtro_departamento, #filtro_subcategoria').on('change', function () {
-            // Si se cambia un combo, se limpia el filtro de ID de ticket
             $('#filtro_ticket_id').val('');
             cargarDashboard();
         });
 
         $('#btn_buscar_ticket').on('click', function () {
-            // Si se busca por un ID, es buena idea limpiar los otros filtros para evitar conflictos.
             $('#filtro_departamento, #filtro_subcategoria').val(null).trigger('change.select2');
-            // Llamamos a la función principal para recargar todos los datos con el nuevo filtro.
             cargarDashboard();
         });
 
         $('#btn_limpiar_filtros').on('click', function () {
             $('#filtro_departamento, #filtro_subcategoria').val(null).trigger('change.select2');
             $('#filtro_ticket_id').val('');
-            cargarDashboard(); // Recarga con los filtros limpios
+            cargarDashboard();
         });
 
-    } else if (dp_id > 0) { // Es Jefe de Departamento (tiene un dp_id asignado)
-        $('#panel-filtros').hide();
-        cargarDashboard({ dp_id: dp_id }); // Carga el dashboard filtrado por su departamento
+    } else if (is_jefe === 1) { // Es Jefe de Departamento
+        $('#panel-filtros').show();
+        $('#filtro_departamento').closest('.col-md-4').hide(); // Oculta el filtro de depto.
+        cargarFiltros(); // Carga los otros filtros como subcategoría
+        cargarDashboard({ dp_id: dp_id }); // Carga el dashboard pre-filtrado
 
-    } else { // Es Agente normal
+        // Eventos para Jefe de Depto (sin el filtro de depto)
+        $('#filtro_subcategoria').on('change', function () {
+            $('#filtro_ticket_id').val('');
+            cargarDashboard({ dp_id: dp_id });
+        });
+
+        $('#btn_buscar_ticket').on('click', function () {
+            $('#filtro_subcategoria').val(null).trigger('change.select2');
+            cargarDashboard({ dp_id: dp_id });
+        });
+
+        $('#btn_limpiar_filtros').on('click', function () {
+            $('#filtro_subcategoria').val(null).trigger('change.select2');
+            $('#filtro_ticket_id').val('');
+            cargarDashboard({ dp_id: dp_id });
+        });
+
+    } else { // Es Agente o usuario normal
         $('#panel-filtros').hide();
-        // Ocultamos todos los contenedores de gráficos y tablas
-        $('.card').hide();
-        // Mostramos solo sus KPIs personales
-        totalTicketsUsuario(usu_id);
+        cargarDashboard({ usu_id: usu_id });
     }
 });
 
@@ -378,6 +392,26 @@ function cargarTablaErroresAgente(filtros) {
                 const row = `<tr>
                                 <td>${item.usu_nom} ${item.usu_ape}</td>
                                 <td><span class="label label-pill label-danger">${item.total_errores_atribuidos}</span></td>
+                             </tr>`;
+                tbody.append(row);
+            });
+        }
+    });
+}
+
+function cargarTablaResueltosAgente(filtros) {
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_tickets_resueltos',
+        method: 'POST',
+        data: filtros,
+        dataType: 'json',
+        success: function (data) {
+            const tbody = $('#tabla-resueltos-agente tbody');
+            tbody.empty();
+            data.forEach(item => {
+                const row = `<tr>
+                                <td>${item.agente}</td>
+                                <td><span class="label label-pill label-info">${item.total_cerrados}</span></td>
                              </tr>`;
                 tbody.append(row);
             });

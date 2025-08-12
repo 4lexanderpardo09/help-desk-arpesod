@@ -187,18 +187,18 @@ class Reporte extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
 
-        // Base de la consulta
+        // La consulta ahora solo trae las fechas necesarias
         $sql = "SELECT
-                ROUND(AVG(TIMESTAMPDIFF(HOUR, ticket.fech_crea, ticket.fech_cierre)), 2) AS horas_promedio_resolucion
+                ticket.fech_crea,
+                ticket.fech_cierre
             FROM 
                 tm_ticket AS ticket";
 
         $params = [];
         $sql_where = " WHERE ticket.tick_estado = 'Cerrado' AND ticket.fech_cierre IS NOT NULL";
 
-        // Lógica para añadir filtros dinámicos
+        // Lógica de filtros dinámicos (sin cambios)
         if (!is_null($tick_id)) {
-            // El filtro por ticket específico tiene la máxima prioridad
             $sql_where .= " AND ticket.tick_id = ?";
             $params[] = $tick_id;
         } else {
@@ -217,14 +217,25 @@ class Reporte extends Conectar
             }
         }
 
-        // Unimos todo y finalizamos la consulta
         $sql .= $sql_where;
 
         $stmt = $conectar->prepare($sql);
         $stmt->execute($params);
-        $resultado = $stmt->fetch(PDO::FETCH_ASSOC);
+        $resultados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $resultado ? $resultado['horas_promedio_resolucion'] : null;
+        if (empty($resultados)) {
+            return null;
+        }
+
+        // Cálculo del promedio en PHP usando el DateHelper para horas hábiles
+        $total_horas_habiles = 0;
+        foreach ($resultados as $row) {
+            $total_horas_habiles += DateHelper::calcular_horas_habiles($row['fech_crea'], $row['fech_cierre']);
+        }
+
+        $promedio = $total_horas_habiles / count($resultados);
+
+        return round($promedio, 2);
     }
 
     /**
@@ -506,7 +517,7 @@ class Reporte extends Conectar
             }
 
             if (!is_null($dp_id)) {
-                $sql .= " INNER JOIN tm_usuario u ON t.usu_id = u.usu_id";
+                $sql .= " INNER JOIN tm_usuario u ON t.usu_asig = u.usu_id";
                 $sql_where .= " AND u.dp_id = ?";
                 $params[] = $dp_id;
             } elseif (!is_null($usu_id)) {
@@ -601,6 +612,48 @@ class Reporte extends Conectar
         $sql = "SELECT cats_id, cats_nom FROM tm_subcategoria WHERE est = 1 ORDER BY cats_nom ASC";
         $stmt = $conectar->prepare($sql);
         $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_tickets_resueltos_por_agente($usu_id = null, $dp_id = null, $cats_id = null, $tick_id = null)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        $sql = "SELECT
+                CONCAT(u.usu_nom, ' ', u.usu_ape) AS agente,
+                COUNT(t.tick_id) AS total_cerrados
+            FROM
+                tm_ticket t
+            INNER JOIN
+                tm_usuario u ON t.usu_asig = u.usu_id
+            WHERE
+                t.tick_estado = 'Cerrado'
+                AND t.fech_cierre >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+
+        $params = [];
+
+        if (!is_null($tick_id)) {
+            $sql .= " AND t.tick_id = ?";
+            $params[] = $tick_id;
+        } else {
+            if (!is_null($cats_id)) {
+                $sql .= " AND t.cats_id = ?";
+                $params[] = $cats_id;
+            }
+            if (!is_null($dp_id)) {
+                $sql .= " AND u.dp_id = ?";
+                $params[] = $dp_id;
+            } elseif (!is_null($usu_id)) {
+                $sql .= " AND t.usu_asig = ?";
+                $params[] = $usu_id;
+            }
+        }
+
+        $sql .= " GROUP BY agente ORDER BY total_cerrados DESC";
+
+        $stmt = $conectar->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
