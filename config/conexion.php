@@ -2,10 +2,6 @@
 
 session_start();
 
-if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-    $_SERVER['HTTPS'] = 'on';
-}
-
 // Requerir el autoload de Composer para poder usar las librerías instaladas
 require_once __DIR__ . '/../vendor/autoload.php';
 
