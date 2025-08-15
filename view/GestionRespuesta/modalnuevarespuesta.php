@@ -19,7 +19,12 @@
                     <div class="form-group">
                         <label class="form-label semibold" for="answer_nom">Nombre</label>
                         <input type="text" class="form-control" id="answer_nom" name="answer_nom" placeholder="Ingrese un nombre" required>
-                        <div></div>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <input type="checkbox" id="es_error_proceso" name="es_error_proceso">
+                            <label for="es_error_proceso">Es error de proceso</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

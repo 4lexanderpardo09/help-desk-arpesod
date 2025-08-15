@@ -998,6 +998,7 @@ switch ($_GET["op"]) {
     $respuesta_rapida = new RespuestaRapida();
     $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
     $nombre_respuesta = $datos_respuesta["answer_nom"];
+    $es_error_proceso = $datos_respuesta["es_error_proceso"];
 
     // --- LÓGICA UNIFICADA Y CORREGIDA ---
 
@@ -1026,6 +1027,18 @@ switch ($_GET["op"]) {
 
     // 5. Insertamos el nuevo comentario detallado en el historial.
     $ticket->insert_ticket_detalle($tick_id, $usu_id, $comentario);
+
+    // 6. Si es error de proceso, reasignamos al usuario anterior y retrocedemos el paso.
+    if ($es_error_proceso && $asignacion_anterior) {
+        $usuario_anterior_id = $asignacion_anterior['usu_asig'];
+        $paso_anterior_id = $asignacion_anterior['paso_id'];
+        $quien_asigno_id = $usu_id;
+
+        $comentario_reasignacion = "Ticket devuelto por error de proceso.";
+        $mensaje_notificacion = "Se te ha devuelto el Ticket #" . $tick_id . " por un error en el proceso.";
+
+        $ticket->update_asignacion_y_paso($tick_id, $usuario_anterior_id, $paso_anterior_id, $quien_asigno_id, $comentario_reasignacion, $mensaje_notificacion);
+    }
 
     echo json_encode(["status" => "success"]);
     break;

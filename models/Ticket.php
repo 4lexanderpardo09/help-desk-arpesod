@@ -26,11 +26,12 @@ class Ticket extends Conectar
         $resultado = $sql1->fetchAll(PDO::FETCH_ASSOC);
         $tick_id = $resultado[0]['tick_id'];
 
-        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, fech_asig, asig_comentario, est)
-                VALUES (?, ?, NULL, NOW(), 'Ticket abierto', 1);";
+        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
+                VALUES (?, ?, NULL, ?, NOW(), 'Ticket abierto', 1);";
         $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);
         $sql2->bindValue(2, $usu_asig);
+        $sql2->bindValue(3, $paso_actual_id);
         $sql2->execute();
 
         if ($how_asig != $usu_asig) {
@@ -49,7 +50,7 @@ class Ticket extends Conectar
         return $resultado;
     }
 
-    public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id, $quien_asigno_id)
+    public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id, $quien_asigno_id, $asig_comentario = 'Reasignado por avance en el flujo', $notification_message = null)
     {
         $conectar = parent::Conexion();
         // Actualiza el usuario asignado y el ID del paso actual en el ticket
@@ -66,25 +67,30 @@ class Ticket extends Conectar
         $sql->execute();
 
         $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
-                VALUES (?, ?, ?, ?, NOW(), 'Reasignado por avance en el flujo', 1);";
+                VALUES (?, ?, ?, ?, NOW(), ?, 1);";
         $sql2 = $conectar->prepare($sql2);
         $sql2->bindValue(1, $tick_id);                 // El ticket afectado
         $sql2->bindValue(2, $usu_asig);                // El NUEVO usuario asignado
         $sql2->bindValue(3, $quien_asigno_id);         // El usuario que HIZO la reasignación
         $sql2->bindValue(4, $paso_actual_id);          // El ID del paso actual
+        $sql2->bindValue(5, $asig_comentario);         // El comentario de la asignación
         $sql2->execute();
 
         if ($quien_asigno_id != $usu_asig) {
-            // a. Buscamos el nombre del paso para que la notificación sea más clara
-            $sql_paso = "SELECT paso_nombre FROM tm_flujo_paso WHERE paso_id = ?";
-            $sql_paso = $conectar->prepare($sql_paso);
-            $sql_paso->bindValue(1, $paso_actual_id);
-            $sql_paso->execute();
-            $paso_data = $sql_paso->fetch(PDO::FETCH_ASSOC);
-            $nombre_paso = $paso_data ? $paso_data['paso_nombre'] : 'un nuevo paso';
+            if ($notification_message) {
+                $mensaje_notificacion = $notification_message;
+            } else {
+                // a. Buscamos el nombre del paso para que la notificación sea más clara
+                $sql_paso = "SELECT paso_nombre FROM tm_flujo_paso WHERE paso_id = ?";
+                $sql_paso = $conectar->prepare($sql_paso);
+                $sql_paso->bindValue(1, $paso_actual_id);
+                $sql_paso->execute();
+                $paso_data = $sql_paso->fetch(PDO::FETCH_ASSOC);
+                $nombre_paso = $paso_data ? $paso_data['paso_nombre'] : 'un nuevo paso';
 
-            // b. Creamos el mensaje de la notificación
-            $mensaje_notificacion = "Se te ha asignado el Ticket #" . $tick_id . " para la tarea: '" . $nombre_paso . "'";
+                // b. Creamos el mensaje de la notificación
+                $mensaje_notificacion = "Se te ha asignado el Ticket #" . $tick_id . " para la tarea: '" . $nombre_paso . "'";
+            }
 
             // c. Preparamos la consulta para insertar en la tabla de notificaciones
             $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), 2)";

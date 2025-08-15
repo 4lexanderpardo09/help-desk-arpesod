@@ -8,7 +8,9 @@ function init() {
 
 function guardaryeditar(e){
     e.preventDefault();
-    var formData = new FormData($("#answer_form")[0])
+    var formData = new FormData($("#answer_form")[0]);
+    formData.append('es_error_proceso', $('#es_error_proceso').is(':checked') ? 1 : 0);
+
     $.ajax({
         url: "../../controller/respuestarapida.php?op=guardaryeditar",
         type: "POST",
@@ -17,10 +19,7 @@ function guardaryeditar(e){
         processData: false,
         success: function(datos){
             console.log(datos);
-            answer_id
             $("#answer_form")[0].reset();
-            $("#answer_id").val('');
-            $('#answer_nom').html('');
             $("#modalnuevarespuesta").modal('hide');
             $("#answer_data").DataTable().ajax.reload();
             swal({
@@ -98,8 +97,7 @@ function editar(answer_id) {
         data = JSON.parse(data);
         $('#answer_id').val(data.answer_id);
         $('#answer_nom').val(data.answer_nom);
-
-        
+        $('#es_error_proceso').prop('checked', data.es_error_proceso == 1);
 
     });    
 

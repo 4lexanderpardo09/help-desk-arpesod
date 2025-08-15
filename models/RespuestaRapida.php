@@ -11,12 +11,13 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function insert_respuestarapida($answer_nom){
+        public function insert_respuestarapida($answer_nom, $es_error_proceso){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "INSERT INTO tm_fast_answer (answer_nom, fech_crea, est) VALUES (?,NOW(),1)";
+            $sql = "INSERT INTO tm_fast_answer (answer_nom, es_error_proceso, fech_crea, est) VALUES (?,?,NOW(),1)";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$answer_nom);
+            $sql->bindValue(2,$es_error_proceso);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
@@ -33,13 +34,14 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_respuestarapida($answer_id,$answer_nom){
+        public function update_respuestarapida($answer_id,$answer_nom, $es_error_proceso){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "UPDATE tm_fast_answer SET answer_nom = ?, fech_modi = NOW() WHERE answer_id = ?";
+            $sql = "UPDATE tm_fast_answer SET answer_nom = ?, es_error_proceso = ?, fech_modi = NOW() WHERE answer_id = ?";
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1,$answer_nom);
-            $sql->bindValue(2,$answer_id);
+            $sql->bindValue(2,$es_error_proceso);
+            $sql->bindValue(3,$answer_id);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
