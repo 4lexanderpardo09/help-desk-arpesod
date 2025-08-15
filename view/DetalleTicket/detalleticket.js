@@ -275,7 +275,7 @@ $(document).on('click', '#btn_registrar_evento', function () {
         closeOnConfirm: false
     }, function(isConfirm) {
         if (isConfirm) {
-            $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id })
+            $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
                 .done(function() {
                     swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
                     // Recargamos el historial para ver el nuevo registro al instante

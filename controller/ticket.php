@@ -491,6 +491,9 @@ switch ($_GET["op"]) {
                                             Ticket asignado a <b><?php echo $row['nom_receptor'] . ' ' . $row['ape_receptor']; ?></b>.
                                             <br>
                                             <i><?php echo $row['descripcion']; ?></i>
+                                            <?php if (!empty($row['error_descrip'])) : ?>
+                                                <br><strong>Descripción del Error:</strong> <?php echo htmlspecialchars($row['error_descrip']); ?>
+                                            <?php endif; ?>
                                         </p>
                                         
                                         <?php
@@ -988,6 +991,7 @@ switch ($_GET["op"]) {
     $tick_id = $_POST['tick_id'];
     $answer_id = $_POST['answer_id'];
     $usu_id = $_POST['usu_id']; // ID del usuario que reporta el error (el analista)
+    $error_descrip = $_POST['error_descrip']; // Nueva descripción del error
 
     // Buscamos el nombre de la respuesta rápida
     require_once('../models/RespuestaRapida.php');
@@ -1004,12 +1008,15 @@ switch ($_GET["op"]) {
     if ($asignacion_anterior) {
         $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
         
-        // 2. "Sellamos" ese registro de historial con el código del error para los KPIs.
-        $ticket->update_error_code_paso($asignacion_anterior['th_id'], $answer_id);
+        // 2. "Sellamos" ese registro de historial con el código del error y la descripción.
+        $ticket->update_error_code_paso($asignacion_anterior['th_id'], $answer_id, $error_descrip);
     }
 
     // 3. Construimos el comentario para el historial visible.
     $comentario = "Se registró un evento: <b>" . $nombre_respuesta . "</b>.";
+    if (!empty($error_descrip)) {
+        $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
+    }
     if ($nombre_completo_responsable) {
         $comentario .= "<br><small class='text-muted'>Error atribuido al paso anterior, asignado a: <b>" . $nombre_completo_responsable . "</b></small>";
     }

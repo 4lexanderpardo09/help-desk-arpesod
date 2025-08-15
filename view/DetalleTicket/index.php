@@ -7,6 +7,9 @@ if (isset($_SESSION["usu_id"])) {
     <?php require_once('../MainHead/head.php') ?>
     <title>Detalle ticket</title>
     <style>
+        .m-t-lg {
+            margin-top: 0px;
+        }
     /* Contenedor principal de la línea de tiempo horizontal */
     .timeline-wrapper {
         width: 100%;
@@ -248,19 +251,27 @@ if (isset($_SESSION["usu_id"])) {
                                     </div>
                                 </div>
                             </form>
-                            <div class="p-3 mb-3 border rounded" style="background-color: #f0f8ff;" id="panel_respuestas_rapidas">
-                                <div class="form-group">
-                                    <label class="form-label semibold" for="fast_answer_id">Registrar Evento / Respuesta Rápida:</label>
-                                    <div class="input-group">
-                                        <select class="form-control" id="fast_answer_id" name="fast_answer_id">
+                            <div class="box-typical box-typical-padding" id="panel_respuestas_rapidas">
+                                <h5 class="m-t-lg with-border">Registrar Evento</h5>
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label class="form-label" for="fast_answer_id">Tipo de Evento (Respuesta Rápida)</label>
+                                            <select class="select2" id="fast_answer_id" name="fast_answer_id" data-placeholder="Seleccione un tipo de evento...">
                                             </select>
-                                        <div class="input-group-append">
-                                            <button class="btn btn-secondary" type="button" id="btn_registrar_evento">
-                                                <i class="fa fa-plus-circle"></i> Registrar
-                                            </button>
                                         </div>
                                     </div>
-                                    <small class="form-text text-muted">Usa esta opción para marcar el ticket con un estado (ej. Error de Proceso) y dejar un registro en el historial.</small>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label class="form-label" for="error_descrip">Descripción Detallada del Evento</label>
+                                            <textarea class="form-control" id="error_descrip" name="error_descrip" rows="4" placeholder="Añada aquí cualquier detalle relevante sobre el evento que está registrando..."></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" id="btn_registrar_evento" class="btn btn-primary">
+                                            <i class="fa fa-plus"></i> Registrar Evento en Historial
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <fieldset class="form-group semibold">

@@ -290,7 +290,8 @@ class Ticket extends Conectar
                 NULL AS ape_receptor,
                 doc.det_nom,
                 d.tickd_id,
-                NULL AS estado_tiempo_paso -- Columna de relleno para que la unión funcione
+                NULL AS estado_tiempo_paso, -- Columna de relleno para que la unión funcione
+                NULL AS error_descrip -- Columna de relleno
             FROM td_ticketdetalle d
             INNER JOIN tm_usuario u ON d.usu_id = u.usu_id
             LEFT JOIN td_documento_detalle doc ON d.tickd_id = doc.tickd_id
@@ -309,7 +310,8 @@ class Ticket extends Conectar
                 u_nuevo.usu_ape AS ape_receptor,
                 NULL AS det_nom,
                 NULL AS tickd_id,
-                a.estado_tiempo_paso -- AÑADIDO: Seleccionamos el estado del paso
+                a.estado_tiempo_paso, -- AÑADIDO: Seleccionamos el estado del paso
+                a.error_descrip -- NUEVO: Seleccionamos la descripción del error
             FROM th_ticket_asignacion a
             LEFT JOIN tm_usuario u_origen ON a.how_asig = u_origen.usu_id
             INNER JOIN tm_usuario u_nuevo ON a.usu_asig = u_nuevo.usu_id
@@ -328,7 +330,8 @@ class Ticket extends Conectar
                 NULL AS ape_receptor,
                 NULL AS det_nom,
                 NULL AS tickd_id,
-                NULL AS estado_tiempo_paso -- Columna de relleno
+                NULL AS estado_tiempo_paso, -- Columna de relleno
+                NULL AS error_descrip -- Columna de relleno
             FROM tm_ticket t
             LEFT JOIN tm_usuario u_cierre ON t.usu_asig = u_cierre.usu_id
             WHERE t.tick_id = ? AND t.fech_cierre IS NOT NULL)
@@ -827,14 +830,15 @@ class Ticket extends Conectar
         $sql->execute();
     }
 
-    public function update_error_code_paso($th_id, $error_code_id)
+    public function update_error_code_paso($th_id, $error_code_id, $error_descrip)
     {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "UPDATE th_ticket_asignacion SET error_code_id = ? WHERE th_id = ?";
+        $sql = "UPDATE th_ticket_asignacion SET error_code_id = ?, error_descrip = ? WHERE th_id = ?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $error_code_id);
-        $sql->bindValue(2, $th_id);
+        $sql->bindValue(2, $error_descrip);
+        $sql->bindValue(3, $th_id);
         $sql->execute();
     }
 }
