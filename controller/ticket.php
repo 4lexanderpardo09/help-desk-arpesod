@@ -29,11 +29,12 @@ switch ($_GET["op"]) {
         $usu_id_creador = $_POST['usu_id'];
         $cats_id = $_POST['cats_id'];
         $session_usu = $_SESSION['usu_id'];
+        $emp_id = $_POST['emp_id'];
+        $dp_id = $_POST['dp_id'];
 
         $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
         $creador_car_id = $datos_creador['car_id'];
         $creador_reg_id = $datos_creador['reg_id'];
-        $creador_dp_id = $datos_creador['dp_id'];
 
         $usu_asig_final = $_POST['usu_asig'] ?? null;
         $paso_actual_id_final = null;
@@ -52,7 +53,7 @@ switch ($_GET["op"]) {
                     $jefe_id = $regla_excepcion['aprobador_usu_id'];
                 } else {
                     // Si no, se busca al jefe del departamento
-                    $datos_depto = $departamento->get_departamento_x_id($creador_dp_id);
+                    $datos_depto = $departamento->get_departamento_x_id($dp_id);
                     if ($datos_depto && !empty($datos_depto['jefe_usu_id'])) {
                         $jefe_id = $datos_depto['jefe_usu_id'];
                     }
@@ -87,7 +88,7 @@ switch ($_GET["op"]) {
         $datos = $ticket->insert_ticket(
             $usu_id_creador, $_POST['cat_id'], $cats_id, $_POST['pd_id'], 
             $_POST['tick_titulo'], $_POST['tick_descrip'], $_POST['error_proceso'],
-            $usu_asig_final, $paso_actual_id_final, $session_usu
+            $usu_asig_final, $paso_actual_id_final, $session_usu, $emp_id, $dp_id
         );
 
         if (is_array($datos) == true and count($datos) > 0) {

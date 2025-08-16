@@ -1,11 +1,11 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null, $how_asig)
+    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null, $how_asig, $emp_id, $dp_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1')";
+        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est,emp_id,dp_id) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1',?,?)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $cat_id);
@@ -17,6 +17,8 @@ class Ticket extends Conectar
         $sql->bindValue(8, $usu_asig);
         $sql->bindValue(9, $paso_actual_id);
         $sql->bindValue(10, $how_asig);
+        $sql->bindValue(11, $emp_id);
+        $sql->bindValue(12, $dp_id);
         $sql->execute();
 
         $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
@@ -241,39 +243,37 @@ class Ticket extends Conectar
         $conectar = parent::conexion();
         parent::set_names();
         $sql = "SELECT
-        tm_ticket.tick_id,
-        tm_ticket.usu_id,
-        tm_ticket.cat_id,
-        tm_ticket.cats_id,
-        tm_ticket.tick_titulo,
-        tm_ticket.tick_descrip,
-        tm_ticket.tick_estado,
-        tm_ticket.fech_crea,
-        tm_ticket.usu_asig,
-        tm_ticket.pd_id,
-        tm_ticket.paso_actual_id, -- Se añade el ID del paso
-        tm_usuario.usu_nom,
-        tm_usuario.usu_ape,
-        tm_usuario.usu_correo,
-        tm_categoria.cat_nom,
-        tm_subcategoria.cats_nom,
-        td_prioridad.pd_nom,
-        tm_departamento.dp_nom,
-        td_empresa.emp_nom,
-        paso.paso_nombre -- Se añade el NOMBRE del paso
-        FROM
-        tm_ticket
-        LEFT JOIN tm_categoria ON tm_ticket.cat_id = tm_categoria.cat_id
-        LEFT JOIN td_empresa ON tm_ticket.cat_id = td_empresa.emp_id
-        LEFT JOIN tm_usuario ON tm_ticket.usu_id = tm_usuario.usu_id
-        LEFT JOIN tm_departamento ON tm_usuario.dp_id = tm_departamento.dp_id     
-        LEFT JOIN td_prioridad ON tm_ticket.pd_id = td_prioridad.pd_id
-        LEFT JOIN tm_subcategoria on tm_ticket.cats_id = tm_subcategoria.cats_id
-        LEFT JOIN tm_flujo_paso AS paso ON tm_ticket.paso_actual_id = paso.paso_id
-
-
-        WHERE
-        tm_ticket.est = 1 AND tm_ticket.tick_id = ?";
+        t.tick_id,
+        t.usu_id,
+        t.cat_id,
+        t.cats_id,
+        t.tick_titulo,
+        t.tick_descrip,
+        t.tick_estado,
+        t.fech_crea,
+        t.usu_asig,
+        t.pd_id,
+        t.paso_actual_id,
+        u.usu_nom,
+        u.usu_ape,
+        u.usu_correo,
+        c.cat_nom,
+        sc.cats_nom,
+        p.pd_nom,
+        d.dp_nom,
+        e.emp_nom,
+        paso.paso_nombre
+    FROM
+        tm_ticket t
+        LEFT JOIN tm_categoria c ON t.cat_id = c.cat_id
+        LEFT JOIN tm_usuario u ON t.usu_id = u.usu_id
+        LEFT JOIN tm_departamento d ON t.dp_id = d.dp_id     
+        LEFT JOIN td_empresa e ON t.emp_id = e.emp_id
+        LEFT JOIN td_prioridad p ON t.pd_id = p.pd_id
+        LEFT JOIN tm_subcategoria sc on t.cats_id = sc.cats_id
+        LEFT JOIN tm_flujo_paso AS paso ON t.paso_actual_id = paso.paso_id
+    WHERE
+        t.est = 1 AND t.tick_id = ?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->execute();
