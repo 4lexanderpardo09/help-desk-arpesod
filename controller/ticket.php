@@ -43,6 +43,10 @@ switch ($_GET["op"]) {
         $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
         
         if ($flujo) {
+            // Si hay un flujo, siempre intentamos obtener el paso inicial.
+            $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+            $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
+
             if ($flujo['requiere_aprobacion_jefe'] == 1) {
                 // --- 2A. EL FLUJO REQUIERE APROBACIÓN DE JEFE ---
                 $jefe_id = null;
@@ -60,8 +64,8 @@ switch ($_GET["op"]) {
                 }
                 if ($jefe_id) { $usu_asig_final = $jefe_id; }
 
-            } else {
-                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
+            } else if (empty($usu_asig_final)) {
+                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) Y NO HAY ASIGNACIÓN MANUAL ---
                 $asignado_car_id = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
                 
                 if ($asignado_car_id) {
@@ -76,9 +80,7 @@ switch ($_GET["op"]) {
                     }
 
                     if ($nuevo_asignado_info) {
-                        $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
                         $usu_asig_final = $nuevo_asignado_info['usu_id'];
-                        $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
                     }
                 }
             }
@@ -287,13 +289,19 @@ switch ($_GET["op"]) {
     $nuevo_asignado_info = null;
     $datos_siguiente_paso = $flujoPasoModel->get_paso_por_id($paso_id_siguiente);
 
-    // a. Primero, revisamos si la TAREA en sí es nacional.
-    if (isset($datos_siguiente_paso['es_tarea_nacional']) && $datos_siguiente_paso['es_tarea_nacional'] == 1) {
-        // Si la tarea es nacional, buscamos al especialista nacional.
-        $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($cargo_siguiente_paso);
+    // 1. VERIFICAR SI HAY SELECCIÓN MANUAL (aunque en este flujo no se espera, es una salvaguarda)
+    if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
+        $nuevo_asignado_info = $usuario->get_usuario_x_id($_POST['nuevo_asignado_id']);
     } else {
-        // b. Si NO, la tarea es regional y usamos la lógica de siempre.
-        $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
+        // 2. SI NO HAY SELECCIÓN MANUAL, APLICAR LÓGICA AUTOMÁTICA
+        // a. Primero, revisamos si la TAREA en sí es nacional.
+        if (isset($datos_siguiente_paso['es_tarea_nacional']) && $datos_siguiente_paso['es_tarea_nacional'] == 1) {
+            // Si la tarea es nacional, buscamos al especialista nacional.
+            $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($cargo_siguiente_paso);
+        } else {
+            // b. Si NO, la tarea es regional y usamos la lógica de siempre.
+            $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($cargo_siguiente_paso, $regional_id_creador);
+        }
     }
     // --- FIN DE LÓGICA DE ASIGNACIÓN ---
 
@@ -798,20 +806,17 @@ switch ($_GET["op"]) {
 
         if ($datos_siguiente_paso) {
             $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
-            
-            // 1. PRIMERO, revisamos si la TAREA en sí es nacional.
-            if ($datos_siguiente_paso['es_tarea_nacional'] == 1) {
-                // Si la tarea es nacional, buscamos específicamente a un usuario con ese cargo Y que sea nacional.
-                $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($siguiente_cargo_id);
 
+            // 1. VERIFICAR SI HAY SELECCIÓN MANUAL
+            if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
+                $nuevo_asignado_info = $usuario->get_usuario_x_id($_POST['nuevo_asignado_id']);
             } else {
-                // 2. SI NO, la tarea es regional y usamos la lógica híbrida de siempre.
-                
-                // a. Revisamos si el agente eligió a alguien manualmente
-                if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
-                    $nuevo_asignado_info = $usuario->get_usuario_x_id($_POST['nuevo_asignado_id']);
+                // 2. SI NO HAY SELECCIÓN MANUAL, APLICAR LÓGICA AUTOMÁTICA
+                if ($datos_siguiente_paso['es_tarea_nacional'] == 1) {
+                    // a. Si la tarea es nacional, buscar especialista nacional
+                    $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($siguiente_cargo_id);
                 } else {
-                    // b. Si no, lo buscamos automáticamente por región
+                    // b. Si la tarea es regional, buscar por región
                     $regional_origen_id = $ticket->get_ticket_region($tick_id);
                     $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
                 }
