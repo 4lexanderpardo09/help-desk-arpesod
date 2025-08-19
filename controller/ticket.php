@@ -716,7 +716,7 @@ switch ($_GET["op"]) {
                 // 2. Recorres la lista para añadir el indicador de tiempo
                 $mi_ticket = $datos; // Usamos '&' para modificar el array original
                     
-                    $estado_tiempo = 'N/A'; // Valor por defecto
+                    $estado_tiempo = '<span class="label label-defa">N/A</span>'; // Valor por defecto
 
                     // Si el ticket está abierto y en un flujo
                     if ($mi_ticket['tick_estado'] == 'Abierto' && !empty($mi_ticket['paso_actual_id'])) {
