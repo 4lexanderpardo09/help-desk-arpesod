@@ -256,38 +256,60 @@ $(document).on('click', '#btn_registrar_evento', function () {
     var tick_id = getUrlParameter('ID');
     var answer_id = $('#fast_answer_id').val();
     var usu_id = $('#user_idx').val();
+    var answer_text = $('#fast_answer_id option:selected').text();
 
-    // Validamos que se haya seleccionado una opción
     if (!answer_id) {
         swal("Atención", "Por favor, seleccione una respuesta rápida para registrar.", "warning");
         return;
     }
 
-    // Pedimos confirmación al usuario
-    swal({
-        title: "¿Estás seguro?",
-        text: "Se registrará este evento en el historial del ticket y se marcará el ticket con este estado.",
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonClass: "btn-primary",
-        confirmButtonText: "Sí, registrar ahora",
-        cancelButtonText: "Cancelar",
-        closeOnConfirm: false
-    }, function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
-                .done(function() {
-                    swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
-                    // Recargamos el historial para ver el nuevo registro al instante
-                    listarDetalle(tick_id);
-                    // Reseteamos el combo
-                    $('#fast_answer_id').val('');
-                })
-                .fail(function() {
-                    swal("Error", "No se pudo registrar el evento.", "error");
-                });
-        }
-    });
+    if (answer_text.toLowerCase().trim() === "cierre forzoso") {
+        swal({
+            title: "¿Estás seguro?",
+            text: "Se registrará este evento y se cerrará el ticket.",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonClass: "btn-danger",
+            confirmButtonText: "Sí, cerrar ticket",
+            cancelButtonText: "Cancelar",
+            closeOnConfirm: false
+        }, function(isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
+                    .done(function() {
+                        updateTicket(tick_id, usu_id);
+                        listarDetalle(tick_id);
+                        $('#fast_answer_id').val('');
+                    })
+                    .fail(function() {
+                        swal("Error", "No se pudo registrar el evento.", "error");
+                    });
+            }
+        });
+    } else {
+        swal({
+            title: "¿Estás seguro?",
+            text: "Se registrará este evento en el historial del ticket y se marcará el ticket con este estado.",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonClass: "btn-primary",
+            confirmButtonText: "Sí, registrar ahora",
+            cancelButtonText: "Cancelar",
+            closeOnConfirm: false
+        }, function(isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
+                    .done(function() {
+                        swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
+                        listarDetalle(tick_id);
+                        $('#fast_answer_id').val('');
+                    })
+                    .fail(function() {
+                        swal("Error", "No se pudo registrar el evento.", "error");
+                    });
+            }
+        });
+    }
 });
 
 
