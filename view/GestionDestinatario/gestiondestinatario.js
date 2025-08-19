@@ -146,7 +146,6 @@ function editar(dest_id) {
     $.post("../../controller/destinatarioticket.php?op=mostrar", {dest_id:dest_id}, function(data) {
         data = JSON.parse(data);
         $('#dest_id').val(data.dest_id);
-        console.log(data.dest_id);
         
         $("#answer_id").val(data.answer_id).trigger('change');
         $('#usu_id').val(data.usu_id).trigger('change');

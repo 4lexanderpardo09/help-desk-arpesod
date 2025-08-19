@@ -16,7 +16,6 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
             $("#pd_form")[0].reset();
             $("#pd_nom").html('');
             $("#pd_id").val('');

@@ -15,11 +15,9 @@ $(document).ready(function () {
         lang: "es-ES",
         callbacks: {
             onImageUpload: function (image) {
-                console.log("Image detect...");
                 myimagetreat(image[0]);
             },
             onPaste: function (e) {
-                console.log("Text detect...");
             }
         },
         toolbar: [
@@ -217,7 +215,6 @@ $(document).on('click', '#btnenviar', function () {
         contentType: false,
         processData: false,
         success: function (data) {
-            console.log(data);
             var resultado = JSON.parse(data);
             // Verificamos la nueva bandera que envía el controlador
             if (resultado.reassigned) {
@@ -415,7 +412,6 @@ function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
-        console.log(data.tick_estado_texto);
 
         $('#lbltickestado').html(data.tick_estado);
         $('#lblprioridad').html(data.pd_nom);
@@ -455,10 +451,6 @@ function listarDetalle(tick_id) {
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
         var usu_asigx = $('#user_idx').val();
-        console.log(usu_asigx);
-        
-        console.log(data);
-        // ... tu código para llenar el resto de la vista ...
 
         // Lógica para construir la línea de tiempo
         if (data.timeline_steps && data.timeline_steps.length > 0) {
@@ -518,7 +510,6 @@ function listarDetalle(tick_id) {
             // Llenamos el editor Summernote con la descripción del paso
             // Si la descripción está vacía, no ponemos nada.
             if (pasoInfo.paso_descripcion) {
-                console.log(pasoInfo.paso_descripcion);
                 
                 $('#tickd_descrip').summernote('code', pasoInfo.paso_descripcion);
             }
@@ -529,29 +520,22 @@ function listarDetalle(tick_id) {
 // --- NUEVO: Evento que se activa al marcar/desmarcar el checkbox de avanzar flujo ---
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
     console.clear(); // Limpiamos la consola para ver mejor
-    console.log("--- INICIANDO DEPURACIÓN DE AVANCE DE FLUJO ---");
-    console.log("Checkbox clickeado. Nuevo estado:", $(this).is(':checked') ? "Marcado" : "Desmarcado");
 
     // Obtenemos la información completa del siguiente paso que guardamos en el panel
     var siguiente_paso = $('#panel_checkbox_flujo').data('siguiente-paso-id');
-    console.log("1. Datos del siguiente paso encontrados en el panel:", siguiente_paso);
 
     if ($(this).is(':checked')) {
         // Verificamos si los datos del siguiente paso existen
         if (siguiente_paso) {
-            console.log("2. Verificando la regla 'requiere_seleccion_manual'. Valor:", siguiente_paso.requiere_seleccion_manual);
             
             // Preguntamos si este paso requiere selección manual (usando el "interruptor" de la BD)
             if (siguiente_paso.requiere_seleccion_manual == 1) {
-                console.log("3. DECISIÓN: El paso REQUIERE selección manual. Pidiendo lista de usuarios...");
                 // Si SÍ, pedimos la lista de usuarios y mostramos el combo
                 $.post("../../controller/ticket.php?op=get_usuarios_por_paso", { paso_id: siguiente_paso.paso_id }, function(data) {
                     $('#nuevo_asignado_id').html(data).trigger('change');
                     $('#panel_siguiente_asignado').show();
-                    console.log("4. Combo de usuarios cargado y mostrado.");
                 });
             } else {
-                console.log("3. DECISIÓN: El paso es AUTOMÁTICO. No se muestra el combo de selección.");
             }
         } else {
             console.error("Error: No se encontraron los datos del siguiente paso en el panel. Revisa la función listarDetalle.");
@@ -559,9 +543,7 @@ $(document).on('change', '#checkbox_avanzar_flujo', function() {
     } else {
         // Si se desmarca, siempre ocultamos el combo
         $('#panel_siguiente_asignado').hide();
-        console.log("Checkbox desmarcado. Panel de selección oculto.");
     }
-    console.log("--- FIN DEPURACIÓN ---");
 });
 
 init();

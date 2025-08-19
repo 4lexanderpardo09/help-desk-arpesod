@@ -9,7 +9,6 @@ $(document).ready(function(){
 
     const rol_id = $('#rol_real_idx').val();
     const usu_id = $('#user_idx').val();
-    console.log(usu_id);
     
 
     // Inicialización de la tabla de historial

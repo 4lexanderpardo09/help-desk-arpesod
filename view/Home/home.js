@@ -16,7 +16,6 @@ function cargarDashboard(override_filtros = {}) {
     // Sobrescribir o añadir filtros pasados como argumentos
     filtros = { ...filtros, ...override_filtros };
 
-    console.log("Cargando dashboard con filtros:", filtros);
     cargarKPIs(filtros);
     cargarGraficoTicketsPorMes(filtros);
     cargarTablaTopCategorias(filtros);

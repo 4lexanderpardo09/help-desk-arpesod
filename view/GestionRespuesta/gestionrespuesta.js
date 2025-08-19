@@ -18,7 +18,6 @@ function guardaryeditar(e){
         contentType: false,
         processData: false,
         success: function(datos){
-            console.log(datos);
             $("#answer_form")[0].reset();
             $("#modalnuevarespuesta").modal('hide');
             $("#answer_data").DataTable().ajax.reload();

@@ -11,11 +11,11 @@ $(document).ready(function () {
         lang: "es-ES",
         callbacks: {
             onImageUpload: function (image) {
-                console.log("Image detect...");
+                ("Image detect...");
                 myimagetreat(image[0]);
             },
             onPaste: function (e) {
-                console.log("Text detect...");
+                ("Text detect...");
             }
         },
         toolbar: [

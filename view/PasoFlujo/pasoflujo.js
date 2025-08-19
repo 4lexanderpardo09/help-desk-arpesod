@@ -81,7 +81,7 @@ $(document).ready(function () {
             data: {flujo_id: getUrlParameter('ID')},
             dataType: 'json',
             error: function (e) {
-                console.log(e.responseText);
+                (e.responseText);
             }
         },
         "bDestroy": true,
@@ -205,11 +205,11 @@ function descripcionPaso(){
         lang: "es-ES",
         callbacks: {
             onImageUpload: function (image) {
-                console.log("Image detect...");
+                ("Image detect...");
                 myimagetreat(image[0]);
             },
             onPaste: function (e) {
-                console.log("Text detect...");
+                ("Text detect...");
             }
         },
         toolbar: [

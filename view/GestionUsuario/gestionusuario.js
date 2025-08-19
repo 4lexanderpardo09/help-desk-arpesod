@@ -2,7 +2,6 @@ var tabla;
 
 function init() {
     $("#usuario_form").on("submit", function (e) {
-        console.log("Enviando empresas: ", $('#emp_id_string').val());
 
         guardaryeditar(e);
     })
@@ -115,7 +114,6 @@ $(document).ready(function () {
         $('#car_id').html(data);
     });
     $.post("../../controller/regional.php?op=combo", function (data) {
-        console.log(data);
         
         $('#reg_id').html(data);
     });

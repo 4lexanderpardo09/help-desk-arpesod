@@ -22,18 +22,12 @@ $(document).ready(function() {
     }
 
     const socket_url = `${wsProtocol}://${wsHost}${wsPath}?userId=${usu_id}`;
-    console.log('Intentando conectar a WebSocket en:', socket_url);
 
     const conn = new WebSocket(socket_url);
 
     // --- MANEJO DE EVENTOS DEL WEBSOCKET ---
 
-    conn.onopen = function(e) {
-        console.log("Conexión WebSocket establecida exitosamente.");
-    };
-
     conn.onmessage = function(e) {
-        console.log("Mensaje recibido del servidor: ", e.data);
         const data = JSON.parse(e.data);
 
         if (data.type === 'new_ticket_notification') {
@@ -46,14 +40,6 @@ $(document).ready(function() {
             actualizarContadorDeNotificaciones();
             actualizarMenuDeNotificaciones();
         }
-    };
-
-    conn.onclose = function(e) {
-        console.log("Conexión WebSocket cerrada. Puede que necesites recargar la página.");
-    };
-
-    conn.onerror = function(e) {
-        console.error("Ha ocurrido un error en la conexión WebSocket.", e);
     };
 
     // --- FUNCIONES AUXILIARES ---
