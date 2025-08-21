@@ -334,4 +334,16 @@ class Usuario extends Conectar
         $sql->execute();
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function get_usuario_por_cargo_y_departamento($car_id, $dp_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_usuario WHERE car_id = ? AND dp_id = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->bindValue(2, $dp_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
 }

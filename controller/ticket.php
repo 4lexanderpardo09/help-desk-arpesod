@@ -43,44 +43,60 @@ switch ($_GET["op"]) {
         $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
         
         if ($flujo) {
-            // Si hay un flujo, siempre intentamos obtener el paso inicial.
-            $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
-            $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
-
             if ($flujo['requiere_aprobacion_jefe'] == 1) {
                 // --- 2A. EL FLUJO REQUIERE APROBACIÓN DE JEFE ---
+                $paso_actual_id_final = null; // Se pone en NULL porque está pendiente de aprobación
+                
+                require_once('../models/Organigrama.php');
+                $organigrama = new Organigrama();
                 $jefe_id = null;
-                $regla_excepcion = $flujoPasoModel->get_regla_aprobacion($creador_car_id);
 
-                if ($regla_excepcion) {
-                    // Si hay una regla de excepción (ej: Caja -> Director Financiero)
-                    $jefe_id = $regla_excepcion['aprobador_usu_id'];
-                } else {
-                    // Si no, se busca al jefe del departamento
-                    $datos_depto = $departamento->get_departamento_x_id($dp_id);
-                    if ($datos_depto && !empty($datos_depto['jefe_usu_id'])) {
-                        $jefe_id = $datos_depto['jefe_usu_id'];
+                // 1. Buscar el cargo del jefe en el organigrama
+                $jefe_cargo_id = $organigrama->get_jefe_cargo_id($creador_car_id);
+
+                if ($jefe_cargo_id) {
+                    // 2. Buscar al usuario que es el jefe, priorizando usuarios nacionales.
+                    $jefe_info = null;
+                    // a. Primero, buscar un jefe que sea "nacional" con ese cargo.
+                    $jefe_info = $usuario->get_usuario_nacional_por_cargo($jefe_cargo_id);
+                    // b. Si no se encuentra un jefe nacional, buscar uno en la misma regional del creador.
+                    if (!$jefe_info) {
+                        $jefe_info = $usuario->get_usuario_por_cargo_y_regional($jefe_cargo_id, $creador_reg_id);
+                    }
+                    // c. Como fallback, buscar en el mismo departamento si no se encontró por regional.
+                    if (!$jefe_info) {
+                        $jefe_info = $usuario->get_usuario_por_cargo_y_departamento($jefe_cargo_id, $dp_id);
+                    }
+
+                    if ($jefe_info) {
+                        $jefe_id = $jefe_info['usu_id'];
                     }
                 }
-                if ($jefe_id) { $usu_asig_final = $jefe_id; }
-
-            } else if (empty($usu_asig_final)) {
-                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) Y NO HAY ASIGNACIÓN MANUAL ---
-                $asignado_car_id = $flujoPasoModel->get_regla_mapeo($cats_id, $creador_car_id);
                 
-                if ($asignado_car_id) {
-                    $nuevo_asignado_info = null;
+                if ($jefe_id) { 
+                    $usu_asig_final = $jefe_id; 
+                }
 
-                    // 1. PRIMERO, buscamos si existe un especialista NACIONAL para ese cargo.
-                    $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
+            } else {
+                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
+                $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+                $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
 
-                    // 2. SI NO se encontró un especialista nacional, buscamos por región.
-                    if (!$nuevo_asignado_info) {
-                        $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
-                    }
-
-                    if ($nuevo_asignado_info) {
-                        $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                if (empty($usu_asig_final) && $paso_inicial) {
+                    // Asignación automática para el primer paso si no se asignó manualmente
+                    $asignado_car_id = $paso_inicial['cargo_id_asignado'];
+                    
+                    if ($asignado_car_id) {
+                        $nuevo_asignado_info = null;
+                        // a. Primero, buscar un agente que sea "nacional" con ese cargo.
+                        $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
+                        // b. Si no, buscar uno en la misma regional.
+                        if (!$nuevo_asignado_info) {
+                            $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
+                        }
+                        if ($nuevo_asignado_info) {
+                            $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                        }
                     }
                 }
             }

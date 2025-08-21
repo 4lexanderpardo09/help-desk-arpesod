@@ -133,6 +133,11 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <span class="lbl">Gestion destinatario ticket</span>
                         </a>
                     </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionOrganigrama\">
+                            <span class="lbl">Gestion Organigrama</span>
+                        </a>
+                    </li>
                     <li class="grey with-sub">
                         <span>
                             <span class="lbl">Gestion flujos</span>
@@ -146,11 +151,6 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                             <li class="blue-dirty">
                                 <a href="..\GestionMapeoFlujo\">
                                     <span class="lbl">Mapeo de flujos</span>
-                                </a>
-                            </li>
-                            <li class="blue-dirty">
-                                <a href="..\GestionReglaAprobacion\">
-                                    <span class="lbl">Reglas de aprobacion</span>
                                 </a>
                             </li>
                         </ul>
