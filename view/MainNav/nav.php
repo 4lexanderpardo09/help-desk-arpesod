@@ -21,6 +21,10 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                     <span class="lbl">Consultar Ticket</span>
                 </a>
             </li>
+            <li class="menu-footer" style="padding: 20px 0; text-align: center; color: #a3a3a3; font-size: 12px; border-top: 1px solid #e0e0e0;">
+                <div>Desarrollado por departamento de Sistemas</div>
+                <div>&copy; <?php echo date("Y"); ?> Arpesod SAS</div>
+            </li>
         </ul>
     </nav>
 <?php
@@ -59,13 +63,13 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 </a>
             </li>
             <li class="menu-footer" style="padding: 20px 0; text-align: center; color: #a3a3a3; font-size: 12px; border-top: 1px solid #e0e0e0;">
-                <div>Desarrollado por departamento de Sistema</div>
+                <div>Desarrollado por departamento de Sistemas</div>
                 <div>&copy; <?php echo date("Y"); ?> Arpesod SAS</div>
             </li>
         </ul>
     </nav>
 <?php
-}else if ($_SESSION['rol_id'] == 2 || $_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] == 3) {
+} else if ($_SESSION['rol_id'] == 2 || $_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] == 3) {
 ?>
     <nav class="side-menu">
         <ul class="side-menu-list">
@@ -88,11 +92,11 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                 </a>
             </li>
             <li class="grey with-sub">
-	            <span>
-	                <i class="font-icon font-icon-dashboard"></i>
-	                <span class="lbl">Gestion</span>
-	            </span>
-	            <ul>
+                <span>
+                    <i class="font-icon font-icon-dashboard"></i>
+                    <span class="lbl">Gestion</span>
+                </span>
+                <ul>
                     <li class="blue-dirty">
                         <a href="..\GestionUsuario\">
                             <span class="lbl">Gestion usuarios</span>
@@ -124,13 +128,18 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                         </a>
                     </li>
                     <li class="blue-dirty">
-                        <a href="..\GestionRespuesta\">
-                            <span class="lbl">Gestion respuesta rapida</span>
+                        <a href="..\GestionRegional\">
+                            <span class="lbl">Gestion regional</span>
                         </a>
                     </li>
                     <li class="blue-dirty">
-                        <a href="..\GestionDestinatario\">
-                            <span class="lbl">Gestion destinatario ticket</span>
+                        <a href="..\GestionCargo\">
+                            <span class="lbl">Gestion cargo</span>
+                        </a>
+                    </li>
+                    <li class="blue-dirty">
+                        <a href="..\GestionRespuesta\">
+                            <span class="lbl">Gestion respuesta rapida</span>
                         </a>
                     </li>
                     <li class="blue-dirty">
@@ -154,9 +163,13 @@ if ($_SESSION['rol_id'] == 1 && $_SESSION['rol_id_real'] != 3) {
                                 </a>
                             </li>
                         </ul>
-                    </li>    
-	            </ul>
-	        </li>
+                    </li>
+                </ul>
+            </li>
+            <li class="menu-footer" style="padding: 20px 0; text-align: center; color: #a3a3a3; font-size: 12px; border-top: 1px solid #e0e0e0;">
+                <div>Desarrollado por departamento de Sistemas</div>
+                <div>&copy; <?php echo date("Y"); ?> Arpesod SAS</div>
+            </li>
         </ul>
     </nav>
 <?php
