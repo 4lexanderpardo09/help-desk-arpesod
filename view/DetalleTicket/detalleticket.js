@@ -111,49 +111,6 @@ function getRespuestasRapidas() {
 
 }
 
-function getDestinatarios(cats_id) {
-
-    var dp_idx = $('#dp_idx').val();
-
-    $("#answer_id").off('change').on('change', function () {
-        answer_id = $(this).val();
-
-        if (answer_id == 0) {
-            $('#dest_id').html('<option value="">Seleccionar</option>');
-            $('#tickd_descrip').summernote('code', '');
-        } else {
-
-            $.post("../../controller/destinatarioticket.php?op=combo", { answer_id: answer_id, dp_id: dp_idx, cats_id: cats_id }, function (data) {
-                $('#dest_id').html('<option value="">Seleccionar</option>' + data);
-            });
-
-            $("#dest_id").off('change').on('change', function () {
-                dest_id = $(this).val();
-
-                if (dest_id == 0) {
-                    $('#tickd_descrip').summernote('code', '');
-                } else {
-                    $.post("../../controller/respuestarapida.php?op=mostrar", { answer_id: answer_id }, function (data) {
-                        data = JSON.parse(data);
-                        respuesta = data.answer_nom
-                        $.post("../../controller/destinatarioticket.php?op=mostrar", { dest_id: dest_id }, function (data) {
-
-
-                            data = JSON.parse(data);
-                            $('#tickd_descrip').summernote('code', `${respuesta} se envio el ticekt a ${data.nombre_usuario}`);
-                        });
-                    });
-                }
-            })
-
-
-        }
-
-
-    });
-
-}
-
 var getUrlParameter = function getUrlParameter(sParam) {
     var sPageURL = decodeURIComponent(window.location.search.substring(1)),
         sURLVariables = sPageURL.split('&'),
