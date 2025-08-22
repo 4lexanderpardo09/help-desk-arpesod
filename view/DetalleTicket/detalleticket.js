@@ -324,16 +324,15 @@ $(document).on("click", "#btn_aprobar_flujo", function () {
                 $.post("../../controller/ticket.php?op=aprobar_ticket_jefe", { tick_id: tick_id }, function (data) {
                     swal({
                         title: "¡Aprobado!",
-                        text: "El ticket ha sido reasignado y el flujo continúa.",
+                        text: "El ticket ha sido reasignado y el flujo continúa. Serás redirigido a la lista de tickets.",
                         type: "success",
-                        confirmButtonClass: "btn-success"
+                        timer: 2000,
+                        showConfirmButton: false
                     });
 
-                    // Recargamos la página después de un momento para ver los cambios.
-                    // El ticket ahora tendrá otro asignado y el botón de aprobar ya no será visible.
                     setTimeout(function () {
-                        location.reload();
-                    }, 1800);
+                        window.location.href = "../../view/ConsultarTicket/";
+                    }, 2100);
 
                 }).fail(function (jqXHR) {
                     // Si el backend devuelve un error, lo mostramos

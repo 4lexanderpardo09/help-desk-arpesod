@@ -33,14 +33,12 @@ class Usuario extends Conectar
                     $acceso_permitido = ($rol_real_del_usuario == $rol_de_administrador) || ($rol_real_del_usuario == $rol_solicitado);
 
                     if ($acceso_permitido) {
-                        // Verificar si el usuario es jefe de algún departamento
-                        $es_jefe_query = "SELECT dp_id FROM tm_departamento WHERE jefe_usu_id = ? AND est = 1";
-                        $es_jefe_stmt = $conectar->prepare($es_jefe_query);
-                        $es_jefe_stmt->bindValue(1, $resultado['usu_id']);
-                        $es_jefe_stmt->execute();
-                        $departamento_jefe = $es_jefe_stmt->fetch(PDO::FETCH_ASSOC);
+                        require_once(dirname(__FILE__).'/../models/Organigrama.php');
+                        $organigrama = new Organigrama();
 
-                        $_SESSION["is_jefe"] = $departamento_jefe ? true : false;
+                        // Verificar si el usuario es jefe usando el organigrama
+                        $es_jefe = $organigrama->es_jefe($resultado['car_id']);
+                        $_SESSION["is_jefe"] = $es_jefe;
                         
                         // Guardar datos en la sesión
                         $_SESSION["usu_id"] = $resultado["usu_id"];

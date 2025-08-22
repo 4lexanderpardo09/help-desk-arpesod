@@ -71,5 +71,16 @@ class Organigrama extends Conectar {
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['jefe_car_id'] : null;
     }
+
+    public function es_jefe($car_id) {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT COUNT(*) as es_jefe FROM tm_organigrama WHERE jefe_car_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado['es_jefe'] > 0;
+    }
 }
 ?>
