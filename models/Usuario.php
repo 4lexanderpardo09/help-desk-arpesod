@@ -181,6 +181,17 @@ class Usuario extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function get_usuario_por_correo($usu_correo)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_usuario WHERE usu_correo = ? AND est = 1";
+        $stmt = $conectar->prepare($sql);
+        $stmt->bindValue(1, $usu_correo);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function get_usuario()
     {
         $conectar = parent::Conexion();
