@@ -59,7 +59,7 @@ switch ($_GET["op"]) {
                         <?php
                         if ($row['est'] != 0) {   
                         ?>
-                        <a onclick="verNotificacion(<?php echo $row['not_id'] ?>)" href="https://mesadeayuda.electrocreditosdelcauca.com//view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>">Nueva notificacion </a><?php echo  $row['not_mensaje']?></a>
+                        <a onclick="verNotificacion(<?php echo $row['not_id'] ?>)" href="https://helpdesk.electrocreditosdelcauca.com//view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>">Nueva notificacion </a><?php echo  $row['not_mensaje']?></a>
                         <div class="color-blue-grey-lighter"><?php echo $tiempo ?></div>
                         <?php } ?>
                     </div>

@@ -2,7 +2,7 @@
 deployment:
   tasks:
     # Ruta de despliegue para toda la aplicación.
-    - export DEPLOYPATH=/home/electroc/mesadeayuda.electrocreditosdelcauca.com/
+    - export DEPLOYPATH=/home/electroc/helpdesk.electrocreditosdelcauca.com/
 
     # Crea la carpeta de destino si no existe.
     - mkdir -p $DEPLOYPATH

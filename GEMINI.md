@@ -914,7 +914,7 @@ Este archivo actúa como un controlador (controller) para la gestión de notific
 *   El archivo mezcla la lógica de control con la presentación (HTML) en el caso del `case "notificacionespendientes"`, lo que dificulta el mantenimiento y la reutilización del código.  Sería mejor separar la lógica de generación de HTML en una vista o plantilla.
 *   El controlador asume que las operaciones se realizan a través de solicitudes `POST` excepto la operación principal que depende de un `GET`. Esta inconsistencia puede generar confusión y problemas de seguridad. Se recomienda utilizar un solo método (POST) para todas las operaciones y pasar los datos necesarios en el cuerpo de la solicitud.
 *   La seguridad del código no se puede evaluar completamente sin conocer el contenido de los archivos dependientes (`conexion.php` y `Notificacion.php`). Sin embargo, es importante validar y sanitizar las entradas del usuario (`$_POST['usu_id']`, `$_POST['not_id']`) para prevenir ataques de inyección SQL.
-*   El código dentro de `notificacionespendientes` crea un enlace que apunta a `https://mesadeayuda.electrocreditosdelcauca.com//view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>`.  Se asume que esta URL es fija y se utiliza para ver los detalles de un ticket.
+*   El código dentro de `notificacionespendientes` crea un enlace que apunta a `https://helpdesk.electrocreditosdelcauca.com//view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>`.  Se asume que esta URL es fija y se utiliza para ver los detalles de un ticket.
 ```
 
 ---
@@ -2447,7 +2447,7 @@ Este archivo JavaScript se encarga de establecer una conexión WebSocket con el 
 
     *   **Configuración del WebSocket:**
 
-        *   Determina si la aplicación se está ejecutando localmente para configurar la URL del WebSocket apropiadamente (diferencia entre `localhost` y el dominio `mesadeayuda.electrocreditosdelcauca.com`).
+        *   Determina si la aplicación se está ejecutando localmente para configurar la URL del WebSocket apropiadamente (diferencia entre `localhost` y el dominio `helpdesk.electrocreditosdelcauca.com`).
         *   Define el protocolo WebSocket a usar (`ws` o `wss` dependiendo si la página se sirve sobre `http` o `https`).
         *   Crea la URL completa del WebSocket, incluyendo el ID del usuario como parámetro (`userId`).
         *   Crea una nueva instancia de `WebSocket` para establecer la conexión.

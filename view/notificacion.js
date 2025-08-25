@@ -17,7 +17,7 @@ $(document).ready(function() {
         wsHost = 'localhost:8080';
         wsPath = '/';
     } else {
-        wsHost = 'mesadeayuda.electrocreditosdelcauca.com';
+        wsHost = 'helpdesk.electrocreditosdelcauca.com';
         wsPath = '/websocket';
     }
 
