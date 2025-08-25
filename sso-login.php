@@ -60,8 +60,13 @@ try {
         $_SESSION["usu_id"] = $user_data["usu_id"];
         $_SESSION["usu_nom"] = $user_data["usu_nom"];
         $_SESSION["usu_ape"] = $user_data["usu_ape"];
-        $_SESSION["rol_id"] = $user_data["rol_id"];
-        $_SESSION["rol_id_real"] = $user_data["rol_id"];
+        if ($user_data["rol_id"] == 3) {
+            $_SESSION["rol_id"] = 1; // Default role for admin
+            $_SESSION["rol_id_real"] = 3;
+        } else {
+            $_SESSION["rol_id"] = $user_data["rol_id"];
+            $_SESSION["rol_id_real"] = $user_data["rol_id"];
+        }
         $_SESSION["dp_id"] = $user_data["dp_id"];
         $_SESSION["car_id"] = $user_data["car_id"];
 
