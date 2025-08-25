@@ -37,6 +37,9 @@ if (!isset($_GET['token']) || empty($_GET['token'])) {
 
 $token = $_GET['token'];
 
+// Set leeway for JWT validation (5 seconds)
+JWT::$leeway = 5;
+
 try {
     $decoded = JWT::decode($token, new Key($jwt_secret_key, 'HS256'));
 
@@ -53,7 +56,6 @@ try {
 
     if ($user_data && is_array($user_data) && count($user_data) > 0) {
         // User found, create session
-        session_start();
 
         $_SESSION["usu_id"] = $user_data["usu_id"];
         $_SESSION["usu_nom"] = $user_data["usu_nom"];
