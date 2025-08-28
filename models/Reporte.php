@@ -370,12 +370,15 @@ class Reporte extends Conectar
                 AVG(TIMESTAMPDIFF(HOUR, T1.fech_asig, T1.fecha_fin_paso)) AS horas_promedio_respuesta
             FROM (
                 SELECT
-                    tick_id, -- Se necesita para el join
-                    usu_asig,
-                    fech_asig,
-                    LEAD(fech_asig, 1, NOW()) OVER (PARTITION BY tick_id ORDER BY fech_asig) AS fecha_fin_paso
+                    a.tick_id,
+                    a.usu_asig,
+                    a.fech_asig,
+                    (SELECT b.fech_asig 
+                    FROM th_ticket_asignacion b 
+                    WHERE b.tick_id = a.tick_id AND b.fech_asig > a.fech_asig 
+                    ORDER BY b.fech_asig ASC LIMIT 1) AS fecha_fin_paso
                 FROM
-                    th_ticket_asignacion
+                    th_ticket_asignacion a
             ) AS T1
             INNER JOIN tm_usuario u ON T1.usu_asig = u.usu_id
             -- AÑADIDO: Unimos con tm_ticket para poder filtrar por sus propiedades
@@ -434,14 +437,17 @@ class Reporte extends Conectar
                 SUM(CASE WHEN T1.estado_tiempo_paso = 'Atrasado' THEN 1 ELSE 0 END) AS atrasado
             FROM (
                 SELECT
-                    tick_id,
-                    paso_id,
-                    usu_asig,
-                    fech_asig,
-                    estado_tiempo_paso,
-                    LEAD(fech_asig, 1, NULL) OVER (PARTITION BY tick_id ORDER BY fech_asig) AS fecha_fin_paso
+                    a.tick_id,
+                    a.paso_id,
+                    a.usu_asig,
+                    a.fech_asig,
+                    a.estado_tiempo_paso,
+                    (SELECT b.fech_asig 
+                    FROM th_ticket_asignacion b 
+                    WHERE b.tick_id = a.tick_id AND b.fech_asig > a.fech_asig 
+                    ORDER BY b.fech_asig ASC LIMIT 1) AS fecha_fin_paso
                 FROM
-                    th_ticket_asignacion
+                    th_ticket_asignacion a
             ) AS T1
             INNER JOIN tm_flujo_paso fp ON T1.paso_id = fp.paso_id
             -- AÑADIDO: Unimos con tm_ticket para poder filtrar por sus propiedades
