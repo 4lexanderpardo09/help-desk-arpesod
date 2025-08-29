@@ -88,12 +88,13 @@ switch ($_GET["op"]) {
                     
                     if ($asignado_car_id) {
                         $nuevo_asignado_info = null;
-                        // a. Primero, buscar un agente que sea "nacional" con ese cargo.
-                        $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
-                        // b. Si no, buscar uno en la misma regional.
-                        if (!$nuevo_asignado_info) {
+                        
+                        if (isset($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
+                            $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
+                        } else {
                             $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
                         }
+
                         if ($nuevo_asignado_info) {
                             $usu_asig_final = $nuevo_asignado_info['usu_id'];
                         }
