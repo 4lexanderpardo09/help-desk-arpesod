@@ -71,7 +71,18 @@ class NotificationServer implements MessageComponentInterface {
             echo "Nueva conexión para el usuario {$userId}! ({$conn->resourceId})\n";
         }
     }
-    public function onMessage(ConnectionInterface $from, $msg) {}
+    public function onMessage(ConnectionInterface $from, $msg) {
+        $data = json_decode($msg, true);
+        $type = $data['type'] ?? '';
+
+        // Reenviar el mensaje a los destinatarios apropiados
+        if ($type === 'chat_message') {
+            $para_usu_id = $data['para_usu_id'];
+            if (isset($this->userConnections[$para_usu_id])) {
+                $this->userConnections[$para_usu_id]->send($msg);
+            }
+        }
+    }
     public function onClose(ConnectionInterface $conn) {
         $this->clients->detach($conn);
         foreach ($this->userConnections as $userId => $connection) {
