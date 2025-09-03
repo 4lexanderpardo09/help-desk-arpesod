@@ -637,130 +637,101 @@ switch ($_GET["op"]) {
     case "mostrar":
         $datos = $ticket->listar_ticket_x_id($_POST['tick_id']);
         if (is_array($datos) == true and count($datos) > 0) {
-                $row = $datos;
-                $output['tick_id'] = $row['tick_id'];
-                $output['usu_id'] = $row['usu_id'];
-                $output['cat_id'] = $row['cat_id'];
-                $output['cats_id'] = $row['cats_id'];
-                $output['pd_id'] = $row['pd_id'];
-                $output['usu_asig'] = $row['usu_asig'];
-                $output['tick_titulo'] = $row['tick_titulo'];
-                $output['tick_descrip'] = $row['tick_descrip'];
-                $output['tick_estado_texto'] = $row['tick_estado'];
+            $row = $datos;
+            $output['tick_id'] = $row['tick_id'];
+            $output['usu_id'] = $row['usu_id'];
+            $output['cat_id'] = $row['cat_id'];
+            $output['cats_id'] = $row['cats_id'];
+            $output['pd_id'] = $row['pd_id'];
+            $output['usu_asig'] = $row['usu_asig'];
+            $output['tick_titulo'] = $row['tick_titulo'];
+            $output['tick_descrip'] = $row['tick_descrip'];
+            $output['tick_estado_texto'] = $row['tick_estado'];
 
-                if ($row['tick_estado'] == 'Abierto') {
-                    $output['tick_estado'] = '<span class="label label-success">Abierto</span>';
-                } else {
-                    $output['tick_estado'] = '<span class="label label-danger">Cerrado</span>';
+            if ($row['tick_estado'] == 'Abierto') {
+                $output['tick_estado'] = '<span class="label label-success">Abierto</span>';
+            } else {
+                $output['tick_estado'] = '<span class="label label-danger">Cerrado</span>';
+            }
+            $output['fech_crea'] = date("d/m/Y", strtotime($row["fech_crea"]));
+            $output['usu_nom'] = $row['usu_nom'];
+            $output['usu_ape'] = $row['usu_ape'];
+            $output['cat_nom'] = $row['cat_nom'];
+            $output['cats_nom'] = $row['cats_nom'];
+            $output['emp_nom'] = $row['emp_nom'];
+            $output['dp_nom'] = $row['dp_nom'];
+            $output['paso_actual_id'] = $row['paso_actual_id'];
+            $output['paso_nombre'] = $row['paso_nombre'];
+
+            if ($row['pd_nom'] == 'Baja') {
+                $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';
+            } elseif ($row['pd_nom'] == 'Media') {
+                $output['pd_nom'] = '<span class="label label-warning">Media</span>';
+            } else {
+                $output['pd_nom'] = '<span class="label label-danger">Alta</span>';
+            }
+
+            $output["siguientes_pasos"] = []; // Valor por defecto
+            if (!empty($row["paso_actual_id"])) {
+                $siguientes_pasos = $flujoPasoModel->get_siguientes_pasos($row["paso_actual_id"]);
+                if ($siguientes_pasos) {
+                    $output["siguientes_pasos"] = $siguientes_pasos;
                 }
-                $output['fech_crea'] = date("d/m/Y", strtotime($row["fech_crea"]));
-                $output['usu_nom'] = $row['usu_nom'];
-                $output['usu_ape'] = $row['usu_ape'];
-                $output['cat_nom'] = $row['cat_nom'];
-                $output['cats_nom'] = $row['cats_nom'];
-                $output['emp_nom'] = $row['emp_nom'];
-                $output['dp_nom'] = $row['dp_nom'];
-                $output['paso_actual_id'] = $row['paso_actual_id'];
-                $output['paso_nombre'] = $row['paso_nombre'];
+            }
 
-                if ($row['pd_nom'] == 'Baja') {
-                    $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';
-                } elseif ($row['pd_nom'] == 'Media') {
-                    $output['pd_nom'] = '<span class="label label-warning">Media</span>';
-                } else {
-                    $output['pd_nom'] = '<span class="label label-danger">Alta</span>';
+            $output["paso_actual_info"] = null; // Valor por defecto
+            if (!empty($row["paso_actual_id"])) {
+                $paso_actual_info = $flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
+                if ($paso_actual_info) {
+                    $output["paso_actual_info"] = $paso_actual_info;
                 }
+            }
 
-                $output["siguiente_paso"] = null; // Valor por defecto
-                if (!empty($row["paso_actual_id"])) {
-                    // Instanciamos el modelo del flujo
-                    
-                    // Llamamos a la función que ya confirmamos que funciona
-                    $siguiente_paso = $flujoPasoModel->get_siguiente_paso($row["paso_actual_id"]);
-                    
-                    // Añadimos el resultado al output
-                    if ($siguiente_paso) {
-                        $output["siguiente_paso"] = $siguiente_paso;
-                    }
-                }
+            $output["timeline_steps"] = []; // Array vacío por defecto
+            if (!empty($row["paso_actual_id"])) {
+                $flujo_id = $flujoPasoModel->get_flujo_id_from_paso($row["paso_actual_id"]);
+                if ($flujo_id) {
+                    $todos_los_pasos = $flujoPasoModel->get_pasos_por_flujo($flujo_id);
+                    $paso_actual_info = $flujoPasoModel->get_paso_por_id($row["paso_actual_id"]);
+                    $orden_actual = $paso_actual_info['paso_orden'];
 
-                $output["paso_actual_info"] = null; // Valor por defecto
-                if (!empty($row["paso_actual_id"])) {
-                    // Instanciamos el modelo del flujo
-                    
-                    // Llamamos a la función que ya confirmamos que funciona
-                    $paso_actual_info = $flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
-                    
-                    // Añadimos el resultado al output
-                    if ($paso_actual_info) {
-                        $output["paso_actual_info"] = $paso_actual_info;
-                    }
-                }
-
-                $output["timeline_steps"] = []; // Array vacío por defecto
-                if (!empty($row["paso_actual_id"])) {
-                    
-                    // 1. Obtenemos el flujo_id del ticket actual
-                    $flujo_id = $flujoPasoModel->get_flujo_id_from_paso($row["paso_actual_id"]);
-                    
-                    if ($flujo_id) {
-                        // 2. Obtenemos TODOS los pasos de ese flujo
-                        $todos_los_pasos = $flujoPasoModel->get_pasos_por_flujo($flujo_id);
-                        
-                        // 3. Obtenemos el orden del paso actual para comparar
-                        $paso_actual_info = $flujoPasoModel->get_paso_por_id($row["paso_actual_id"]);
-                        $orden_actual = $paso_actual_info['paso_orden'];
-
-                        // 4. Añadimos el estado a cada paso (Completado, Actual, Pendiente)
-                        foreach ($todos_los_pasos as $paso) {
-                            // Si el ticket está cerrado, todos los pasos se marcan como "Completado"
-                            if ($row['tick_estado'] == 'Cerrado') {
+                    foreach ($todos_los_pasos as $paso) {
+                        if ($row['tick_estado'] == 'Cerrado') {
+                            $paso['estado'] = 'Completado';
+                        } else {
+                            if ($paso['paso_orden'] < $orden_actual) {
                                 $paso['estado'] = 'Completado';
+                            } elseif ($paso['paso_orden'] == $orden_actual) {
+                                $paso['estado'] = 'Actual';
                             } else {
-                                if ($paso['paso_orden'] < $orden_actual) {
-                                    $paso['estado'] = 'Completado';
-                                } elseif ($paso['paso_orden'] == $orden_actual) {
-                                    $paso['estado'] = 'Actual';
-                                } else {
-                                    $paso['estado'] = 'Pendiente';
-                                }
+                                $paso['estado'] = 'Pendiente';
                             }
-                            $output["timeline_steps"][] = $paso;
                         }
+                        $output["timeline_steps"][] = $paso;
                     }
                 }
+            }
 
-                // 2. Recorres la lista para añadir el indicador de tiempo
-                $mi_ticket = $datos; // Usamos '&' para modificar el array original
-                    
-                    $estado_tiempo = '<span class="label label-defa">N/A</span>'; // Valor por defecto
+            $mi_ticket = $datos;
+            $estado_tiempo = '<span class="label label-defa">N/A</span>';
 
-                    // Si el ticket está abierto y en un flujo
-                    if ($mi_ticket['tick_estado'] == 'Abierto' && !empty($mi_ticket['paso_actual_id'])) {
-                        
-                        // a. Obtenemos los datos necesarios
-                        $fecha_asignacion = $ticket->get_fecha_ultima_asignacion($mi_ticket['tick_id']);
-                        $paso_info = $flujoPasoModel->get_paso_por_id($mi_ticket['paso_actual_id']);
-                        $dias_habiles_permitidos = $paso_info['paso_tiempo_habil'];
+            if ($mi_ticket['tick_estado'] == 'Abierto' && !empty($mi_ticket['paso_actual_id'])) {
+                $fecha_asignacion = $ticket->get_fecha_ultima_asignacion($mi_ticket['tick_id']);
+                $paso_info = $flujoPasoModel->get_paso_por_id($mi_ticket['paso_actual_id']);
+                $dias_habiles_permitidos = $paso_info['paso_tiempo_habil'];
 
-                        if ($fecha_asignacion && $dias_habiles_permitidos > 0) {
-                            // b. Calculamos la fecha límite
-                            $fecha_limite = $dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles_permitidos);
-                            $fecha_hoy = new DateTime();
+                if ($fecha_asignacion && $dias_habiles_permitidos > 0) {
+                    $fecha_limite = $dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles_permitidos);
+                    $fecha_hoy = new DateTime();
 
-                            // c. Comparamos y definimos el estado
-                            if ($fecha_hoy > $fecha_limite) {
-                                $estado_tiempo = '<span class="label label-danger">Atrasado</span>';
-                            } else {
-                                $estado_tiempo = '<span class="label label-success">A Tiempo</span>';
-                            }
-                        }
+                    if ($fecha_hoy > $fecha_limite) {
+                        $estado_tiempo = '<span class="label label-danger">Atrasado</span>';
+                    } else {
+                        $estado_tiempo = '<span class="label label-success">A Tiempo</span>';
                     }
-                    
-                    // d. Añadimos el nuevo dato al array del ticket
-                    $output['estado_tiempo'] = $estado_tiempo;
-                
-            
+                }
+            }
+            $output['estado_tiempo'] = $estado_tiempo;
             echo json_encode($output);
         }
         break;

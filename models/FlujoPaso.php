@@ -146,6 +146,23 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_siguientes_pasos($paso_actual_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_flujo_paso 
+                WHERE 
+                    flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
+                    AND 
+                    paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?) + 1
+                    AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_actual_id);
+        $sql->bindValue(2, $paso_actual_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function get_paso_actual($paso_actual_id)
     {
         $conectar = parent::Conexion();

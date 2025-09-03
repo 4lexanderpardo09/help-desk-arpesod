@@ -78,6 +78,11 @@ switch ($_GET["op"]) {
         $flujopaso->delete_paso($_POST["paso_id"]);
         break;
 
+    case "get_siguientes_pasos":
+        $datos = $flujopaso->get_siguientes_pasos($_POST['paso_actual_id']);
+        echo json_encode($datos);
+        break;
+
     case "mostrar":
         // CAMBIADO: Se usa la función get_paso_por_id que es más directa
         $datos = $flujopaso->get_paso_por_id($_POST['paso_id']);

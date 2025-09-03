@@ -144,11 +144,18 @@ $(document).on('click', '#btnenviar', function () {
 
      // --- MODIFICADO: Lógica para enviar los datos del flujo ---
     if ($('#checkbox_avanzar_flujo').is(':checked')) {
-        var siguiente_paso_info = $('#panel_checkbox_flujo').data('siguiente-paso-id');
-        formData.append("siguiente_paso_id", siguiente_paso_info.paso_id);
+        var selected_siguiente_paso_id = $('#selected_siguiente_paso_id').val();
+        if (!selected_siguiente_paso_id) {
+            swal("Atención", "Debe seleccionar un paso siguiente para avanzar el flujo.", "warning");
+            return false;
+        }
+        formData.append("siguiente_paso_id", selected_siguiente_paso_id);
 
-        // Verificamos si el paso requiere selección manual
-        if (siguiente_paso_info.requiere_seleccion_manual == 1) {
+        // Obtenemos la información del paso seleccionado para verificar si requiere selección manual
+        var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos');
+        var selected_paso_info = siguientes_pasos.find(paso => paso.paso_id == selected_siguiente_paso_id);
+
+        if (selected_paso_info && selected_paso_info.requiere_seleccion_manual == 1) {
             var nuevo_asignado_id = $('#nuevo_asignado_id').val();
             if (!nuevo_asignado_id) {
                 swal("Atención", "Debe seleccionar un agente para el siguiente paso.", "warning");
@@ -403,6 +410,52 @@ function listarDetalle(tick_id) {
 
 
     });
+}
+
+    function listarDetalle(tick_id) {
+
+    $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
+        $('#lbldetalle').html(data);
+
+    });
+
+    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
+        data = JSON.parse(data);
+
+        $('#lbltickestado').html(data.tick_estado);
+        $('#lblprioridad').html(data.pd_nom);
+        $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);
+        $('#lblestado_tiempo').html(data.estado_tiempo);
+        $('#lblfechacrea').html(data.fech_crea);
+        $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
+        $('#cat_id').val(data.cat_nom);
+        $('#cats_id').val(data.cats_nom);
+        $('#emp_id').val(data.emp_nom);
+        $('#dp_id').val(data.dp_nom);
+        $('#tick_titulo').val(data.tick_titulo);
+        $('#tickd_descripusu').summernote('code', data.tick_descrip);
+
+        var usu_id = $('#user_idx').val();
+        if (usu_id != data.usu_asig) {
+            $("#btncerrarticket").addClass('hidden');
+            $("#panel_respuestas_rapidas").addClass('hidden');
+        };
+
+        $('#panel_aprobacion_jefe').hide();
+
+        if ((data.paso_actual_id === null || data.paso_actual_id == 0) && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id) {
+            // Si todas las condiciones se cumplen, muestra el panel
+            $('#panel_aprobacion_jefe').show();
+            // $('#boxdetalleticket').hide(); 
+        } else {
+            $('#boxdetalleticket').show();
+            if (data.tick_estado_texto == 'Cerrado') {
+                $('#boxdetalleticket').hide();
+            };
+        }
+
+
+    });
 
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
@@ -435,14 +488,14 @@ function listarDetalle(tick_id) {
 
         $('#panel_checkbox_flujo').hide(); // Ocultamos por defecto
 
-        if (data.siguiente_paso) {
-            // Si el servidor nos dice que hay un siguiente paso, mostramos el checkbox
+        if (data.siguientes_pasos && data.siguientes_pasos.length > 0) {
+            // Si el servidor nos dice que hay uno o más siguientes pasos, mostramos el checkbox
             $('#panel_checkbox_flujo').show();
-            // Y guardamos el ID del siguiente paso para usarlo después
-            $('#panel_checkbox_flujo').data('siguiente-paso-id', data.siguiente_paso);
+            // Y guardamos el array completo de siguientes pasos para usarlo después
+            $('#panel_checkbox_flujo').data('siguientes-pasos', data.siguientes_pasos);
         }
 
-        if (data.siguiente_paso || data.paso_actual_info == null) {
+        if ((data.siguientes_pasos && data.siguientes_pasos.length > 0) || data.paso_actual_info == null) {
             // SI hay un siguiente paso, el flujo NO ha terminado.
             // Deshabilitamos el botón de cerrar.
             $('#btncerrarticket').prop('disabled', true);
@@ -473,33 +526,73 @@ function listarDetalle(tick_id) {
     });
 }
 
-// --- NUEVO: Evento que se activa al marcar/desmarcar el checkbox de avanzar flujo ---
+// Función para manejar la lógica después de seleccionar un paso siguiente (ya sea automáticamente o por el usuario)
+function handleSelectedNextStep(selectedPasoId) {
+    // Obtenemos el array completo de siguientes pasos
+    var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos');
+    // Encontramos el paso seleccionado dentro del array
+    var selected_paso_info = siguientes_pasos.find(paso => paso.paso_id == selectedPasoId);
+
+    if (selected_paso_info) {
+        // Almacenamos el ID del paso seleccionado en el campo oculto
+        $('#selected_siguiente_paso_id').val(selectedPasoId);
+
+        // Si el paso seleccionado requiere selección manual, mostramos el combo de agentes
+        if (selected_paso_info.requiere_seleccion_manual == 1) {
+            $.post("../../controller/ticket.php?op=get_usuarios_por_paso", { paso_id: selected_paso_info.paso_id }, function(data) {
+                $('#nuevo_asignado_id').html(data).trigger('change');
+                $('#panel_siguiente_asignado').show();
+            });
+        } else {
+            // Si no requiere selección manual, ocultamos el combo de agentes
+            $('#panel_siguiente_asignado').hide();
+        }
+    } else {
+        console.error("Error: No se encontró información para el paso seleccionado: " + selectedPasoId);
+    }
+}
+
+// --- Evento que se activa al marcar/desmarcar el checkbox de avanzar flujo ---
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
     console.clear(); // Limpiamos la consola para ver mejor
 
-    // Obtenemos la información completa del siguiente paso que guardamos en el panel
-    var siguiente_paso = $('#panel_checkbox_flujo').data('siguiente-paso-id');
+    // Obtenemos el array completo de siguientes pasos que guardamos en el panel
+    var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos');
 
     if ($(this).is(':checked')) {
-        // Verificamos si los datos del siguiente paso existen
-        if (siguiente_paso) {
-            
-            // Preguntamos si este paso requiere selección manual (usando el "interruptor" de la BD)
-            if (siguiente_paso.requiere_seleccion_manual == 1) {
-                // Si SÍ, pedimos la lista de usuarios y mostramos el combo
-                $.post("../../controller/ticket.php?op=get_usuarios_por_paso", { paso_id: siguiente_paso.paso_id }, function(data) {
-                    $('#nuevo_asignado_id').html(data).trigger('change');
-                    $('#panel_siguiente_asignado').show();
+        if (siguientes_pasos && siguientes_pasos.length > 0) {
+            if (siguientes_pasos.length > 1) {
+                // Si hay múltiples pasos, mostramos el modal de selección
+                var options_html = '';
+                siguientes_pasos.forEach(function(paso) {
+                    options_html += '<option value="' + paso.paso_id + '">' + paso.paso_nombre + '</option>';
                 });
+                $('#select_siguiente_paso').html(options_html);
+                $('#modal_seleccionar_paso').modal('show');
             } else {
+                // Si solo hay un paso, lo seleccionamos automáticamente
+                handleSelectedNextStep(siguientes_pasos[0].paso_id);
             }
         } else {
-            console.error("Error: No se encontraron los datos del siguiente paso en el panel. Revisa la función listarDetalle.");
+            console.error("Error: No se encontraron los datos de los siguientes pasos en el panel. Revisa la función listarDetalle.");
         }
     } else {
-        // Si se desmarca, siempre ocultamos el combo
+        // Si se desmarca, siempre ocultamos el combo de agentes y limpiamos el paso seleccionado
         $('#panel_siguiente_asignado').hide();
+        $('#selected_siguiente_paso_id').val('');
+    }
+});
+
+// --- Evento para el botón de confirmar selección en el modal ---
+$(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
+    var selectedPasoId = $('#select_siguiente_paso').val();
+    if (selectedPasoId) {
+        $('#modal_seleccionar_paso').modal('hide');
+        handleSelectedNextStep(selectedPasoId);
+    } else {
+        swal("Atención", "Por favor, selecciona un paso.", "warning");
     }
 });
 
 init();
+

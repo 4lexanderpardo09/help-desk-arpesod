@@ -242,6 +242,7 @@ if (isset($_SESSION["usu_id"])) {
                     <div class="row">
                         <div class="col-lg-12">
                             <form method="post" id="detalle_form">
+                                <input type="hidden" id="selected_siguiente_paso_id" name="selected_siguiente_paso_id">
                                 <div class="row">
                                     <div class="col-lg-4">
                                         <fieldset class="form-group">
@@ -309,6 +310,32 @@ if (isset($_SESSION["usu_id"])) {
 
             </div>
         </div>
+        <!-- Modal para seleccionar el siguiente paso -->
+<div class="modal fade" id="modal_seleccionar_paso" tabindex="-1" role="dialog" aria-labelledby="modal_seleccionar_paso_label" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_seleccionar_paso_label">Seleccionar Siguiente Paso</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Hay múltiples opciones para el siguiente paso. Por favor, selecciona uno:</p>
+                <div class="form-group">
+                    <label for="select_siguiente_paso">Paso:</label>
+                    <select class="form-control" id="select_siguiente_paso" name="select_siguiente_paso">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn_confirmar_paso_seleccionado">Seleccionar</button>
+            </div>
+        </div>
+    </div>
+</div>
         <?php require_once('../MainJs/js.php') ?>
 
         <script type="text/javascript" src="../DetalleTicket/detalleticket.js"></script>
