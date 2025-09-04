@@ -6,106 +6,6 @@ if (isset($_SESSION["usu_id"])) {
     <html>
     <?php require_once('../MainHead/head.php') ?>
     <title>Detalle ticket</title>
-    <style>
-        .m-t-lg {
-            margin-top: 0px;
-        }
-    /* Contenedor principal de la línea de tiempo horizontal */
-    .timeline-wrapper {
-        width: 100%;
-        overflow-x: auto; /* Permite scroll horizontal si no cabe */
-        padding: 20px 0;
-    }
-
-    /* La lista que contiene los pasos */
-    .timeline {
-        display: flex;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        min-width: 600px;
-    }
-
-    /* Cada paso individual del timeline */
-    .timeline li {
-        flex: 1;
-        position: relative;
-        text-align: center;
-        padding-top: 40px;
-    }
-
-    /* La línea horizontal que conecta los pasos */
-    .timeline li:before {
-        content: '';
-        position: absolute;
-        top: 18px;
-        left: -50%;
-        width: 100%;
-        height: 4px;
-        background-color: #e5e5e5;
-        /* CORRECCIÓN: Usamos un z-index positivo */
-        z-index: 1; 
-    }
-
-    /* Ocultamos la línea del primer elemento */
-    .timeline li:first-child:before {
-        display: none;
-    }
-
-    /* El círculo de cada paso */
-    .timeline li:after {
-        content: '';
-        position: absolute;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 25px;
-        height: 25px;
-        border-radius: 50%;
-        background-color: white; /* Importante para tapar la línea que pasa por detrás */
-        border: 4px solid #e5e5e5;
-        transition: all 0.2s ease-in-out;
-        z-index: 2;
-    }
-
-    /* Estilos para el nombre del paso */
-    .step-name {
-        font-size: 14px;
-        color: #777;
-    }
-
-    /* --- ESTILOS POR ESTADO --- */
-
-    /* Paso completado */
-    .timeline li.timeline-step-completed:before {
-        background-color: #5cb85c; /* Verde */
-    }
-    .timeline li.timeline-step-completed:after {
-        border-color: #5cb85c;
-        background-color: #5cb85c;
-    }
-    .timeline li.timeline-step-completed .step-name {
-        color: #333;
-    }
-    
-    /* Paso activo (actual) */
-    .timeline li.timeline-step-active:after {
-        border-color: #337ab7; /* Azul */
-        transform: translateX(-50%) scale(1.2);
-    }
-    .timeline li.timeline-step-active .step-name {
-        font-weight: bold;
-        color: #337ab7;
-    }
-
-    /* Paso pendiente */
-    .timeline li.timeline-step-pending:after {
-        border-color: #e5e5e5; /* Gris */
-    }
-    .timeline li.timeline-step-pending .step-name {
-        color: #aaa;
-    }
-</style>
     </head>
 
     <body class="with-side-menu">
@@ -141,9 +41,8 @@ if (isset($_SESSION["usu_id"])) {
 
                 <div id="panel_linea_tiempo" class="box-typical box-typical-padding" style="display:none;">
                     <h5 class="m-t-lg with-border">Progreso del Flujo de Trabajo</h5>
-                    <div class="timeline-wrapper">
-                        <ul id="timeline_flujo" class="timeline">
-                        </ul>
+                    <div class="mermaid">
+                        
                     </div>
                 </div>
 
@@ -337,7 +236,6 @@ if (isset($_SESSION["usu_id"])) {
     </div>
 </div>
         <?php require_once('../MainJs/js.php') ?>
-
         <script type="text/javascript" src="../DetalleTicket/detalleticket.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
 

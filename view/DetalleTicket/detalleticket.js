@@ -460,28 +460,67 @@ function listarDetalle(tick_id) {
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         data = JSON.parse(data);
         var usu_asigx = $('#user_idx').val();
-
-        // Lógica para construir la línea de tiempo
-        if (data.timeline_steps && data.timeline_steps.length > 0) {
+        // === Manejo seguro y robusto de mermaid ===
+        if (data.timeline_graph && data.timeline_graph.length > 0) {
             $('#panel_linea_tiempo').show();
-            var timeline_html = '';
 
-            data.timeline_steps.forEach(function (paso) {
-                var status_class = '';
-                if (paso.estado === 'Completado') {
-                    status_class = 'timeline-step-completed';
-                } else if (paso.estado === 'Actual') {
-                    status_class = 'timeline-step-active';
-                } else { // Pendiente
-                    status_class = 'timeline-step-pending';
+            const mermaidContainer = document.querySelector("#panel_linea_tiempo .mermaid");
+            // Limpia el contenedor antes de dibujar
+            mermaidContainer.innerHTML = '';
+
+            // Normalizamos el texto: quitar espacios excesivos, convertir ; a saltos si quieres
+            let graph = data.timeline_graph.trim();
+            // opcional: si ves que el ; a final de línea causa problemas, reemplaza:
+            graph = graph.replace(/graph\s+(TD|TB)/i, 'graph LR');
+
+            // Inyectar como textContent para evitar que el navegador parsee HTML
+            mermaidContainer.textContent = graph;
+
+            // Asegurarnos que el panel está visible antes de renderizar
+            // (en algunas versiones mermaid necesita layout en elementos visibles)
+            setTimeout(function () {
+                if (window.mermaid) {
+                    try {
+                        // Inicializamos sin startOnLoad (no queremos que busque automáticamente)
+                        mermaid.initialize({ startOnLoad: false });
+                    } catch (e) {
+                        // algunas versiones ignoran initialize, no pasa nada
+                    }
+
+                    // Intentamos mermaid.render (maneja versiones modernas y devuelve SVG)
+                    try {
+                        const renderResult = mermaid.render
+                            ? mermaid.render('mermaid_graph_' + Date.now(), graph)
+                            : null;
+
+                        // renderResult puede ser promesa o resultado inmediato
+                        if (renderResult && typeof renderResult.then === 'function') {
+                            renderResult.then(res => {
+                                mermaidContainer.innerHTML = (res.svg || res);
+                            }).catch(err => {
+                                console.error("mermaid.render (promise) falló:", err);
+                                // fallback a init
+                                try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                            });
+                        } else if (renderResult) {
+                            // resultado inmediato
+                            mermaidContainer.innerHTML = (renderResult.svg || renderResult);
+                        } else {
+                            // fallback para versiones que usan init
+                            try {
+                                mermaid.init(undefined, mermaidContainer);
+                            } catch (err) {
+                                console.error("mermaid.init falló:", err);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error al renderizar con mermaid.render:", err);
+                        try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                    }
+                } else {
+                    console.error("Mermaid no está cargado en window cuando intentamos renderizar.");
                 }
-
-                timeline_html += '<li class="' + status_class + '">';
-                timeline_html += '  <div class="step-name">' + paso.paso_nombre + '</div>';
-                timeline_html += '</li>';
-            });
-
-            $('#timeline_flujo').html(timeline_html);
+            }, 50); // un pequeño delay ayuda si el contenedor estaba oculto
         } else {
             $('#panel_linea_tiempo').hide();
         }

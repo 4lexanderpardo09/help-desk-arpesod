@@ -22,6 +22,9 @@
 <script src="../../public/js/lib/lobipanel/lobipanel.min.js"></script>
 <script src="../../public/js/lib/match-height/jquery.matchHeight.min.js"></script>
 <script src="../../public/js/lib/hide-show-password/bootstrap-show-password.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+        <script>mermaid.initialize({ startOnLoad: true });</script>
+
 
 
 

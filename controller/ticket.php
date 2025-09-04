@@ -687,7 +687,9 @@ switch ($_GET["op"]) {
                 }
             }
 
-            $output["timeline_steps"] = []; // Array vacío por defecto
+
+
+            $output["timeline_graph"] = ""; // Creamos una nueva variable para el string del diagrama
             if (!empty($row["paso_actual_id"])) {
                 $flujo_id = $flujoPasoModel->get_flujo_id_from_paso($row["paso_actual_id"]);
                 if ($flujo_id) {
@@ -695,20 +697,47 @@ switch ($_GET["op"]) {
                     $paso_actual_info = $flujoPasoModel->get_paso_por_id($row["paso_actual_id"]);
                     $orden_actual = $paso_actual_info['paso_orden'];
 
+                    // --- INICIA NUEVA LÓGICA PARA GENERAR EL "GUION" DE MERMAID ---
+                    $mermaid_string = "graph TD;\n"; // TD = Top Down
+                    $pasos_por_orden = [];
                     foreach ($todos_los_pasos as $paso) {
-                        if ($row['tick_estado'] == 'Cerrado') {
-                            $paso['estado'] = 'Completado';
-                        } else {
-                            if ($paso['paso_orden'] < $orden_actual) {
-                                $paso['estado'] = 'Completado';
-                            } elseif ($paso['paso_orden'] == $orden_actual) {
-                                $paso['estado'] = 'Actual';
-                            } else {
-                                $paso['estado'] = 'Pendiente';
+                        $pasos_por_orden[$paso['paso_orden']][] = $paso;
+                    }
+
+                    // Definimos los nodos y sus estilos
+                    foreach ($todos_los_pasos as $paso) {
+                        $estado = '';
+                        if ($paso['paso_orden'] < $orden_actual) $estado = 'completed';
+                        elseif ($paso['paso_orden'] == $orden_actual && $paso['paso_id'] == $row["paso_actual_id"]) $estado = 'active';
+                        else $estado = 'pending';
+                        
+                        // Sintaxis de Mermaid para un nodo: ID_NODO["Texto del Nodo"]
+                        $mermaid_string .= "    paso{$paso['paso_id']}_[\"{$paso['paso_nombre']}\"];\n";
+                        // Sintaxis para aplicar un estilo
+                        $mermaid_string .= "    class paso{$paso['paso_id']}_ {$estado};\n";
+                    }
+
+                    // Definimos las conexiones (flechas)
+                    ksort($pasos_por_orden); // Ordenamos los niveles
+                    $ordenes = array_keys($pasos_por_orden);
+                    for ($i = 0; $i < count($ordenes) - 1; $i++) {
+                        $nivel_actual = $pasos_por_orden[$ordenes[$i]];
+                        $siguiente_nivel = $pasos_por_orden[$ordenes[$i+1]];
+                        foreach ($nivel_actual as $paso_padre) {
+                            foreach ($siguiente_nivel as $paso_hijo) {
+                                // Sintaxis de conexión: ID_PADRE --> ID_HIJO
+                                $mermaid_string .= "    paso{$paso_padre['paso_id']}_ --> paso{$paso_hijo['paso_id']}_;\n";
                             }
                         }
-                        $output["timeline_steps"][] = $paso;
                     }
+
+                    // Definimos los estilos CSS para los estados
+                    $mermaid_string .= "classDef completed fill:#dff0d8,stroke:#3c763d,stroke-width:2px;\n";
+                    $mermaid_string .= "classDef active fill:#d9edf7,stroke:#31708f,stroke-width:4px;\n";
+                    $mermaid_string .= "classDef pending fill:#f5f5f5,stroke:#ccc,stroke-width:2px;\n";
+                    // --- FIN DE LÓGICA ---
+                    
+                    $output["timeline_graph"] = $mermaid_string;
                 }
             }
 
