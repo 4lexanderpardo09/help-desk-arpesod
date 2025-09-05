@@ -167,15 +167,9 @@ class FlujoPaso extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT * FROM tm_flujo_paso 
-                WHERE 
-                    flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
-                    AND 
-                    paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?)
-                    AND est = 1";
+        $sql = "SELECT * FROM tm_flujo_paso WHERE paso_id = ? AND est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_actual_id);
-        $sql->bindValue(2, $paso_actual_id);
         $sql->execute();
         // Usamos fetch() para obtener solo una fila (o false si no hay siguiente paso)
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);

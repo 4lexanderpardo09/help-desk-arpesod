@@ -71,12 +71,6 @@ try {
             continue;
         }
 
-        if ($flujo_paso_model->verificar_orden_existente($flujo_id, $paso_orden)) {
-            echo "<p style='color:red;'>ERROR - OMITIDO: El paso '{$paso_nombre}' no se pudo crear porque el número de orden '{$paso_orden}' ya existe en este flujo.</p>";
-            $omitidos++;
-            continue; // Saltamos a la siguiente fila del Excel
-        }
-
         $paso_descripcion = nl2br($paso_descripcion_raw);
         $req_seleccion_manual = (strtoupper($seleccion_manual_str) == 'SI') ? 1 : 0;
         // --- AÑADIDO: Convertimos "SI" a 1 y cualquier otra cosa a 0 ---
