@@ -23,7 +23,7 @@ switch ($_GET["op"]) {
 
      
         case "guardaryeditar":
-            $es_error_proceso = isset($_POST['es_error_proceso']) ? 1 : 0;
+            $es_error_proceso = !empty($_POST['es_error_proceso']) ? 1 : 0;
             if(empty($_POST['answer_id'])){
                 $respuestarapida->insert_respuestarapida($_POST['answer_nom'], $es_error_proceso);
             }else{
