@@ -19,28 +19,12 @@ $(document).ready(function () {
             },
             onPaste: function (e) {
             }
-        },
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['strikethrough', 'superscript', 'subscript']],
-            ['fontsize', ['fontsize']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['height', ['height']]
-        ]
+        }
     });
 
     $('#tickd_descripusu').summernote({
         height: 200,
-        lang: 'es-ES',
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['strikethrough', 'superscript', 'subscript']],
-            ['fontsize', ['fontsize']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['height', ['height']]
-        ]
+        lang: 'es-ES'
     });
 
     $('#tickd_descripusu').summernote('disable');
@@ -109,6 +93,26 @@ function getRespuestasRapidas() {
 
     });
 
+}
+
+function myimagetreat(image) {
+    var data = new FormData();
+    data.append("file", image);
+    $.ajax({
+        url: '../../controller/tmp_upload.php',
+        cache: false,
+        contentType: false,
+        processData: false,
+        data: data,
+        type: "post",
+        success: function(data) {
+            var image = $('<img>').attr('src', data);
+            $('#tickd_descrip').summernote("insertNode", image[0]);
+        },
+        error: function(data) {
+            console.log(data);
+        }
+    });
 }
 
 var getUrlParameter = function getUrlParameter(sParam) {

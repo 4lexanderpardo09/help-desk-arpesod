@@ -18,15 +18,45 @@ $(document).ready(function () {
                 ("Text detect...");
             }
         },
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['strikethrough', 'superscript', 'subscript']],
-            ['fontsize', ['fontsize']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['height', ['height']]
-        ]
+        buttons: {
+            image: function() {
+                var fileInput = document.createElement('input');
+                fileInput.setAttribute('type', 'file');
+                fileInput.setAttribute('accept', 'image/*');
+                fileInput.addEventListener('change', function() {
+                    var file = this.files[0];
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var dataURL = e.target.result;
+                        $('#tick_descrip').summernote('insertImage', dataURL);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                fileInput.click();
+            }
+        }
     });
+
+    
+    function myimagetreat(image) {
+        var data = new FormData();
+        data.append("file", image);
+        $.ajax({
+            url: '../../controller/tmp_upload.php',
+            cache: false,
+            contentType: false,
+            processData: false,
+            data: data,
+            type: "post",
+            success: function(data) {
+                var image = $('<img>').attr('src', data);
+                $('#tick_descrip').summernote("insertNode", image[0]);
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
+    }
 
     $.post("../../controller/prioridad.php?op=combo", function (data) {
         $('#pd_id').html('<option value="">Seleccionar</option>' + data);
@@ -183,7 +213,6 @@ function guardaryeditar(e) {
         contentType: false,
         processData: false,
         success: function (data) {
-            data = JSON.parse(data);
             $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
             $.post("../../controller/email.php?op=ticket_asignado", { tick_id: data[0].tick_id })
             $('#cat_id').val('');
