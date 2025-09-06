@@ -102,6 +102,7 @@ function categoriasAnidadas() {
         $('#cat_id').html('<option value="">Seleccione</option>');
         $('#cats_id').html('<option value="">Seleccione</option>');
         $('#tick_descrip').summernote('code', '');
+        $('#tick_descrip').data('template', '');
         $('#panel_asignacion_manual').hide();
 
         if (dp_id && emp_id) {
@@ -119,6 +120,7 @@ function categoriasAnidadas() {
         // Limpiamos los combos hijos
         $('#cats_id').html('<option value="">Seleccione</option>');
         $('#tick_descrip').summernote('code', '');
+        $('#tick_descrip').data('template', '');
         $('#panel_asignacion_manual').hide();
 
         if (cat_id) {
@@ -135,6 +137,7 @@ function categoriasAnidadas() {
 
         // Limpiamos los campos dependientes
         $('#tick_descrip').summernote('code', '');
+        $('#tick_descrip').data('template', '');
         $('#panel_asignacion_manual').hide();
         $('#usu_asig').html('');
 
@@ -144,7 +147,9 @@ function categoriasAnidadas() {
                 data = JSON.parse(data);
                 
                 if (data.subcategoria && data.subcategoria.cats_descrip) {
-                    $('#tick_descrip').summernote('code', data.subcategoria.cats_descrip);
+                    var template_content = data.subcategoria.cats_descrip;
+                    $('#tick_descrip').summernote('code', template_content);
+                    $('#tick_descrip').data('template', template_content); // Guardar plantilla
                     $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
                 }
             });
@@ -197,6 +202,16 @@ function guardaryeditar(e) {
 
     } else if ($('#tick_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una descripción", "warning");
+        return false;
+    }
+
+    var template = $('#tick_descrip').data('template') || '';
+    var current_content = $('#tick_descrip').val();
+    var cleanTemplate = template.replace(/<[^>]*>?/gm, '').trim();
+    var cleanContent = current_content.replace(/<[^>]*>?/gm, '').trim();
+
+    if (cleanContent === cleanTemplate) {
+        swal("Atención", "Debe agregar información adicional a la plantilla de descripción.", "warning");
         return false;
     }
 
@@ -265,6 +280,7 @@ function guardaryeditar(e) {
             $('#cats_id').val('');
             $('#pd_id').val('');
             $('#tick_descrip').summernote('reset');
+            $('#tick_descrip').data('template', '');
             $('#usu_asig').val('');
             $('#error_proceso').prop('checked', false);
             $("#error_procesodiv").addClass('hidden');
@@ -290,7 +306,6 @@ function guardaryeditar(e) {
         }
     });
 }
-
 
 
 init();

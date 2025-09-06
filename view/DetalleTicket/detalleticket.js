@@ -130,23 +130,48 @@ var getUrlParameter = function getUrlParameter(sParam) {
     }
 }
 
+// Helper para quitar HTML y caracteres invisibles y dejar solo texto legible
+function stripHtml(html) {
+    if (!html) return '';
+    // quitar etiquetas html
+    var tmp = html.replace(/<[^>]*>/g, '');
+    // reemplazar &nbsp; y otros espacios invisibles
+    tmp = tmp.replace(/\u00A0/g, ' ').replace(/\u200B/g, '').trim();
+    // colapsar múltiples espacios y saltos
+    tmp = tmp.replace(/\s+/g, ' ').trim();
+    return tmp;
+}
+
 $(document).on('click', '#btnenviar', function () {
+    // Validar que haya contenido en el summernote
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
         return false;
     }
 
+    // Validar contra plantilla (si existe)
+    var templateHtml = $('#tickd_descrip').data('template') || '';
+    var currentHtml = $('#tickd_descrip').summernote('code') || '';
+    var cleanTemplate = stripHtml(templateHtml);
+    var cleanContent = stripHtml(currentHtml);
+
+    // Si la plantilla no es vacía y el contenido limpio es exactamente igual -> bloquear
+    if (cleanTemplate !== '' && cleanContent === cleanTemplate) {
+        swal("Atención", "Debe agregar información adicional a la plantilla de descripción.", "warning");
+        return false;
+    }
+
     var tick_id = getUrlParameter('ID');
     var usu_id = $('#user_idx').val();
-    var tickd_descrip = $('#tickd_descrip').val();
+    var tickd_descrip = currentHtml;
 
-    var formData = new FormData($('#detalle_form')[0])
+    var formData = new FormData($('#detalle_form')[0]);
 
     formData.append("tick_id", tick_id);
     formData.append("usu_id", usu_id);
     formData.append("tickd_descrip", tickd_descrip);
 
-     // --- MODIFICADO: Lógica para enviar los datos del flujo ---
+    // --- Lógica del flujo: si va a avanzar, validar paso y posible asignado manual ---
     if ($('#checkbox_avanzar_flujo').is(':checked')) {
         var selected_siguiente_paso_id = $('#selected_siguiente_paso_id').val();
         if (!selected_siguiente_paso_id) {
@@ -156,7 +181,7 @@ $(document).on('click', '#btnenviar', function () {
         formData.append("siguiente_paso_id", selected_siguiente_paso_id);
 
         // Obtenemos la información del paso seleccionado para verificar si requiere selección manual
-        var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos');
+        var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos') || [];
         var selected_paso_info = siguientes_pasos.find(paso => paso.paso_id == selected_siguiente_paso_id);
 
         if (selected_paso_info && selected_paso_info.requiere_seleccion_manual == 1) {
@@ -171,9 +196,11 @@ $(document).on('click', '#btnenviar', function () {
         // Si no es manual, no se envía 'nuevo_asignado_id' y el backend lo asignará automáticamente.
     }
 
-    var totalFile = $('#fileElem').val().length;
+    // Archivos: usar files API (más fiable que val().length)
+    var fileInput = $('#fileElem')[0];
+    var totalFile = fileInput && fileInput.files ? fileInput.files.length : 0;
     for (var i = 0; i < totalFile; i++) {
-        formData.append('files[]', $('#fileElem')[0].files[i]);
+        formData.append('files[]', fileInput.files[i]);
     }
 
     $.ajax({
@@ -183,7 +210,22 @@ $(document).on('click', '#btnenviar', function () {
         contentType: false,
         processData: false,
         success: function (data) {
-            var resultado = JSON.parse(data);
+            var resultado;
+            try {
+                resultado = typeof data === 'string' ? JSON.parse(data) : data;
+            } catch (e) {
+                console.error("Respuesta inválida insertdetalle:", data);
+                swal("Error", "Respuesta inválida del servidor.", "error");
+                return;
+            }
+
+            // Si el backend devuelve errores (forma similar a insert ticket)
+            if (resultado && resultado.success === false) {
+                var mensajes = resultado.errors && resultado.errors.length ? resultado.errors : ["No se pudo procesar la petición."];
+                swal("Error", mensajes.join("\n"), "error");
+                return;
+            }
+
             // Verificamos la nueva bandera que envía el controlador
             if (resultado.reassigned) {
                 // Si se reasignó, mostramos un mensaje de éxito y redirigimos
@@ -191,11 +233,10 @@ $(document).on('click', '#btnenviar', function () {
                     title: "¡Correcto!",
                     text: "El ticket ha sido avanzado y reasignado.",
                     type: "success",
-                    timer: 1500, // La alerta se cierra sola después de 1.5 segundos
+                    timer: 1500,
                     showConfirmButton: false
                 });
 
-                // Después de 1.6 segundos, redirigimos al listado principal
                 setTimeout(function() {
                     window.location.href = "../../view/ConsultarTicket/";
                 }, 1600);
@@ -203,19 +244,29 @@ $(document).on('click', '#btnenviar', function () {
             } else {
                 // Si no se reasignó (solo fue un comentario), recargamos los detalles
                 $('#tickd_descrip').summernote('reset');
+                $('#tickd_descrip').data('template', ''); // limpiar plantilla guardada si aplica
                 $('#fileElem').val('');
-                $('#checkbox_avanzar_flujo').prop('checked', false); // Desmarcamos el checkbox
-                $('#panel_siguiente_asignado').hide(); // Ocultamos el combo si estaba visible
+                $('#checkbox_avanzar_flujo').prop('checked', false);
+                $('#panel_siguiente_asignado').hide();
                 listarDetalle(tick_id);
                 swal("Correcto", "Respuesta enviada correctamente", "success");
             }
+        },
+        error: function (jqXHR) {
+            console.error("Error AJAX insertdetalle:", jqXHR.responseText);
+            var msg = "Ocurrió un error al comunicarse con el servidor.";
+            try {
+                var parsed = JSON.parse(jqXHR.responseText);
+                if (parsed && parsed.errors) msg = parsed.errors.join("\n");
+            } catch (e) {
+                if (jqXHR.responseText) msg = jqXHR.responseText;
+            }
+            swal("Error", msg, "error");
         }
-    })
-
-
-
+    });
 
 });
+
 
 $(document).on('click', '#btn_registrar_evento', function () {
     var tick_id = getUrlParameter('ID');
@@ -562,8 +613,12 @@ function listarDetalle(tick_id) {
             // Llenamos el editor Summernote con la descripción del paso
             // Si la descripción está vacía, no ponemos nada.
             if (pasoInfo.paso_descripcion) {
-                
-                $('#tickd_descrip').summernote('code', pasoInfo.paso_descripcion);
+                var pasoTemplate = pasoInfo.paso_descripcion;
+                $('#tickd_descrip').summernote('code', pasoTemplate);
+                // Guardamos la plantilla para compararla antes de enviar la respuesta
+                $('#tickd_descrip').data('template', pasoTemplate);
+            } else {
+                $('#tickd_descrip').data('template', ''); // limpiar si no hay
             }
         }
     });
