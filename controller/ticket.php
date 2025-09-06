@@ -25,120 +25,151 @@ $dateHelper = new DateHelper();
 switch ($_GET["op"]) {
 
     case "insert":
+    $usu_id_creador = $_POST['usu_id'];
+    $cats_id = $_POST['cats_id'];
+    $session_usu = $_SESSION['usu_id'];
+    $emp_id = $_POST['emp_id'];
+    $dp_id = $_POST['dp_id'];
 
-        $usu_id_creador = $_POST['usu_id'];
-        $cats_id = $_POST['cats_id'];
-        $session_usu = $_SESSION['usu_id'];
-        $emp_id = $_POST['emp_id'];
-        $dp_id = $_POST['dp_id'];
+    $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
+    $creador_car_id = $datos_creador['car_id'] ?? null;
+    $creador_reg_id = $datos_creador['reg_id'] ?? null;
 
-        $datos_creador = $usuario->get_usuario_x_id($usu_id_creador);
-        $creador_car_id = $datos_creador['car_id'];
-        $creador_reg_id = $datos_creador['reg_id'];
+    $usu_asig_final = $_POST['usu_asig'] ?? null;
+    $paso_actual_id_final = null;
 
-        $usu_asig_final = $_POST['usu_asig'] ?? null;
-        $paso_actual_id_final = null;
+    // Array para acumular errores que impidan la creación
+    $errors = [];
 
-        // --- 2. VERIFICAR SI HAY UN FLUJO Y SI REQUIERE APROBACIÓN ---
-        $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
-        
-        if ($flujo) {
-            if ($flujo['requiere_aprobacion_jefe'] == 1) {
-                // --- 2A. EL FLUJO REQUIERE APROBACIÓN DE JEFE ---
-                $paso_actual_id_final = null; // Se pone en NULL porque está pendiente de aprobación
-                
-                require_once('../models/Organigrama.php');
-                $organigrama = new Organigrama();
-                $jefe_id = null;
+    // --- 2. VERIFICAR SI HAY UN FLUJO Y SI REQUIERE APROBACIÓN ---
+    $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
 
-                // 1. Buscar el cargo del jefe en el organigrama
-                $jefe_cargo_id = $organigrama->get_jefe_cargo_id($creador_car_id);
+    if ($flujo) {
+        if ($flujo['requiere_aprobacion_jefe'] == 1) {
+            // Flujo requiere aprobación del jefe: buscamos jefe
+            $paso_actual_id_final = null; // queda pendiente de aprobación
+            require_once('../models/Organigrama.php');
+            $organigrama = new Organigrama();
 
-                if ($jefe_cargo_id) {
-                    // 2. Buscar al usuario que es el jefe, priorizando usuarios nacionales.
-                    $jefe_info = null;
-                    // a. Primero, buscar un jefe que sea "nacional" con ese cargo.
-                    $jefe_info = $usuario->get_usuario_nacional_por_cargo($jefe_cargo_id);
-                    // b. Si no se encuentra un jefe nacional, buscar uno en la misma regional del creador.
-                    if (!$jefe_info) {
-                        $jefe_info = $usuario->get_usuario_por_cargo_y_regional($jefe_cargo_id, $creador_reg_id);
-                    }
-                    // c. Como fallback, buscar en el mismo departamento si no se encontró por regional.
-                    if (!$jefe_info) {
-                        $jefe_info = $usuario->get_usuario_por_cargo_y_departamento($jefe_cargo_id, $dp_id);
-                    }
+            // 1. obtener cargo del jefe correspondiente al cargo del creador
+            $jefe_cargo_id = $organigrama->get_jefe_cargo_id($creador_car_id);
 
-                    if ($jefe_info) {
-                        $jefe_id = $jefe_info['usu_id'];
-                    }
-                }
-                
-                if ($jefe_id) { 
-                    $usu_asig_final = $jefe_id; 
-                }
-
+            if (!$jefe_cargo_id) {
+                $errors[] = "No existe definición de cargo de jefe para el cargo del creador (cargo_id: {$creador_car_id}).";
             } else {
-                // --- 2B. EL FLUJO ES NORMAL (SIN APROBACIÓN PREVIA) ---
-                $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
-                $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
+                // intentamos encontrar un jefe válido (nacional -> regional -> departamento)
+                $jefe_info = $usuario->get_usuario_nacional_por_cargo($jefe_cargo_id);
 
-                if (empty($usu_asig_final) && $paso_inicial) {
-                    // Asignación automática para el primer paso si no se asignó manualmente
-                    $asignado_car_id = $paso_inicial['cargo_id_asignado'];
-                    
-                    if ($asignado_car_id) {
-                        $nuevo_asignado_info = null;
-                        
-                        if (isset($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
+                if (!$jefe_info) {
+                    $jefe_info = $usuario->get_usuario_por_cargo_y_regional($jefe_cargo_id, $creador_reg_id);
+                }
+                if (!$jefe_info) {
+                    $jefe_info = $usuario->get_usuario_por_cargo_y_departamento($jefe_cargo_id, $dp_id);
+                }
+
+                if ($jefe_info && !empty($jefe_info['usu_id'])) {
+                    $usu_asig_final = $jefe_info['usu_id'];
+                } else {
+                    $errors[] = "No se encontró un jefe asignable para el cargo (cargo_id: {$jefe_cargo_id}).";
+                }
+            }
+
+        } else {
+            // Flujo normal: buscamos paso inicial y usuario asignado automáticamente si no hay uno manual
+            $paso_inicial = $flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+            $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
+
+            if (!$paso_inicial) {
+                $errors[] = "El flujo (id: {$flujo['flujo_id']}) no tiene paso inicial definido.";
+            } else {
+                // Si no se asignó usuario manualmente, tratamos de asignar automáticamente
+                if (empty($usu_asig_final)) {
+                    $asignado_car_id = $paso_inicial['cargo_id_asignado'] ?? null;
+                    if (!$asignado_car_id) {
+                        $errors[] = "El paso inicial no tiene cargo asignado.";
+                    } else {
+                        if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
                             $nuevo_asignado_info = $usuario->get_usuario_nacional_por_cargo($asignado_car_id);
                         } else {
                             $nuevo_asignado_info = $usuario->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
                         }
 
-                        if ($nuevo_asignado_info) {
+                        if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
                             $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                        } else {
+                            $errors[] = "No se encontró un usuario automático para cargo_id {$asignado_car_id} (paso inicial).";
                         }
                     }
                 }
             }
         }
+    } else {
+        // Si no hay flujo definido, requerimos que el frontend nos haya enviado manualmente un usuario asignado
+        if (empty($usu_asig_final)) {
+            $errors[] = "No existe flujo para la subcategoría y no se suministró un usuario asignado manualmente.";
+        }
+    }
 
-        // --- 3. CREAR EL TICKET ---
-        $datos = $ticket->insert_ticket(
-            $usu_id_creador, $_POST['cat_id'], $cats_id, $_POST['pd_id'], 
-            $_POST['tick_titulo'], $_POST['tick_descrip'], $_POST['error_proceso'],
-            $usu_asig_final, $paso_actual_id_final, $session_usu, $emp_id, $dp_id
-        );
+    // Si hay errores, NO insertamos y devolvemos mensajes claros al frontend
+    if (count($errors) > 0) {
+        // Puedes loguear $errors en server log si quieres
+        echo json_encode([
+            "success" => false,
+            "errors"  => $errors
+        ]);
+        break;
+    }
 
-        if (is_array($datos) == true and count($datos) > 0) {
-            foreach ($datos as $row) {
-                $output['tick_id'] = $row['tick_id'];
+    // --- 3. CREAR EL TICKET (todo validado) ---
+    $datos = $ticket->insert_ticket(
+        $usu_id_creador,
+        $_POST['cat_id'],
+        $cats_id,
+        $_POST['pd_id'],
+        $_POST['tick_titulo'],
+        $_POST['tick_descrip'],
+        $_POST['error_proceso'],
+        $usu_asig_final,
+        $paso_actual_id_final,
+        $session_usu,
+        $emp_id,
+        $dp_id
+    );
 
-                if (empty($_FILES['files'])) {
-                } else {
-                    $countfiles = is_countable($_FILES['files']['name'] ?? null) ? count($_FILES['files']['name']) : 0;
-                    $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
-                    $files_arr = array();
+    // Manejo archivos y respuesta final (igual que antes)
+    $output = [];
+    if (is_array($datos) && count($datos) > 0) {
+        foreach ($datos as $row) {
+            $output['tick_id'] = $row['tick_id'];
 
-                    if (!file_exists($ruta)) {
-                        mkdir($ruta, 0777, true);
-                    }
+            if (!empty($_FILES['files'])) {
+                $countfiles = is_countable($_FILES['files']['name'] ?? null) ? count($_FILES['files']['name']) : 0;
+                $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
 
-                    for ($index = 0; $index < $countfiles; $index++) {
-                        $doc1 = $_FILES['files']['name'][$index];
-                        $tmp_name = $_FILES['files']['tmp_name'][$index];
-                        $destino = $ruta . $doc1;
+                if (!file_exists($ruta)) {
+                    mkdir($ruta, 0777, true);
+                }
 
-                        $documento->insert_documento($output['tick_id'], $doc1);
+                for ($index = 0; $index < $countfiles; $index++) {
+                    $doc1 = $_FILES['files']['name'][$index];
+                    $tmp_name = $_FILES['files']['tmp_name'][$index];
+                    $destino = $ruta . $doc1;
 
-                        move_uploaded_file($tmp_name, $destino);
-                    }
+                    $documento->insert_documento($output['tick_id'], $doc1);
+                    move_uploaded_file($tmp_name, $destino);
                 }
             }
         }
-        echo json_encode($datos);
+    }
 
-        break;
+    // Respuesta exitosa
+    echo json_encode([
+        "success" => true,
+        "ticket"  => $datos,
+        "tick_id" => $output['tick_id'] ?? null
+    ]);
+    break;
+
 
     case "listar_x_usu":
 

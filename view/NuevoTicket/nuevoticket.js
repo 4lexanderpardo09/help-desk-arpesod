@@ -213,8 +213,51 @@ function guardaryeditar(e) {
         contentType: false,
         processData: false,
         success: function (data) {
-            $.post("../../controller/email.php?op=ticket_abierto", { tick_id: data[0].tick_id })
-            $.post("../../controller/email.php?op=ticket_asignado", { tick_id: data[0].tick_id })
+            // Intentamos asegurarnos de que tenemos un objeto JS
+            var resp = data;
+            try {
+                if (typeof data === 'string' || data instanceof String) {
+                    resp = JSON.parse(data);
+                }
+            } catch (err) {
+                console.error("Respuesta no JSON:", data, err);
+                swal("Error", "Respuesta inválida del servidor.", "error");
+                return;
+            }
+
+            // Caso nuevo: backend devuelve { success: false, errors: [...] }
+            if (resp && resp.hasOwnProperty('success') && resp.success === false) {
+                var mensajes = resp.errors && resp.errors.length ? resp.errors : ["No se pudo crear el ticket."];
+                // Unimos con saltos de línea para mostrar en swal
+                swal("No se creó el ticket", mensajes.join("\n"), "error");
+                return;
+            }
+
+            // Caso nuevo: success true con tick_id explícito
+            var tickId = null;
+            if (resp && resp.hasOwnProperty('tick_id')) {
+                tickId = resp.tick_id;
+            }
+            // Caso refactor/antiguo: resp.ticket es array o resp es array
+            if (!tickId && resp && resp.ticket && Array.isArray(resp.ticket) && resp.ticket.length > 0) {
+                tickId = resp.ticket[0].tick_id || resp.ticket[0].tick_id;
+            }
+            if (!tickId && Array.isArray(resp) && resp.length > 0 && resp[0].tick_id) {
+                tickId = resp[0].tick_id;
+            }
+
+            if (!tickId) {
+                // si no obtenemos tick_id, intentar leer datos.ticket o asumir éxito parcial
+                console.warn("No se encontró tick_id en la respuesta:", resp);
+            }
+
+            // Si todo quedó bien: enviar correos (si tenemos tickId)
+            if (tickId) {
+                $.post("../../controller/email.php?op=ticket_abierto", { tick_id: tickId });
+                $.post("../../controller/email.php?op=ticket_asignado", { tick_id: tickId });
+            }
+
+            // Reset del formulario
             $('#cat_id').val('');
             $('#tick_titulo').val('');
             $('#fileElem').val('');
@@ -224,10 +267,28 @@ function guardaryeditar(e) {
             $('#tick_descrip').summernote('reset');
             $('#usu_asig').val('');
             $('#error_proceso').prop('checked', false);
-            $("#error_procesodiv").addClass('hidden')
-            swal("Correcto", "Registrado correctamente ", "success");
+            $("#error_procesodiv").addClass('hidden');
+
+            swal("Correcto", "Registrado correctamente", "success");
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            console.error("Error AJAX:", textStatus, errorThrown, jqXHR.responseText);
+            var msg = "Ocurrió un error al comunicarse con el servidor.";
+            // si el backend devolvió JSON con detalles en responseText, intentar parsearlo
+            try {
+                var parsed = JSON.parse(jqXHR.responseText);
+                if (parsed && parsed.errors && parsed.errors.length) {
+                    msg = parsed.errors.join("\n");
+                } else if (parsed && parsed.message) {
+                    msg = parsed.message;
+                }
+            } catch (e) {
+                // no es JSON: usar texto plano
+                if (jqXHR.responseText) msg = jqXHR.responseText;
+            }
+            swal("Error", msg, "error");
         }
-    })
+    });
 }
 
 
