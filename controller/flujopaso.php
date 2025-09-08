@@ -83,6 +83,26 @@ switch ($_GET["op"]) {
         echo json_encode($datos);
         break;
 
+    case "get_usuarios_por_paso":
+        $paso_id = $_POST['paso_id'];
+        // Obtenemos los datos del paso para saber qué cargo se necesita
+        $paso_data = $flujopaso->get_paso_por_id($paso_id);
+        if ($paso_data) {
+            $cargo_id_necesario = $paso_data['cargo_id_asignado'];
+            // Buscamos a TODOS los usuarios con ese cargo
+            $usuarios = $usuario->get_usuarios_por_cargo($cargo_id_necesario);
+            
+            $html = "<option value=''>Seleccione un Agente</option>";
+            if (is_array($usuarios) && count($usuarios) > 0) {
+                foreach ($usuarios as $row) {
+                    // Mostramos el nombre y su regional para poder diferenciarlos
+                    $html .= "<option value='" . $row["usu_id"] . "'>" . $row["usu_nom"] . " " . $row["usu_ape"] . "</option>";
+                }
+            }
+            echo $html;
+        }
+        break;
+
     case "mostrar":
         // CAMBIADO: Se usa la función get_paso_por_id que es más directa
         $datos = $flujopaso->get_paso_por_id($_POST['paso_id']);

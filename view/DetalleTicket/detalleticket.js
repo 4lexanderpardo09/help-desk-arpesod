@@ -590,7 +590,7 @@ function handleSelectedNextStep(selectedPasoId) {
 
         // Si el paso seleccionado requiere selección manual, mostramos el combo de agentes
         if (selected_paso_info.requiere_seleccion_manual == 1) {
-            $.post("../../controller/ticket.php?op=get_usuarios_por_paso", { paso_id: selected_paso_info.paso_id }, function(data) {
+            $.post("../../controller/flujopaso.php?op=get_usuarios_por_paso", { paso_id: selected_paso_info.paso_id }, function(data) {
                 $('#nuevo_asignado_id').html(data).trigger('change');
                 $('#panel_siguiente_asignado').show();
             });

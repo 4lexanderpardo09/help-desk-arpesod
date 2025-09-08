@@ -157,6 +157,8 @@ function categoriasAnidadas() {
             // b. Verificar si se necesita asignación manual
             $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
                 if (data.requiere_seleccion) {
+                    console.log('entre seleccion');
+                    
                     var options = '<option value="">Seleccione un agente...</option>';
                     data.usuarios.forEach(function (user) {
                         options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
