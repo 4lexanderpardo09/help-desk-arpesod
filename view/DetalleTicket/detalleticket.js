@@ -420,54 +420,7 @@ function updateTicket(tick_id, usu_id) {
 
 }
 
-
 function listarDetalle(tick_id) {
-
-    $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
-        $('#lbldetalle').html(data);
-
-    });
-
-    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
-        data = JSON.parse(data);
-
-        $('#lbltickestado').html(data.tick_estado);
-        $('#lblprioridad').html(data.pd_nom);
-        $('#lblnomusuario').html(data.usu_nom + ' ' + data.usu_ape);
-        $('#lblestado_tiempo').html(data.estado_tiempo);
-        $('#lblfechacrea').html(data.fech_crea);
-        $('#lblticketid').html("Detalle del tikect #" + data.tick_id);
-        $('#cat_id').val(data.cat_nom);
-        $('#cats_id').val(data.cats_nom);
-        $('#emp_id').val(data.emp_nom);
-        $('#dp_id').val(data.dp_nom);
-        $('#tick_titulo').val(data.tick_titulo);
-        $('#tickd_descripusu').summernote('code', data.tick_descrip);
-
-        var usu_id = $('#user_idx').val();
-        if (usu_id != data.usu_asig) {
-            $("#btncerrarticket").addClass('hidden');
-            $("#panel_respuestas_rapidas").addClass('hidden');
-        };
-
-        $('#panel_aprobacion_jefe').hide();
-
-        if ((data.paso_actual_id === null || data.paso_actual_id == 0) && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id) {
-            // Si todas las condiciones se cumplen, muestra el panel
-            $('#panel_aprobacion_jefe').show();
-            // $('#boxdetalleticket').hide(); 
-        } else {
-            $('#boxdetalleticket').show();
-            if (data.tick_estado_texto == 'Cerrado') {
-                $('#boxdetalleticket').hide();
-            };
-        }
-
-
-    });
-}
-
-    function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
         $('#lbldetalle').html(data);
