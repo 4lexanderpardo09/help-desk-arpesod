@@ -57,12 +57,9 @@ switch ($_GET["op"]) {
     
         case "mostrar":
             $datos = $departamento->get_departamento_x_id($_POST['dp_id']);
-            if(is_array($datos) and count($datos) >0){
-                foreach ($datos as $row) {
-                    $output['dp_id'] = $row['dp_id'];
-                    $output['dp_nom'] = $row['dp_nom'];
-                }
-                echo json_encode($output);
-            }    
+                $output['dp_id'] = $datos['dp_id'];
+                $output['dp_nom'] = $datos['dp_nom'];
+            echo json_encode($output);  
+        break;
 }
 ?>
