@@ -41,7 +41,7 @@ if (isset($_SESSION["usu_id"])) {
 
 
                 <div class="row">
-                    <form method="post" id="ticket_form">
+                    <form method="post" id="ticket_form" enctype="multipart/form-data">
                         <input type="hidden" id="usu_id" name="usu_id" value="<?php echo $_SESSION["usu_id"] ?>">
                         <input type="hidden" id="user_cargo_id" value="<?php echo $_SESSION['car_id']; ?>">
                         <div class="col-lg-3">
@@ -87,7 +87,7 @@ if (isset($_SESSION["usu_id"])) {
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Documento adicional</label>
-                                <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                <input type="file" name="files[]" id="files" class="form-control" multiple>
                             </fieldset>
                         </div>
                         <div class="col-lg-3">

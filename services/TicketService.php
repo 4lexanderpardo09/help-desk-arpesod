@@ -8,6 +8,13 @@ require_once('../models/FlujoPaso.php');
 require_once('../models/Departamento.php');
 require_once('../models/DateHelper.php');
 
+use models\repository\TicketRepository;
+use models\repository\NotificationRepository;
+use models\repository\AssignmentRepository;
+use PDO;
+use Exception;
+
+
 class TicketService
 {
     private $ticketModel;
@@ -18,7 +25,12 @@ class TicketService
     private $departamentoModel;
     private $dateHelper;
 
-    public function __construct()
+    private TicketRepository $ticketRepository;
+    private NotificationRepository $notificationRepository;
+    private AssignmentRepository $assignmentRepository;
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo)
     {
         $this->ticketModel = new Ticket();
         $this->usuarioModel = new Usuario();
@@ -27,27 +39,20 @@ class TicketService
         $this->flujoPasoModel = new FlujoPaso();
         $this->departamentoModel = new Departamento();
         $this->dateHelper = new DateHelper();
+
+        $this->pdo = $pdo;
+        $this->ticketRepository = new TicketRepository($pdo);
+        $this->notificationRepository = new NotificationRepository($pdo);
+        $this->assignmentRepository = new AssignmentRepository($pdo);
     }
 
-
-    public function createTicket($postData, $filesData)
+    public function resolveAssigned($flujo, $usu_id_creador)
     {
-        $usu_id_creador = $postData['usu_id'];
-        $cats_id = $postData['cats_id'];
-        $session_usu = $_SESSION['usu_id'];
-        $emp_id = $postData['emp_id'];
-        $dp_id = $postData['dp_id'];
-
         $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
         $creador_car_id = $datos_creador['car_id'] ?? null;
         $creador_reg_id = $datos_creador['reg_id'] ?? null;
-
-        $usu_asig_final = $postData['usu_asig'] ?? null;
-        $paso_actual_id_final = null;
-
         $errors = [];
-
-        $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
+        $paso_actual_id_final = null;
 
         if ($flujo) {
             if ($flujo['requiere_aprobacion_jefe'] == 1) {
@@ -107,51 +112,102 @@ class TicketService
             }
         }
 
-        if (count($errors) > 0) {
-            return ["success" => false, "errors" => $errors];
-        }
+        return [
+            'usu_asig_final' => $usu_asig_final ?? null,
+            'paso_actual_id_final' => $paso_actual_id_final,
+            'errors' => $errors
+        ];
+    }
 
-        $datos = $this->ticketModel->insert_ticket(
-            $usu_id_creador,
-            $postData['cat_id'],
-            $cats_id,
-            $postData['pd_id'],
-            $postData['tick_titulo'],
-            $postData['tick_descrip'],
-            $postData['error_proceso'],
-            $usu_asig_final,
-            $paso_actual_id_final,
-            $session_usu,
-            $emp_id,
-            $dp_id
-        );
-
+    public function insertDocument($datos)
+    {
         $output = [];
-        if (is_array($datos) && count($datos) > 0) {
-            foreach ($datos as $row) {
-                $output['tick_id'] = $row['tick_id'];
 
-                if (!empty($filesData['files'])) {
-                    $countfiles = is_countable($filesData['files']['name'] ?? null) ? count($filesData['files']['name']) : 0;
-                    $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
+        if ($datos >= 0) {
+            $output['tick_id'] = $datos;
 
-                    if (!file_exists($ruta)) {
-                        mkdir($ruta, 0777, true);
-                    }
+            if (!empty($_FILES['files']) && is_array($_FILES['files']['name'])) {
+                $countFiles = count($_FILES['files']['name']);
+                $ruta = '../public/document/ticket/' . $output['tick_id'] . '/';
 
-                    for ($index = 0; $index < $countfiles; $index++) {
-                        $doc1 = $filesData['files']['name'][$index];
-                        $tmp_name = $filesData['files']['tmp_name'][$index];
-                        $destino = $ruta . $doc1;
+                if (!file_exists($ruta)) {
+                    mkdir($ruta, 0777, true);
+                }
 
-                        $this->documentoModel->insert_documento($output['tick_id'], $doc1);
-                        move_uploaded_file($tmp_name, $destino);
+                for ($i = 0; $i < $countFiles; $i++) {
+                    if ($_FILES['files']['error'][$i] === UPLOAD_ERR_OK) {
+                        $nombreArchivo = basename($_FILES['files']['name'][$i]);
+                        $tmpArchivo    = $_FILES['files']['tmp_name'][$i];
+                        $destino       = $ruta . $nombreArchivo;
+                        $this->documentoModel->insert_documento($output['tick_id'], $nombreArchivo);
+                        move_uploaded_file($tmpArchivo, $destino);
                     }
                 }
+
+                return $output;
+
             }
         }
+    }
 
-        return ["success" => true, "ticket" => $datos, "tick_id" => $output['tick_id'] ?? null];
+
+    public function createTicket($postData)
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $usu_id_creador = $postData['usu_id'] ?? null;
+            $cats_id = $postData['cats_id'] ?? null;
+            $session_usu = $_SESSION['usu_id'] ?? null;
+            $emp_id = $postData['emp_id'] ?? null;
+            $dp_id = $postData['dp_id'] ?? null;
+
+            $usu_asig_final = $postData['usu_asig'] ?? null;
+
+            $errors = [];
+
+            $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
+
+            $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador);
+
+            $errors = array_merge($errors, $resolveResult['errors']);
+
+            if (count($errors) > 0) {
+                return ["success" => false, "errors" => $errors];
+            }
+
+            $datos = $this->ticketRepository->insertTicket(
+                $usu_id_creador,
+                $postData['cat_id'],
+                $cats_id,
+                $postData['pd_id'],
+                $postData['tick_titulo'],
+                $postData['tick_descrip'],
+                $postData['error_proceso'],
+                $usu_asig_final,
+                $resolveResult['paso_actual_id_final'],
+                $session_usu,
+                $emp_id,
+                $dp_id
+            );
+
+            $this->assignmentRepository->insertAssignment($datos, $usu_asig_final, $session_usu, $resolveResult['paso_actual_id_final']);
+
+            if ($usu_asig_final && $usu_asig_final != $usu_id_creador) {
+                $mensaje_notificacion = "Se le ha asignado el ticket # {$datos}.";
+                $this->notificationRepository->insertNotification($usu_asig_final, $mensaje_notificacion, $datos);
+            }
+
+            $output = $this->insertDocument($datos);
+
+            $this->pdo->commit();
+
+            return ["success" => true, "ticket" => $datos, "tick_id" => $output['tick_id'] ?? null];
+        } catch (Exception $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            return ["success" => false, "errors" => ["Exception: " . $e->getMessage()]];
+        }
     }
 
     public function showTicket($tickId)
@@ -231,7 +287,7 @@ class TicketService
                         if ($paso['paso_orden'] < $orden_actual) $estado = 'completed';
                         elseif ($paso['paso_orden'] == $orden_actual && $paso['paso_id'] == $row["paso_actual_id"]) $estado = 'active';
                         else $estado = 'pending';
-                        
+
                         // Sintaxis de Mermaid para un nodo: ID_NODO["Texto del Nodo"]
                         $mermaid_string .= "    paso{$paso['paso_id']}_[\"{$paso['paso_nombre']}\"];\n";
                         // Sintaxis para aplicar un estilo
@@ -243,7 +299,7 @@ class TicketService
                     $ordenes = array_keys($pasos_por_orden);
                     for ($i = 0; $i < count($ordenes) - 1; $i++) {
                         $nivel_actual = $pasos_por_orden[$ordenes[$i]];
-                        $siguiente_nivel = $pasos_por_orden[$ordenes[$i+1]];
+                        $siguiente_nivel = $pasos_por_orden[$ordenes[$i + 1]];
                         foreach ($nivel_actual as $paso_padre) {
                             foreach ($siguiente_nivel as $paso_hijo) {
                                 // Sintaxis de conexión: ID_PADRE --> ID_HIJO
@@ -257,7 +313,7 @@ class TicketService
                     $mermaid_string .= "classDef active fill:#d9edf7,stroke:#31708f,stroke-width:4px;\n";
                     $mermaid_string .= "classDef pending fill:#f5f5f5,stroke:#ccc,stroke-width:2px;\n";
                     // --- FIN DE LÓGICA ---
-                    
+
                     $output["timeline_graph"] = $mermaid_string;
                 }
             }
@@ -286,10 +342,10 @@ class TicketService
         }
     }
 
-    public function createDetailTicket($tickId,$usuId,$tickdDescrip)
+    public function createDetailTicket($tickId, $usuId, $tickdDescrip)
     {
         // 1. Guardar comentario y archivos (tu código existente no cambia)
-        $datos = $this->ticketModel->insert_ticket_detalle($tickId,$usuId,$tickdDescrip);
+        $datos = $this->ticketModel->insert_ticket_detalle($tickId, $usuId, $tickdDescrip);
         if (is_array($datos) && count($datos) > 0) {
             $tickd_id = $datos[0]['tickd_id'];
             if (!empty($_FILES['files']['name'][0])) {
@@ -312,7 +368,7 @@ class TicketService
         if (isset($_POST["siguiente_paso_id"]) && !empty($_POST["siguiente_paso_id"])) {
             $tick_id = $_POST["tick_id"];
             $estado_paso_actual = 'N/A';
-            
+
             // Medir el tiempo del paso que está por terminar (tu lógica es correcta y no cambia)
             $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
             if ($asignacion_actual) {
@@ -359,15 +415,15 @@ class TicketService
             if ($nuevo_asignado_info) {
                 $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
                 $quien_asigno_id = $_SESSION["usu_id"];
-                
+
                 $this->ticketModel->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
-                
+
                 if ($asignacion_actual) {
                     $this->ticketModel->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
                 }
             }
         }
-        
+
         $reassigned = isset($nuevo_asignado_info) && $nuevo_asignado_info;
         echo json_encode(["status" => "success", "reassigned" => $reassigned]);
     }
@@ -376,11 +432,11 @@ class TicketService
     {
         // a. Obtenemos la información de la última asignación (el paso que está por terminar)
         $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tickId);
-        
+
         // Solo ejecutamos la lógica de tiempo si el ticket estaba en un flujo
         if ($asignacion_actual && !empty($asignacion_actual['paso_actual_id'])) {
             $paso_actual_info = $this->flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
-            
+
             if ($paso_actual_info) {
                 $estado_paso_final = 'N/A';
                 $fecha_asignacion = $asignacion_actual['fech_asig'];
@@ -403,7 +459,6 @@ class TicketService
         // --- TU LÓGICA ORIGINAL PARA CERRAR EL TICKET (AHORA VA DESPUÉS) ---
         $this->ticketModel->update_ticket($_POST['tick_id']);
         $this->ticketModel->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
-
     }
 
     public function LogErrorTicket($dataPost)
@@ -424,11 +479,11 @@ class TicketService
 
         // 1. Buscamos el registro de la asignación ANTERIOR para saber a quién atribuirle el error.
         $asignacion_anterior = $ticket->get_penultima_asignacion($tick_id);
-        
+
         $nombre_completo_responsable = null;
         if ($asignacion_anterior) {
             $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
-            
+
             // 2. "Sellamos" ese registro de historial con el código del error y la descripción.
             $ticket->update_error_code_paso($asignacion_anterior['th_id'], $answer_id, $error_descrip);
         }
@@ -462,5 +517,4 @@ class TicketService
 
         echo json_encode(["status" => "success"]);
     }
-
 }

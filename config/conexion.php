@@ -36,6 +36,11 @@ class Conectar{
        // La ruta también viene del archivo .env
        return $_ENV['APP_URL'];
     }
+
+    public static function getConexion(){
+        $instance = new self();
+        return $instance->Conexion();
+    }
 }
 
 ?>

@@ -1,57 +1,6 @@
 <?php
 class Ticket extends Conectar
 {
-    public function insert_ticket($usu_id, $cat_id, $cats_id, $pd_id, $tick_titulo, $tick_descrip, $error_proceso, $usu_asig, $paso_actual_id = null, $how_asig, $emp_id, $dp_id)
-    {
-        $conectar = parent::Conexion();
-        parent::set_names();
-        $sql = "INSERT INTO tm_ticket (tick_id,usu_id,cat_id,cats_id,pd_id,tick_titulo,tick_descrip,tick_estado,error_proceso,fech_crea,usu_asig,paso_actual_id,how_asig,est,emp_id,dp_id) VALUES (NULL,?,?,?,?,?,?,'Abierto',?,NOW(),?,?,?, '1',?,?)";
-        $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $usu_id);
-        $sql->bindValue(2, $cat_id);
-        $sql->bindValue(3, $cats_id);
-        $sql->bindValue(4, $pd_id);
-        $sql->bindValue(5, $tick_titulo);
-        $sql->bindValue(6, $tick_descrip);
-        $sql->bindValue(7, $error_proceso);
-        $sql->bindValue(8, $usu_asig);
-        $sql->bindValue(9, $paso_actual_id);
-        $sql->bindValue(10, $how_asig);
-        $sql->bindValue(11, $emp_id);
-        $sql->bindValue(12, $dp_id);
-        $sql->execute();
-
-        $sql1 = "SELECT LAST_INSERT_ID() as tick_id";
-        $sql1 = $conectar->prepare($sql1);
-        $sql1->execute();
-
-        $resultado = $sql1->fetchAll(PDO::FETCH_ASSOC);
-        $tick_id = $resultado[0]['tick_id'];
-
-        $sql2 = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
-                VALUES (?, ?, NULL, ?, NOW(), 'Ticket abierto', 1);";
-        $sql2 = $conectar->prepare($sql2);
-        $sql2->bindValue(1, $tick_id);
-        $sql2->bindValue(2, $usu_asig);
-        $sql2->bindValue(3, $paso_actual_id);
-        $sql2->execute();
-
-        if ($how_asig != $usu_asig) {
-            // Creamos el mensaje de la notificación
-            $mensaje_notificacion = "Se te ha asignado el nuevo ticket #" . $tick_id;
-
-            // Preparamos la consulta para insertar en la tabla de notificaciones
-            $sql3 = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), 2)";
-            $sql3 = $conectar->prepare($sql3);
-            $sql3->bindValue(1, $usu_asig); // El ID del usuario a notificar
-            $sql3->bindValue(2, $mensaje_notificacion); // El mensaje
-            $sql3->bindValue(3, $tick_id); // El ID del ticket relacionado
-            $sql3->execute();
-        }
-
-        return $resultado;
-    }
-
     public function update_asignacion_y_paso($tick_id, $usu_asig, $paso_actual_id, $quien_asigno_id, $asig_comentario = 'Reasignado por avance en el flujo', $notification_message = null)
     {
         $conectar = parent::Conexion();

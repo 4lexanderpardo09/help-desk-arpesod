@@ -5,19 +5,22 @@ require_once('../services/TicketService.php');
 require_once('../services/TicketWorkflowService.php');
 require_once('../services/TicketLister.php');
 require_once('../services/TicketDetailLister.php');
+require_once('../models/repository/TicketRepository.php');
+require_once('../models/repository/NotificationRepository.php');
+require_once('../models/repository/AssignmentRepository.php');
+
+$pdo = Conectar::getConexion();
 
 $ticket = new Ticket();
-$ticketService = new TicketService();
+$ticketService = new TicketService($pdo);
 $workflowService = new TicketWorkflowService();
 $lister = new TicketLister();
 $detailLister = new TicketDetailLister();
 
-
-
 switch ($_GET["op"]) {
 
     case "insert":
-        $result = $ticketService->createTicket($_POST, $_FILES);
+        $result = $ticketService->createTicket($_POST);
         echo json_encode($result);
     break;
     

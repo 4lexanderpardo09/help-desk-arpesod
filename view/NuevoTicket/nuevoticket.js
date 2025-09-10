@@ -217,11 +217,43 @@ function guardaryeditar(e) {
         return false;
     }
 
-    var totalFile = $('#fileElem').val().length;
+    var form = document.getElementById('ticket_form');
 
-    for (var i = 0; i < totalFile; i++) {
-        formData.append('files[]', $('#fileElem')[0].files[i]);
+    // 1) Crear un FormData vacío
+    var formData = new FormData();
+
+    // 2) Añadir todos los campos no-file (usando serializeArray para jQuery)
+    var fields = $('#ticket_form').serializeArray();
+    fields.forEach(function (f) {
+        // serializeArray no incluye inputs file, por eso es seguro
+        formData.append(f.name, f.value);
+    });
+
+    // 3) Añadir archivos manualmente desde el input #files
+    var input = document.getElementById('files');
+    if (input && input.files && input.files.length) {
+        for (var i = 0; i < input.files.length; i++) {
+            var file = input.files[i];
+            // Solo añadir archivos reales (no entradas vacías)
+            if (file && file.size > 0) {
+                formData.append('files[]', file, file.name);
+            }
+        }
     }
+
+    // 4) (Opcional) Quitar entradas basura que puedan existir por error
+    //    Si por alguna razón quedó una entrada "files" vacía, la borramos:
+    if (formData.has && typeof formData.has === 'function') {
+        // algunos navegadores no soportan FormData.has(); solo intentamos si existe
+        if (formData.has('files')) formData.delete('files');
+    } else {
+        // alternativa segura: reconstruir for safety (no necesario si hicimos append manual)
+    }
+
+    // Debug (temporal): ver en consola lo que realmente se enviará
+    for (var pair of formData.entries()) { console.log("FD:", pair[0], pair[1]); }
+
+
 
     $.ajax({
         url: "../../controller/ticket.php?op=insert",
@@ -277,7 +309,7 @@ function guardaryeditar(e) {
             // Reset del formulario
             $('#cat_id').val('');
             $('#tick_titulo').val('');
-            $('#fileElem').val('');
+            $('#files').val('');
             $('#dp_id').val('');
             $('#cats_id').val('');
             $('#pd_id').val('');
