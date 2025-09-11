@@ -184,10 +184,10 @@ class TicketService
                 $postData['tick_descrip'],
                 $postData['error_proceso'],
                 $usu_asig_final,
-                $resolveResult['paso_actual_id_final'],
                 $session_usu,
                 $emp_id,
-                $dp_id
+                $dp_id,
+                $resolveResult['paso_actual_id_final']
             );
 
             $this->assignmentRepository->insertAssignment($datos, $usu_asig_final, $session_usu, $resolveResult['paso_actual_id_final']);
