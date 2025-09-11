@@ -478,14 +478,14 @@ class TicketService
         // --- LÓGICA UNIFICADA Y CORREGIDA ---
 
         // 1. Buscamos el registro de la asignación ANTERIOR para saber a quién atribuirle el error.
-        $asignacion_anterior = $ticket->get_penultima_asignacion($tick_id);
+        $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
 
         $nombre_completo_responsable = null;
         if ($asignacion_anterior) {
             $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
 
             // 2. "Sellamos" ese registro de historial con el código del error y la descripción.
-            $ticket->update_error_code_paso($asignacion_anterior['th_id'], $answer_id, $error_descrip);
+            $this->ticketModel->update_error_code_paso($asignacion_anterior['th_id'], $answer_id, $error_descrip);
         }
 
         // 3. Construimos el comentario para el historial visible.
@@ -498,10 +498,10 @@ class TicketService
         }
 
         // 4. Marcamos el ticket con el código de error en la tabla principal (para la alerta visual).
-        $ticket->update_error_proceso($tick_id, $answer_id);
+        $this->ticketModel->update_error_proceso($tick_id, $answer_id);
 
         // 5. Insertamos el nuevo comentario detallado en el historial.
-        $ticket->insert_ticket_detalle($tick_id, $usu_id, $comentario);
+        $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id, $comentario);
 
         // 6. Si es error de proceso, reasignamos al usuario anterior y retrocedemos el paso.
         if ($es_error_proceso && $asignacion_anterior) {
@@ -512,7 +512,7 @@ class TicketService
             $comentario_reasignacion = "Ticket devuelto por error de proceso.";
             $mensaje_notificacion = "Se te ha devuelto el Ticket #" . $tick_id . " por un error en el proceso.";
 
-            $ticket->update_asignacion_y_paso($tick_id, $usuario_anterior_id, $paso_anterior_id, $quien_asigno_id, $comentario_reasignacion, $mensaje_notificacion);
+            $this->ticketModel->update_asignacion_y_paso($tick_id, $usuario_anterior_id, $paso_anterior_id, $quien_asigno_id, $comentario_reasignacion, $mensaje_notificacion);
         }
 
         echo json_encode(["status" => "success"]);
