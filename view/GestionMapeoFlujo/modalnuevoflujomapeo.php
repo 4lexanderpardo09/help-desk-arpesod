@@ -26,12 +26,20 @@
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
-                        <label for="creador_car_id"><b>Y</b> es creado por alguien con el cargo:</label>
+                                                <label for="creador_car_id"><b>Y</b> es creado por alguien con el cargo:</label>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-primary" id="select_all_creador">Seleccionar Todos</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="deselect_all_creador">Deseleccionar Todos</button>
+                        </div>
                         <select id="creador_car_ids" name="creador_car_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
                         <label for="asignado_car_id"><b>Entonces</b> asignar a alguien con el cargo:</label>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-primary" id="select_all_asignado">Seleccionar Todos</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="deselect_all_asignado">Deseleccionar Todos</button>
+                        </div>
                         <select id="asignado_car_ids" name="asignado_car_ids[]" class="select2" multiple="multiple" style="width: 100%;">
                         </select>
                     </fieldset>

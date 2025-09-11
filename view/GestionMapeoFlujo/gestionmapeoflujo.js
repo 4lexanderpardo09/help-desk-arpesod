@@ -60,8 +60,27 @@ $(document).ready(function () {
         }
     });
 
+    // --- 4. Lógica para botones de seleccionar/deseleccionar todos ---
+    $('#select_all_creador').on('click', function() {
+        $("#creador_car_ids > option").prop("selected", "selected");
+        $("#creador_car_ids").trigger("change");
+    });
 
-    // --- 4. Inicializar DataTable ---
+    $('#deselect_all_creador').on('click', function() {
+        $("#creador_car_ids").val(null).trigger("change");
+    });
+
+    $('#select_all_asignado').on('click', function() {
+        $("#asignado_car_ids > option").prop("selected", "selected");
+        $("#asignado_car_ids").trigger("change");
+    });
+
+    $('#deselect_all_asignado').on('click', function() {
+        $("#asignado_car_ids").val(null).trigger("change");
+    });
+
+
+    // --- 5. Inicializar DataTable ---
     tabla = $('#flujomapeo_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
