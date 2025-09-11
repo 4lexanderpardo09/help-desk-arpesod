@@ -206,7 +206,7 @@ class TicketService
             if ($this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
-            return ["success" => false, "errors" => ["Exception: " . $e->getMessage()]];
+            return ["success" => false, "errors" => ["Exception: " . $e->getMessage()]] ;
         }
     }
 
@@ -481,11 +481,25 @@ class TicketService
         $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
 
         $nombre_completo_responsable = null;
+        $id_historial_a_sellar = null;
+
         if ($asignacion_anterior) {
             $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
+            $id_historial_a_sellar = $asignacion_anterior['th_id'];
+        } else {
+            // Si no hay asignación penúltima (es un flujo de un solo paso), atribuimos al creador.
+            $primera_asignacion = $this->ticketModel->get_primera_asignacion($tick_id);
+            if ($primera_asignacion) {
+                // El responsable es el creador del ticket
+                $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
+                $nombre_completo_responsable = $ticket_data['usu_nom'] . ' ' . $ticket_data['usu_ape'];
+                $id_historial_a_sellar = $primera_asignacion['th_id'];
+            }
+        }
 
+        if ($id_historial_a_sellar) {
             // 2. "Sellamos" ese registro de historial con el código del error y la descripción.
-            $this->ticketModel->update_error_code_paso($asignacion_anterior['th_id'], $answer_id, $error_descrip);
+            $this->ticketModel->update_error_code_paso($id_historial_a_sellar, $answer_id, $error_descrip);
         }
 
         // 3. Construimos el comentario para el historial visible.
@@ -494,7 +508,7 @@ class TicketService
             $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
         }
         if ($nombre_completo_responsable) {
-            $comentario .= "<br><small class='text-muted'>Error atribuido al paso anterior, asignado a: <b>" . $nombre_completo_responsable . "</b></small>";
+            $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>" . $nombre_completo_responsable . "</b></small>";
         }
 
         // 4. Marcamos el ticket con el código de error en la tabla principal (para la alerta visual).

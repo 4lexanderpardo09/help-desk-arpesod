@@ -774,6 +774,21 @@ class Ticket extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_primera_asignacion($tick_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT *
+                FROM th_ticket_asignacion
+                WHERE tick_id = ?
+                ORDER BY fech_asig ASC
+                LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function update_error_proceso($tick_id, $error_code)
     {
         $conectar = parent::conexion();
