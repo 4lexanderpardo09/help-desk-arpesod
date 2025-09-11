@@ -17,15 +17,17 @@ function cargarDashboard(override_filtros = {}) {
     filtros = { ...filtros, ...override_filtros };
 
     cargarKPIs(filtros);
+    cargarKPIsAvanzados(filtros); // <-- nuevas métricas: primera respuesta, SLA, aging, reopen
     cargarGraficoTicketsPorMes(filtros);
     cargarTablaTopCategorias(filtros);
     cargarTablaTopUsuarios(filtros);
     cargarGraficoCargaAgente(filtros);
-    cargarGraficoTiempoAgente(filtros);
+    cargarGraficoTiempoAgente(filtros); // ahora intenta usar versión optimizada con fallback
     cargarGraficoErroresTipo(filtros);
     cargarTablaRendimientoPaso(filtros);
     cargarTablaErroresAgente(filtros);
     cargarTablaResueltosAgente(filtros);
+    cargarTopCategoriasTiempo(filtros); // top por tiempo de resolución
 }
 
 /**
@@ -117,7 +119,8 @@ function cargarFiltros() {
  */
 function destruirChartSiExiste(chartId) {
     if (charts[chartId]) {
-        charts[chartId].destroy();
+        try { charts[chartId].destroy(); } catch (e) { /* safe */ }
+        delete charts[chartId];
     }
 }
 
@@ -130,47 +133,50 @@ function cargarKPIs(filtros) {
         data: filtros,
         dataType: 'json',
         success: function (data) {
-            const total = data.totalAbiertos + data.totalCerrados;
+            const total = (data.totalAbiertos || 0) + (data.totalCerrados || 0);
             $("#lbltotal").html(total);
-            $("#lblabiertos").html(data.totalAbiertos);
-            $("#lblcerrados").html(data.totalCerrados);
+            $("#lblabiertos").html(data.totalAbiertos || 0);
+            $("#lblcerrados").html(data.totalCerrados || 0);
+
             // --- INICIO DE LA NUEVA LÓGICA ---
             let tiempoFormateado = "N/A"; // Valor por defecto
 
             // Verificamos que tiempoPromedio no sea null o undefined
-            if (data.tiempoPromedio) {
+            if (data.tiempoPromedio !== null && data.tiempoPromedio !== undefined && data.tiempoPromedio !== '') {
 
                 const total_horas = parseFloat(data.tiempoPromedio); // Aseguramos que sea un número
-                const horas_enteras = Math.floor(total_horas);
+                if (!isNaN(total_horas)) {
+                    const horas_enteras = Math.floor(total_horas);
 
-                const dias = Math.floor(horas_enteras / 24);
-                const horas = horas_enteras % 24;
+                    const dias = Math.floor(horas_enteras / 24);
+                    const horas = horas_enteras % 24;
 
-                let textoResultado = '';
+                    let textoResultado = '';
 
-                if (dias > 0) {
-                    // Maneja el plural para "día"
-                    textoResultado += dias + (dias === 1 ? ' dia' : ' dias');
-                }
-
-                if (horas > 0) {
-                    if (textoResultado !== '') {
-                        textoResultado += ' '; // Agrega un espacio si ya hay días
+                    if (dias > 0) {
+                        // Maneja el plural para "día" (sin y con acento)
+                        textoResultado += dias + (dias === 1 ? ' dia' : ' dias');
                     }
-                    // Maneja el plural para "hora"
-                    textoResultado += horas + (horas === 1 ? ' hora' : ' horas');
-                }
 
-                // Si el tiempo es menor a 1 hora, mostramos un texto por defecto
-                if (textoResultado === '') {
-                    tiempoFormateado = "Menos de 1 hora";
-                } else {
-                    tiempoFormateado = textoResultado;
+                    if (horas > 0) {
+                        if (textoResultado !== '') {
+                            textoResultado += ' '; // Agrega un espacio si ya hay días
+                        }
+                        // Maneja el plural para "hora"
+                        textoResultado += horas + (horas === 1 ? ' hora' : ' horas');
+                    }
+
+                    // Si el tiempo es menor a 1 hora, mostramos un texto por defecto
+                    if (textoResultado === '') {
+                        tiempoFormateado = "Menos de 1 hora";
+                    } else {
+                        tiempoFormateado = textoResultado;
+                    }
                 }
             }
 
-            // 2. Revisamos si el texto resultante contiene la palabra "día"
-            if (tiempoFormateado.includes('día')) {
+            // 2. Revisamos si el texto resultante contiene la palabra "dia" (soportamos con/sin acento)
+            if (tiempoFormateado.toLowerCase().includes('dia') || tiempoFormateado.toLowerCase().includes('día')) {
                 // Si contiene "día", le AÑADIMOS una clase para hacerlo más pequeño
                 $("#lblpromedio").addClass('texto-largo');
             } else {
@@ -182,6 +188,86 @@ function cargarKPIs(filtros) {
             $("#lblpromedio").html(tiempoFormateado);
             // --- FIN DE LA NUEVA LÓGICA ---
         },
+    });
+}
+
+/**
+ * Nuevas llamadas a KPIs avanzados (primera respuesta, SLA, aging backlog, reopen rate).
+ * Actualiza elementos si estos existen en el DOM.
+ */
+function cargarKPIsAvanzados(filtros) {
+    // 1) Primera respuesta
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_tiempo_primera_respuesta',
+        method: 'POST',
+        data: filtros,
+        dataType: 'json',
+        success: function (resp) {
+            var val = resp && (resp.horas_promedio_primera_respuesta !== undefined) ? resp.horas_promedio_primera_respuesta : resp;
+            if ($('#lblPrimeraRespuesta').length) {
+                $('#lblPrimeraRespuesta').html(val === null ? 'N/A' : (val + ' hrs'));
+            }
+        },
+        error: function () {
+            if ($('#lblPrimeraRespuesta').length) $('#lblPrimeraRespuesta').html('N/A');
+        }
+    });
+
+    // 2) SLA compliance (por defecto 48h)
+    var slaData = Object.assign({}, filtros, { hours: 48 });
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_sla_compliance',
+        method: 'POST',
+        data: slaData,
+        dataType: 'json',
+        success: function (resp) {
+            if (!resp) return;
+            var pct = resp.pct === null ? 'N/A' : resp.pct + '%';
+            if ($('#lblSLACompliance').length) $('#lblSLACompliance').html(pct);
+            // Si existe una barra de progreso, la actualizamos (ej: #bar-sla)
+            if ($('#bar-sla').length && resp.pct !== null) $('#bar-sla').css('width', resp.pct + '%');
+        },
+        error: function () {
+            if ($('#lblSLACompliance').length) $('#lblSLACompliance').html('N/A');
+        }
+    });
+
+    // 3) Aging backlog
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_aging_backlog',
+        method: 'POST',
+        data: filtros,
+        dataType: 'json',
+        success: function (resp) {
+            if (!resp) return;
+            if ($('#tabla-aging tbody').length) {
+                var tbody = $('#tabla-aging tbody');
+                tbody.empty();
+                resp.forEach(function (r) {
+                    const row = `<tr><td>${r.rango}</td><td><span class="label label-pill label-primary">${r.total}</span></td></tr>`;
+                    tbody.append(row);
+                });
+            }
+        },
+        error: function () {
+            // silenciar
+        }
+    });
+
+    // 4) Reopen rate
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_reopen_rate',
+        method: 'POST',
+        data: filtros,
+        dataType: 'json',
+        success: function (resp) {
+            if (!resp) return;
+            var pct = resp.pct === null ? 'N/A' : resp.pct + '%';
+            if ($('#lblReopenRate').length) $('#lblReopenRate').html(pct);
+        },
+        error: function () {
+            if ($('#lblReopenRate').length) $('#lblReopenRate').html('N/A');
+        }
     });
 }
 
@@ -293,37 +379,100 @@ function cargarTablaTopUsuarios(filtros) {
     });
 }
 
+/**
+ * Intentamos usar la versión optimizada del endpoint para tiempo por agente.
+ * Si falla (404 / error), hacemos fallback al endpoint original.
+ */
 function cargarGraficoTiempoAgente(filtros) {
     destruirChartSiExiste('bar-chart-tiempo-agente');
+
+    function renderTiempoAgente(payload) {
+        // payload: { labels: [...], data: [...] } OR { labels:..., data:... } OR { rows: [...] } OR (fallback) rows array
+        let labels = [], data = [];
+
+        if (Array.isArray(payload)) {
+            // payload es directamente un array de filas [{usu_nom, usu_ape, horas_promedio_respuesta}, ...]
+            labels = payload.map(r => (r.usu_nom || '') + ' ' + (r.usu_ape || ''));
+            data = payload.map(r => parseFloat(r.horas_promedio_respuesta || 0));
+        } else if (payload && Array.isArray(payload.rows)) {
+            labels = payload.rows.map(r => (r.usu_nom || '') + ' ' + (r.usu_ape || ''));
+            data = payload.rows.map(r => parseFloat(r.horas_promedio_respuesta || 0));
+        } else if (payload && Array.isArray(payload.labels) && Array.isArray(payload.data)) {
+            labels = payload.labels;
+            data = payload.data.map(v => parseFloat(v || 0));
+        } else if (payload && Array.isArray(payload.datos)) {
+            // por si tu backend devuelve {datos: [...]}
+            labels = payload.datos.map(r => (r.usu_nom || '') + ' ' + (r.usu_ape || ''));
+            data = payload.datos.map(r => parseFloat(r.horas_promedio_respuesta || 0));
+        } else {
+            console.warn('Formato de payload inesperado para tiempo-agente:', payload);
+            // no podemos renderizar
+            if ($('#bar-chart-tiempo-agente').length) {
+                $('#bar-chart-tiempo-agente').closest('.card-block').append('<div class="text-muted small">No hay datos para el gráfico de tiempo por agente.</div>');
+            }
+            return;
+        }
+
+        const ctx = document.getElementById('bar-chart-tiempo-agente');
+        charts['bar-chart-tiempo-agente'] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Horas Promedio por Tarea',
+                    data: data,
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true } }
+            }
+        });
+    }
+
+    // Intento 1: endpoint optimizado
     $.ajax({
-        url: '../../controller/reporte.php?op=get_tiempo_agente',
+        url: '../../controller/reporte.php?op=get_tiempo_agente_opt',
         method: 'POST',
         data: filtros,
         dataType: 'json',
-        success: function (response) {
-            const ctx = document.getElementById('bar-chart-tiempo-agente');
-            charts['bar-chart-tiempo-agente'] = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: response.labels,
-                    datasets: [{
-                        label: 'Horas Promedio por Tarea',
-                        data: response.data,
-                        backgroundColor: 'rgba(153, 102, 255, 0.6)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 1
-                    }]
+        success: function (datos) {
+            // Si 'datos' no es array, puede ser {labels,data} o {rows: [...]}, lo manejamos en renderTiempoAgente
+            renderTiempoAgente(datos);
+        },
+        error: function (xhr, status, err) {
+            console.warn('get_tiempo_agente_opt falló:', status, err);
+            // Fallback: intentar endpoint original
+            $.ajax({
+                url: '../../controller/reporte.php?op=get_tiempo_agente',
+                method: 'POST',
+                data: filtros,
+                dataType: 'json',
+                success: function (response) {
+                    // la versión original devuelve { labels: [...], data: [...] }
+                    if (response && Array.isArray(response.labels) && Array.isArray(response.data)) {
+                        renderTiempoAgente({ labels: response.labels, data: response.data });
+                    } else {
+                        // Por si la versión original devolvió otra cosa
+                        renderTiempoAgente(response);
+                    }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y', // Gráfico horizontal
-                    scales: { x: { beginAtZero: true } }
+                error: function (xhr2, status2, err2) {
+                    console.error('Ambos endpoints fallaron para tiempo por agente:', status2, err2);
+                    if ($('#bar-chart-tiempo-agente').length) {
+                        $('#bar-chart-tiempo-agente').closest('.card-block').append('<div class="text-muted small">No se pudo cargar el gráfico de tiempo por agente.</div>');
+                    }
                 }
             });
         }
     });
 }
+
 
 function cargarGraficoErroresTipo(filtros) {
     destruirChartSiExiste('pie-chart-errores-tipo');
@@ -414,6 +563,34 @@ function cargarTablaResueltosAgente(filtros) {
                              </tr>`;
                 tbody.append(row);
             });
+        }
+    });
+}
+
+/**
+ * Top categorías por tiempo promedio de resolución (nuevo endpoint).
+ * Llena #tabla-top-categorias-tiempo si existe.
+ */
+function cargarTopCategoriasTiempo(filtros) {
+    $.ajax({
+        url: '../../controller/reporte.php?op=get_top_categorias_tiempo',
+        method: 'POST',
+        data: filtros,
+        dataType: 'json',
+        success: function (data) {
+            if ($('#tabla-top-categorias-tiempo tbody').length) {
+                const tbody = $('#tabla-top-categorias-tiempo tbody');
+                tbody.empty();
+                data.forEach(item => {
+                    const horas = isNaN(parseFloat(item.hrs_promedio)) ? 'N/A' : parseFloat(item.hrs_promedio).toFixed(1);
+                    const row = `<tr>
+                                    <td>${item.cat_nom}</td>
+                                    <td>${item.cant}</td>
+                                    <td>${horas} hrs</td>
+                                </tr>`;
+                    tbody.append(row);
+                });
+            }
         }
     });
 }

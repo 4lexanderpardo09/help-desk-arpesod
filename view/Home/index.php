@@ -10,19 +10,45 @@ if (isset($_SESSION["usu_id"])) {
         /* Estilo normal para el número en las cajas de estadísticas */
         .statistic-box .number {
             font-size: 36px;
-            /* Este es el tamaño de fuente grande por defecto */
             transition: font-size 0.3s ease;
-            /* Efecto suave al cambiar de tamaño (opcional) */
         }
 
         /* NUEVA CLASE: Estilo para cuando el texto es largo */
         .statistic-box .number.texto-largo {
             font-size: 24px;
-            /* Un tamaño de fuente más pequeño */
             line-height: 1.2;
-            /* Mejora el espaciado si hay dos líneas */
             padding-top: 10px;
-            /* Ajusta la posición verticalmente para que se vea centrado */
+        }
+
+        /* Estilos para tarjetas KPI pequeñas (fila adicional) */
+        .kpi-small {
+            padding: 12px;
+            min-height: 90px;
+        }
+
+        .kpi-small .number {
+            font-size: 22px;
+        }
+
+        /* Progress bar SLA */
+        .progress {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #28a745;
+            width: 0%;
+            transition: width .6s ease;
+        }
+
+        /* Tablas compactas para KPI secundarios */
+        .table-compact td, .table-compact th {
+            padding: 6px 8px;
+            vertical-align: middle;
         }
     </style>
     </head>
@@ -33,13 +59,14 @@ if (isset($_SESSION["usu_id"])) {
         <input type="hidden" id="user_dp_id" value="<?php echo $_SESSION['dp_id']; ?>">
         <input type="hidden" id="is_jefe_depto" value="<?php echo $_SESSION['is_jefe'] ? '1' : '0'; ?>">
 
-
         <?php require_once('../MainHeader/header.php') ?>
         <div class="mobile-menu-left-overlay"></div>
         <?php require_once('../MainNav/nav.php') ?>
 
         <div class="page-content">
             <div class="container-fluid">
+
+                <!-- FILTROS -->
                 <div id="panel-filtros" class="box-typical box-typical-padding" style="display: none;">
                     <h5 class="m-t-lg with-border">Filtros del Dashboard</h5>
                     <div class="row">
@@ -71,6 +98,8 @@ if (isset($_SESSION["usu_id"])) {
                         </div>
                     </div>
                 </div>
+
+                <!-- KPIs principales -->
                 <div class="row">
                     <div class="col-sm-6 col-xl-3">
                         <article class="statistic-box purple">
@@ -105,6 +134,7 @@ if (isset($_SESSION["usu_id"])) {
                     <div class="col-sm-6 col-xl-3">
                         <article class="statistic-box yellow">
                             <div>
+                                <!-- lblpromedio puede recibir la clase texto-largo desde JS -->
                                 <div class="number" id="lblpromedio">0</div>
                                 <div class="caption">
                                     <div>Promedio Resolución (Horas)</div>
@@ -114,7 +144,58 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </div>
 
-                <section class="card">
+                <!-- KPIs secundarios (fila nueva) -->
+                <div class="row" style="margin-top:10px;">
+                    <div class="col-sm-6 col-md-3">
+                        <article class="statistic-box kpi-small">
+                            <div>
+                                <div class="number" id="lblPrimeraRespuesta">N/A</div>
+                                <div class="caption">
+                                    <div>Promedio Primera Respuesta</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <article class="statistic-box kpi-small">
+                            <div>
+                                <div class="number" id="lblSLACompliance">N/A</div>
+                                <div class="caption">
+                                    <div>SLA Compliance (<=48h)</div>
+                                </div>
+                                <div class="progress" style="margin-top:6px;">
+                                    <div id="bar-sla" class="progress-bar" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <article class="statistic-box kpi-small">
+                            <div>
+                                <div class="number" id="lblReopenRate">N/A</div>
+                                <div class="caption">
+                                    <div>Tasa Reapertura (estimada)</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="col-sm-6 col-md-3">
+                        <article class="statistic-box kpi-small">
+                            <div>
+                                <div class="number" id="lblVacio">-</div>
+                                <div class="caption">
+                                    <div>Espacio para KPI futuro</div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Gráficos principales -->
+                <section class="card" style="margin-top:10px;">
                     <header class="card-header">
                         Tendencia de Tickets Creados por Mes
                     </header>
@@ -151,6 +232,7 @@ if (isset($_SESSION["usu_id"])) {
                             </div>
                         </section>
                     </div>
+
                     <div class="col-lg-6">
                         <section class="card">
                             <header class="card-header">
@@ -169,6 +251,26 @@ if (isset($_SESSION["usu_id"])) {
                             </div>
                         </section>
                     </div>
+
+                    <!-- Top categorías por tiempo (nuevo) -->
+                    <div class="col-lg-12">
+                        <section class="card">
+                            <header class="card-header">
+                                Top Categorías por Tiempo Promedio de Resolución
+                            </header>
+                            <div class="card-block">
+                                <table id="tabla-top-categorias-tiempo" class="table table-hover table-compact">
+                                    <thead>
+                                        <th>Categoría</th>
+                                        <th>Cantidad</th>
+                                        <th>Horas Promedio</th>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
                     <div class="col-lg-12">
                         <section class="card">
                             <header class="card-header">
@@ -186,6 +288,7 @@ if (isset($_SESSION["usu_id"])) {
                             </div>
                         </section>
                     </div>
+
                     <div class="col-lg-6">
                         <div class="card">
                             <div class="card-header">
@@ -229,7 +332,26 @@ if (isset($_SESSION["usu_id"])) {
                         </div>
                     </div>
 
-                    <div class="col-lg-12">
+                    <!-- Aging backlog -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Aging Backlog (Tickets Abiertos por Antigüedad)</h5>
+                            </div>
+                            <div class="card-block">
+                                <table id="tabla-aging" class="table table-hover table-compact">
+                                    <thead>
+                                        <th>Rango (días)</th>
+                                        <th>Total</th>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Errores Atribuidos por Agente -->
+                    <div class="col-lg-6">
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title">Errores Atribuidos por Agente</h5>
@@ -247,10 +369,14 @@ if (isset($_SESSION["usu_id"])) {
                             </div>
                         </div>
                     </div>
-                </div>
 
-            </div>
-        </div><?php require_once('../MainJs/js.php') ?>
+                </div> <!-- row -->
+
+            </div> <!-- container-fluid -->
+        </div> <!-- page-content -->
+
+        <?php require_once('../MainJs/js.php') ?>
+        <!-- Tu JS principal; asegúrate que aquí esté la versión del .js que contiene todas las funciones nuevas -->
         <script type="text/javascript" src="../Home/home.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
     </body>
