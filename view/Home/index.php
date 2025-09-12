@@ -50,6 +50,28 @@ if (isset($_SESSION["usu_id"])) {
             padding: 6px 8px;
             vertical-align: middle;
         }
+
+        /* === KPI secundarios: tarjeta completa blanca === */
+        .kpi-small {
+            background: #ffffff;               /* cuadro blanco */
+            border-radius: 10px;               /* esquinas redondeadas */
+            padding: 18px 14px;                /* espacio interior */
+            min-height: 110px;
+        }
+
+        .kpi-small .number {
+            font-size: 20px;
+            color: #222;
+            margin: 0 0 8px 0;
+            display: block;
+        }
+
+        .kpi-small .caption div {
+            font-size: 14px;
+            color: #666;
+        }
+
+
     </style>
     </head>
 
@@ -144,7 +166,8 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </div>
 
-                <!-- KPIs secundarios (fila nueva) -->
+               
+                <!-- KPIs secundarios (fila nueva) - REEMPLAZAR ESTA SECCIÓN -->
                 <div class="row" style="margin-top:10px;">
                     <div class="col-sm-6 col-md-3">
                         <article class="statistic-box kpi-small">
@@ -164,7 +187,7 @@ if (isset($_SESSION["usu_id"])) {
                                 <div class="caption">
                                     <div>SLA Compliance (<=48h)</div>
                                 </div>
-                                <div class="progress" style="margin-top:6px;">
+                                <div class="progress">
                                     <div id="bar-sla" class="progress-bar" role="progressbar" style="width: 0%;"></div>
                                 </div>
                             </div>
@@ -193,6 +216,8 @@ if (isset($_SESSION["usu_id"])) {
                         </article>
                     </div>
                 </div>
+                <!-- FIN KPIs secundarios -->
+
 
                 <!-- Gráficos principales -->
                 <section class="card" style="margin-top:10px;">
