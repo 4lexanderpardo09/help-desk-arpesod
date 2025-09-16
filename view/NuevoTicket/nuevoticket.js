@@ -59,11 +59,11 @@ $(document).ready(function () {
     }
 
     $.post("../../controller/prioridad.php?op=combo", function (data) {
-        $('#pd_id').html('<option value=\"Select\">Seleccionar</option>' + data);
+        $('#pd_id').html('<option value="">Seleccionar</option>' + data);
     });
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value=\"Select\">Seleccionar</option>' + data);
+        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
     });
 
     categoriasAnidadas();
@@ -79,12 +79,12 @@ function categoriasAnidadas() {
     user_cargo_id = $('#user_cargo_id').val();
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value=\"Select\">Seleccione Empresa</option>' + data);
+        $('#emp_id').html('<option value="">Seleccione Empresa</option>' + data);
     });
 
     $.post("../../controller/subcategoria.php?op=combo_filtrado", {creador_car_id: user_cargo_id }, function (data) {
         data = JSON.parse(data);
-        $('#cats_id').html('<option value=\"Select\">Seleccione Subcategoría</option>' + data.html);
+        $('#cats_id').html('<option value="">Seleccione Subcategoría</option>' + data.html);
     });
 
     // 4. Evento para Subcategoría

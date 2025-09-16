@@ -161,8 +161,6 @@ class TicketService
             $emp_id = $postData['emp_id'] ?? null;
             $dp_id = $postData['dp_id'] ?? null;
 
-            $usu_asig_final = $postData['usu_asig'] ?? null;
-
             $errors = [];
 
             $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
@@ -183,18 +181,18 @@ class TicketService
                 $postData['tick_titulo'],
                 $postData['tick_descrip'],
                 $postData['error_proceso'],
-                $usu_asig_final,
+                $resolveResult['usu_asig_final'],
                 $session_usu,
                 $emp_id,
                 $dp_id,
                 $resolveResult['paso_actual_id_final']
             );
 
-            $this->assignmentRepository->insertAssignment($datos, $usu_asig_final, $session_usu, $resolveResult['paso_actual_id_final']);
+            $this->assignmentRepository->insertAssignment($datos, $resolveResult['usu_asig_final'], $session_usu, $resolveResult['paso_actual_id_final']);
 
-            if ($usu_asig_final && $usu_asig_final != $usu_id_creador) {
+            if ($resolveResult['usu_asig_final'] && $resolveResult['usu_asig_final'] != $usu_id_creador) {
                 $mensaje_notificacion = "Se le ha asignado el ticket # {$datos}.";
-                $this->notificationRepository->insertNotification($usu_asig_final, $mensaje_notificacion, $datos);
+                $this->notificationRepository->insertNotification($resolveResult['usu_asig_final'], $mensaje_notificacion, $datos);
             }
 
             $output = $this->insertDocument($datos);
