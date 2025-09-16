@@ -205,9 +205,6 @@ function guardaryeditar(e) {
         // alternativa segura: reconstruir for safety (no necesario si hicimos append manual)
     }
 
-    // Debug (temporal): ver en consola lo que realmente se enviará
-    for (var pair of formData.entries()) { console.log("FD:", pair[0], pair[1]); }
-
 
 
     $.ajax({
