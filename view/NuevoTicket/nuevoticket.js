@@ -59,15 +59,11 @@ $(document).ready(function () {
     }
 
     $.post("../../controller/prioridad.php?op=combo", function (data) {
-        $('#pd_id').html('<option value="">Seleccionar</option>' + data);
-    });
-
-    $.post("../../controller/departamento.php?op=combo", function (data) {
-        $('#dp_id').html('<option value="">Seleccionar</option>' + data);
+        $('#pd_id').html('<option value=\"Select\">Seleccionar</option>' + data);
     });
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
+        $('#emp_id').html('<option value=\"Select\">Seleccionar</option>' + data);
     });
 
     categoriasAnidadas();
@@ -77,58 +73,18 @@ $(document).ready(function () {
 function categoriasAnidadas() {
     var user_cargo_id = 0;
     // Inicializamos los combos con Select2
-    $('#dp_id, #emp_id, #cat_id, #cats_id, #usu_asig, #pd_id').select2();
+    $('#emp_id, #cats_id, #usu_asig, #pd_id').select2();
 
     // Guardamos el cargo del usuario en una variable global al cargar la página
     user_cargo_id = $('#user_cargo_id').val();
 
-    // 1. Cargar los combos iniciales que no dependen de otros
-    $.post("../../controller/departamento.php?op=combo", function (data) {
-        $('#dp_id').html('<option value="">Seleccione Departamento</option>' + data);
-    });
-
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value="">Seleccione Empresa</option>' + data);
+        $('#emp_id').html('<option value=\"Select\">Seleccione Empresa</option>' + data);
     });
 
-    // --- EVENTOS "CHANGE" INDEPENDIENTES ---
-
-    // 2. Evento para Departamento y Empresa
-    $('#dp_id, #emp_id').on('change', function () {
-        var dp_id = $('#dp_id').val();
-        var emp_id = $('#emp_id').val();
-
-        // Limpiamos los combos hijos
-        $('#cat_id').html('<option value="">Seleccione</option>');
-        $('#cats_id').html('<option value="">Seleccione</option>');
-        $('#tick_descrip').summernote('code', '');
-        $('#tick_descrip').data('template', '');
-        $('#panel_asignacion_manual').hide();
-
-        if (dp_id && emp_id) {
-            // Si ambos tienen valor, cargamos las Categorías
-            $.post("../../controller/categoria.php?op=combo", { dp_id: dp_id, emp_id: emp_id }, function (data) {
-                $('#cat_id').html('<option value="">Seleccione Categoría</option>' + data);
-            });
-        }
-    });
-
-    // 3. Evento para Categoría
-    $('#cat_id').on('change', function () {
-        var cat_id = $(this).val();
-
-        // Limpiamos los combos hijos
-        $('#cats_id').html('<option value="">Seleccione</option>');
-        $('#tick_descrip').summernote('code', '');
-        $('#tick_descrip').data('template', '');
-        $('#panel_asignacion_manual').hide();
-
-        if (cat_id) {
-            // Si se selecciona una categoría, cargamos las Subcategorías permitidas para el cargo del usuario
-            $.post("../../controller/subcategoria.php?op=combo_filtrado", { cat_id: cat_id, creador_car_id: user_cargo_id }, function (data) {
-                $('#cats_id').html('<option value="">Seleccione Subcategoría</option>' + data);
-            });
-        }
+    $.post("../../controller/subcategoria.php?op=combo_filtrado", {creador_car_id: user_cargo_id }, function (data) {
+        data = JSON.parse(data);
+        $('#cats_id').html('<option value=\"Select\">Seleccione Subcategoría</option>' + data.html);
     });
 
     // 4. Evento para Subcategoría
@@ -142,15 +98,22 @@ function categoriasAnidadas() {
         $('#usu_asig').html('');
 
         if (cats_id) {
-            // a. Llenar la descripción por defecto
+            // a. Llenar la descripción por defecto y obtener datos de la subcategoría
             $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                 data = JSON.parse(data);
                 
-                if (data.subcategoria && data.subcategoria.cats_descrip) {
+                if (data.subcategoria) {
                     var template_content = data.subcategoria.cats_descrip;
                     $('#tick_descrip').summernote('code', template_content);
                     $('#tick_descrip').data('template', template_content); // Guardar plantilla
                     $('#pd_id').val(data.subcategoria.pd_id).trigger('change');
+
+                    // Poblar campos ocultos de categoría y departamento
+                    $('#cat_id').val(data.subcategoria.cat_id);
+                    if (data.departamentos && data.departamentos.length > 0) {
+                        // Asumimos que el primer departamento es el correcto
+                        $('#dp_id').val(data.departamentos[0]);
+                    }
                 }
             });
 
@@ -159,7 +122,7 @@ function categoriasAnidadas() {
                 if (data.requiere_seleccion) {
                     console.log('entre seleccion');
                     
-                    var options = '<option value="">Seleccione un agente...</option>';
+                    var options = '<option value=\"Select\">Seleccione un agente...</option>';
                     data.usuarios.forEach(function (user) {
                         options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
                     });
@@ -179,16 +142,8 @@ function guardaryeditar(e) {
     if ($('#tick_titulo').val().trim() == '') {
         swal("Atención", "Debe ingresar un título", "warning");
         return false;
-
-    } else if ($('#dp_id').val() == null || $('#dp_id').val() == '') {
-        swal("Atención", "Debe seleccionar un departamento", "warning");
-        return false;
     } else if ($('#emp_id').val() == null || $('#emp_id').val() == '') {
         swal("Atención", "Debe seleccionar una empresa", "warning");
-        return false;
-
-    } else if ($('#cat_id').val() == null || $('#cat_id').val() == '') {
-        swal("Atención", "Debe seleccionar una categoría", "warning");
         return false;
 
     } else if ($('#cats_id').val() == null || $('#cats_id').val() == '') {
@@ -343,3 +298,4 @@ function guardaryeditar(e) {
 
 
 init();
+

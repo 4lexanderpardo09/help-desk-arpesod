@@ -50,27 +50,8 @@ if (isset($_SESSION["usu_id"])) {
                                 <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" placeholder="Titulo del ticket">
                             </fieldset>
                         </div>
-                        <div class="col-lg-3">
-                            <fieldset class="form-group">
-                                <label class="form-label semibold" for="dp_id">Departamento</label>
-                                <select class="form-control" id="dp_id" name="dp_id" placeholder="Seleccione un departamento">
-                                </select>
-                            </fieldset>
-                        </div>
-                        <div class="col-lg-3">
-                            <fieldset class="form-group">
-                                <label class="form-label semibold" for="emp_id">Empresa</label>
-                                <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una empresa">
-                                </select>
-                            </fieldset>
-                        </div>
-                        <div class="col-lg-3">
-                            <fieldset class="form-group">
-                                <label class="form-label semibold" for="cat_id">Categoria</label>
-                                <select class="form-control" id="cat_id" name="cat_id" placeholder="Seleccione una categoria">
-                                </select>
-                            </fieldset>
-                        </div>
+                        <input type="hidden" id="dp_id" name="dp_id">
+                        <input type="hidden" id="cat_id" name="cat_id">
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cats_id">Subcategoria</label>
@@ -82,6 +63,13 @@ if (isset($_SESSION["usu_id"])) {
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="usu_asig">Asignar Ticket a:</label>
                                 <select id="usu_asig" name="usu_asig" class="form-control"></select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="emp_id">Empresa</label>
+                                <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una empresa">
+                                </select>
                             </fieldset>
                         </div>
                         <div class="col-lg-3">

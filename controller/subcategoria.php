@@ -69,20 +69,29 @@ switch ($_GET["op"]) {
         }
         break;
 
-    case "combo_filtrado": // Renombramos para mayor claridad
-        // Obtenemos ambos IDs que nos envía el JavaScript
-        $cat_id = $_POST['cat_id'];
-        $creador_car_id = $_POST['creador_car_id'];
+    case "combo_filtrado": 
+        // Validar entrada
+        $creador_car_id = isset($_POST['creador_car_id']) ? intval($_POST['creador_car_id']) : 0;
 
-        // Llamamos a la nueva función del modelo
-        $datos = $subcategoria->get_subcategorias_filtradas($cat_id, $creador_car_id);
+        // Consultar datos en el modelo
+        $datos = $subcategoria->get_subcategorias_filtradas($creador_car_id);
 
         $html = "";
         if (is_array($datos) && count($datos) > 0) {
             foreach ($datos as $row) {
-                $html .= "<option value='" . $row["cats_id"] . "'>" . $row["cats_nom"] . "</option>";
+                $html .= "<option value='" . htmlspecialchars($row["cats_id"]) . "'>" 
+                    . htmlspecialchars($row["cats_nom"]) 
+                    . "</option>";
             }
+        } else {
+            $html = "<option value=''>No hay resultados</option>";
         }
-        echo $html;
+
+        // Devolver ambos: html y datos
+        echo json_encode([
+            "html" => $html,
+            "datos" => $datos
+        ]);
         break;
+
 }

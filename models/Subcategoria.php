@@ -136,7 +136,7 @@ class Subcategoria extends Conectar
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado ? $resultado['cats_id'] : null;
     }
-    public function get_subcategorias_filtradas($cat_id, $creador_car_id)
+    public function get_subcategorias_filtradas($creador_car_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -151,13 +151,12 @@ class Subcategoria extends Conectar
             INNER JOIN
                 regla_creadores rc ON rm.regla_id = rc.regla_id
             WHERE 
-                s.cat_id = ? AND rc.creador_car_id = ? AND s.est = 1 AND rm.est = 1
+                rc.creador_car_id = ? AND s.est = 1 AND rm.est = 1
             ORDER BY 
                 s.cats_nom ASC";
 
         $sql = $conectar->prepare($sql);
-        $sql->bindValue(1, $cat_id);
-        $sql->bindValue(2, $creador_car_id);
+        $sql->bindValue(1, $creador_car_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
