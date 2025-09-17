@@ -11,11 +11,11 @@ $(document).ready(function () {
         lang: "es-ES",
         callbacks: {
             onImageUpload: function (image) {
-                ("Image detect...");
+                console.log("Image detect...");
                 myimagetreat(image[0]);
             },
             onPaste: function (e) {
-                ("Text detect...");
+                console.log("Text detect...");
             }
         },
         buttons: {
@@ -59,32 +59,39 @@ $(document).ready(function () {
     }
 
     $.post("../../controller/prioridad.php?op=combo", function (data) {
-        $('#pd_id').html('<option value="">Seleccionar</option>' + data);
+        $('#pd_id').html('<option value="Select">Seleccionar</option>' + data);
     });
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value="">Seleccionar</option>' + data);
+        $('#emp_id').html('<option value="Select">Seleccionar</option>' + data);
     });
+
+    if ($('#es_nacional').val() == 1) {
+        $('#regional_field').show();
+        $.post("../../controller/regional.php?op=combo", function (data) {
+            $('#reg_id').html('<option value="Select">Seleccionar</option>' + data);
+        });
+    }
 
     categoriasAnidadas();
 
 });
 
-function categoriasAnidadas() {
+categoriasAnidadas = function() {
     var user_cargo_id = 0;
     // Inicializamos los combos con Select2
-    $('#emp_id, #cats_id, #usu_asig, #pd_id').select2();
+    $('#emp_id, #cats_id, #usu_asig, #pd_id, #reg_id').select2();
 
     // Guardamos el cargo del usuario en una variable global al cargar la página
     user_cargo_id = $('#user_cargo_id').val();
 
     $.post("../../controller/empresa.php?op=combo", function (data) {
-        $('#emp_id').html('<option value="">Seleccione Empresa</option>' + data);
+        $('#emp_id').html('<option value="Select">Seleccione Empresa</option>' + data);
     });
 
     $.post("../../controller/subcategoria.php?op=combo_filtrado", {creador_car_id: user_cargo_id }, function (data) {
         data = JSON.parse(data);
-        $('#cats_id').html('<option value="">Seleccione Subcategoría</option>' + data.html);
+        $('#cats_id').html('<option value="Select">Seleccione Subcategoría</option>' + data.html);
     });
 
     // 4. Evento para Subcategoría
@@ -122,7 +129,7 @@ function categoriasAnidadas() {
                 if (data.requiere_seleccion) {
                     console.log('entre seleccion');
                     
-                    var options = '<option value=\"Select\">Seleccione un agente...</option>';
+                    var options = '<option value="Select">Seleccione un agente...</option>';
                     data.usuarios.forEach(function (user) {
                         options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;
                     });
@@ -148,6 +155,9 @@ function guardaryeditar(e) {
 
     } else if ($('#cats_id').val() == null || $('#cats_id').val() == '') {
         swal("Atención", "Debe seleccionar una subcategoría", "warning");
+        return false;
+    } else if ($('#es_nacional').val() == 1 && ($('#reg_id').val() == null || $('#reg_id').val() == '')) {
+        swal("Atención", "Debe seleccionar una regional", "warning");
         return false;
     } else if ($('#panel_asignacion_manual').is(':visible') && ($('#usu_asig').val() == null || $('#usu_asig').val() == '')) {
         swal("Atención", "Esta subcategoría requiere que seleccione un agente para la asignación.", "warning");
@@ -265,6 +275,7 @@ function guardaryeditar(e) {
             $('#dp_id').val('');
             $('#cats_id').val('');
             $('#pd_id').val('');
+            $('#reg_id').val('');
             $('#tick_descrip').summernote('reset');
             $('#tick_descrip').data('template', '');
             $('#usu_asig').val('');
@@ -295,4 +306,3 @@ function guardaryeditar(e) {
 
 
 init();
-

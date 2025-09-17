@@ -44,6 +44,7 @@ if (isset($_SESSION["usu_id"])) {
                     <form method="post" id="ticket_form" enctype="multipart/form-data">
                         <input type="hidden" id="usu_id" name="usu_id" value="<?php echo $_SESSION["usu_id"] ?>">
                         <input type="hidden" id="user_cargo_id" value="<?php echo $_SESSION['car_id']; ?>">
+                        <input type="hidden" id="es_nacional" value="<?php echo $_SESSION['es_nacional']; ?>">
                         <div class="col-lg-3">
                             <fieldset class="form-group semibold">
                                 <label class="form-label" for="tick_titulo">Titulo</label>
@@ -69,6 +70,13 @@ if (isset($_SESSION["usu_id"])) {
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="emp_id">Empresa</label>
                                 <select class="form-control" id="emp_id" name="emp_id" placeholder="Seleccione una empresa">
+                                </select>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3" id="regional_field" style="display: none;">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="reg_id">Regional</label>
+                                <select class="form-control" id="reg_id" name="reg_id" placeholder="Seleccione una regional">
                                 </select>
                             </fieldset>
                         </div>

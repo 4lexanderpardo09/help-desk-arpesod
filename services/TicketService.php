@@ -46,11 +46,10 @@ class TicketService
         $this->assignmentRepository = new AssignmentRepository($pdo);
     }
 
-    public function resolveAssigned($flujo, $usu_id_creador)
+    public function resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id)
     {
         $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
         $creador_car_id = $datos_creador['car_id'] ?? null;
-        $creador_reg_id = $datos_creador['reg_id'] ?? null;
         $errors = [];
         $paso_actual_id_final = null;
 
@@ -67,7 +66,7 @@ class TicketService
                     $jefe_info = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
 
                     if (!$jefe_info) {
-                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $creador_reg_id);
+                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $ticket_reg_id);
                     }
                     if (!$jefe_info) {
                         $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_departamento($jefe_cargo_id, $dp_id);
@@ -94,7 +93,8 @@ class TicketService
                             if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
                                 $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($asignado_car_id);
                             } else {
-                                $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $creador_reg_id);
+                                $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $ticket_reg_id);
+                                var_dump($nuevo_asignado_info);
                             }
 
                             if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
@@ -161,11 +161,19 @@ class TicketService
             $emp_id = $postData['emp_id'] ?? null;
             $dp_id = $postData['dp_id'] ?? null;
 
+            $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
+            $ticket_reg_id = null;
+            if (!empty($datos_creador['es_nacional']) && $datos_creador['es_nacional'] == 1) {
+                $ticket_reg_id = $postData['reg_id'] ?? null;
+            } else {
+                $ticket_reg_id = $datos_creador['reg_id'] ?? null;
+            }
+
             $errors = [];
 
             $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
 
-            $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador);
+            $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id);
 
             $errors = array_merge($errors, $resolveResult['errors']);
 
@@ -185,7 +193,8 @@ class TicketService
                 $session_usu,
                 $emp_id,
                 $dp_id,
-                $resolveResult['paso_actual_id_final']
+                $resolveResult['paso_actual_id_final'],
+                $ticket_reg_id
             );
 
             $this->assignmentRepository->insertAssignment($datos, $resolveResult['usu_asig_final'], $session_usu, $resolveResult['paso_actual_id_final']);

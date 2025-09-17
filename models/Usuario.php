@@ -48,6 +48,7 @@ class Usuario extends Conectar
                         $_SESSION["rol_id_real"] = $rol_real_del_usuario;
                         $_SESSION["dp_id"] = $resultado["dp_id"]; // Se mantiene el depto al que pertenece
                         $_SESSION["car_id"] = $resultado["car_id"];
+                        $_SESSION["es_nacional"] = $resultado["es_nacional"];
 
                         header("Location: " . Conectar::ruta() . "view/Home/");
                         exit();
