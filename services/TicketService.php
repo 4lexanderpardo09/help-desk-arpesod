@@ -94,7 +94,6 @@ class TicketService
                                 $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($asignado_car_id);
                             } else {
                                 $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $ticket_reg_id);
-                                var_dump($nuevo_asignado_info);
                             }
 
                             if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
