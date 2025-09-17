@@ -159,6 +159,8 @@ class TicketService
             $session_usu = $_SESSION['usu_id'] ?? null;
             $emp_id = $postData['emp_id'] ?? null;
             $dp_id = $postData['dp_id'] ?? null;
+            $usu_asig = $postData['usu_asig'] ?? null;
+            $usu_asig_final = null;
 
             $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
             $ticket_reg_id = null;
@@ -174,6 +176,12 @@ class TicketService
 
             $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id);
 
+            if (!empty($usu_asig)) {
+                $usu_asig_final = $usu_asig;
+            } else {
+                $usu_asig_final = $resolveResult['usu_asig_final'];
+            }
+
             $errors = array_merge($errors, $resolveResult['errors']);
 
             if (count($errors) > 0) {
@@ -188,7 +196,7 @@ class TicketService
                 $postData['tick_titulo'],
                 $postData['tick_descrip'],
                 $postData['error_proceso'],
-                $resolveResult['usu_asig_final'],
+                $usu_asig_final,
                 $session_usu,
                 $emp_id,
                 $dp_id,
