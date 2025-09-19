@@ -55,6 +55,56 @@ class Ticket extends Conectar
         return $sql->fetchAll();
     }
 
+    public function cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        // 1. Cerrar el ticket
+        $sql_update = "UPDATE tm_ticket SET tick_estado = 'Cerrado', fech_cierre = NOW() WHERE tick_id = ?";
+        $sql_update = $conectar->prepare($sql_update);
+        $sql_update->bindValue(1, $tick_id);
+        $sql_update->execute();
+
+        // 2. Insertar la nota de cierre como un detalle del ticket
+        $sql_detalle = "INSERT INTO td_ticketdetalle (tick_id, usu_id, tickd_descrip, fech_crea, est) VALUES (?, ?, ?, NOW(), '1')";
+        $sql_detalle = $conectar->prepare($sql_detalle);
+        $sql_detalle->bindValue(1, $tick_id);
+        $sql_detalle->bindValue(2, $usu_id);
+        $sql_detalle->bindValue(3, $nota_cierre);
+        $sql_detalle->execute();
+
+        // 3. Notificar a todos los usuarios involucrados
+        // Obtener el creador del ticket
+        $sql_get_creator = "SELECT usu_id FROM tm_ticket WHERE tick_id = ?";
+        $stmt_creator = $conectar->prepare($sql_get_creator);
+        $stmt_creator->bindValue(1, $tick_id);
+        $stmt_creator->execute();
+        $creator = $stmt_creator->fetch(PDO::FETCH_ASSOC);
+
+        // Obtener todos los usuarios asignados en el historial
+        $sql_get_assigned = "SELECT DISTINCT usu_asig FROM th_ticket_asignacion WHERE tick_id = ?";
+        $stmt_assigned = $conectar->prepare($sql_get_assigned);
+        $stmt_assigned->bindValue(1, $tick_id);
+        $stmt_assigned->execute();
+        $assigned_users = $stmt_assigned->fetchAll(PDO::FETCH_COLUMN);
+
+        $involved_users = array_unique(array_merge([$creator['usu_id']], $assigned_users));
+
+        $mensaje_notificacion = "El Ticket #" . $tick_id . " ha sido cerrado con la siguiente nota: " . strip_tags($nota_cierre);
+
+        foreach ($involved_users as $user_id_to_notify) {
+            if ($user_id_to_notify) {
+                $sql_notif = "INSERT INTO tm_notificacion (usu_id, not_mensaje, tick_id, fech_not, est) VALUES (?, ?, ?, NOW(), '2')";
+                $stmt_notif = $conectar->prepare($sql_notif);
+                $stmt_notif->bindValue(1, $user_id_to_notify);
+                $stmt_notif->bindValue(2, $mensaje_notificacion);
+                $stmt_notif->bindValue(3, $tick_id);
+                $stmt_notif->execute();
+            }
+        }
+    }
+
     public function listar_ticket_x_usuario($usu_id)
     {
         $conectar = parent::Conexion();

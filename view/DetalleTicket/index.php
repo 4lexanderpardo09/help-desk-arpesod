@@ -235,6 +235,33 @@ if (isset($_SESSION["usu_id"])) {
         </div>
     </div>
 </div>
+<!-- Modal para la nota de cierre -->
+<div class="modal fade" id="modal_nota_cierre" tabindex="-1" role="dialog" aria-labelledby="modal_nota_cierre_label" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_nota_cierre_label">Añadir Nota de Cierre</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Por favor, escribe una nota para el cierre de este ticket. Esta nota será visible para el usuario creador y otros usuarios relevantes.</p>
+                <div class="summernote-theme-1">
+                    <textarea id="nota_cierre_summernote" name="nota_cierre_summernote" class="summernote"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label semibold" for="cierre_files">Documentos adjuntos</label>
+                    <input type="file" name="cierre_files[]" id="cierre_files" class="form-control" multiple>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn_confirmar_cierre">Confirmar Cierre</button>
+            </div>
+        </div>
+    </div>
+</div>
         <?php require_once('../MainJs/js.php') ?>
         <script type="text/javascript" src="../DetalleTicket/detalleticket.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>

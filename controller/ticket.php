@@ -70,8 +70,14 @@ switch ($_GET["op"]) {
     break;
 
     case "update":
-        $result = $ticketService->updateTicket($_POST['tick_id']);
-    break;
+        $ticket->update_ticket($_POST["tick_id"]);
+        $ticket->insert_ticket_detalle_cerrar($_POST["tick_id"], $_POST["usu_id"]);
+        break;
+
+    case 'cerrar_con_nota':
+        $ticket->cerrar_ticket_con_nota($_POST["tick_id"], $_POST["usu_id"], $_POST["nota_cierre"]);
+        echo json_encode(["success" => true]);
+        break;
 
     case "reabrir":
         $ticket->reabrir_ticket($_POST['tick_id']);

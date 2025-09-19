@@ -29,6 +29,20 @@ $(document).ready(function () {
 
     $('#tickd_descripusu').summernote('disable');
 
+    // Inicializar Summernote para la nota de cierre en el modal
+    $('#nota_cierre_summernote').summernote({
+        height: 150,
+        lang: "es-ES",
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['strikethrough', 'superscript', 'subscript']],
+            ['fontsize', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['height', ['height']]
+        ]
+    });
+
     tabla = $('#documentos_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
@@ -330,41 +344,38 @@ $(document).on('click', '#btn_registrar_evento', function () {
 
 
 $(document).on('click', '#btncerrarticket', function () {
-    swal({
-        title: "¿Estas seguro que quieres cerrar el ticket?",
-        text: "Una vez cerrado no podrás volver a abrirlo",
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonClass: "btn-danger",
-        confirmButtonText: "Si, cerrar ticket!",
-        cancelButtonText: "No, cancelar!",
-        closeOnConfirm: false,
-        closeOnCancel: false
-    },
-        function (isConfirm) {
-            if (isConfirm) {
-                var tick_id = getUrlParameter('ID');
-                var usu_id = $('#user_idx').val();
-                updateTicket(tick_id, usu_id);
+    // Abre el modal para la nota de cierre
+    $('#modal_nota_cierre').modal('show');
+});
 
-                setTimeout(function () {
-                    $.post("../../controller/email.php?op=ticket_cerrado", { tick_id: tick_id }, function (resp) {
-                    }).fail(function (err) {
-                        console.error("Error al enviar el correo:", err.responseText);
-                    });
-                }, 0);
+$(document).on('click', '#btn_confirmar_cierre', function() {
+    var tick_id = getUrlParameter('ID');
+    var usu_id = $('#user_idx').val();
+    var nota_cierre = $('#nota_cierre_summernote').summernote('code');
 
-            } else {
-                swal({
-                    title: "Cancelado",
-                    text: "El ticket sigue abierto.",
-                    type: "error",
-                    confirmButtonClass: "btn-danger"
+    if ($('#nota_cierre_summernote').summernote('isEmpty')) {
+        swal("Atención", "Debe ingresar una nota de cierre.", "warning");
+        return;
+    }
 
-                });
-            }
-        });
-
+    $.ajax({
+        url: '../../controller/ticket.php?op=cerrar_con_nota',
+        type: 'POST',
+        data: {
+            tick_id: tick_id,
+            usu_id: usu_id,
+            nota_cierre: nota_cierre
+        },
+        success: function(response) {
+            $('#modal_nota_cierre').modal('hide');
+            $('#nota_cierre_summernote').summernote('reset');
+            swal("¡Cerrado!", "El ticket ha sido cerrado correctamente.", "success");
+            listarDetalle(tick_id);
+        },
+        error: function() {
+            swal("Error", "No se pudo cerrar el ticket.", "error");
+        }
+    });
 });
 
 
@@ -542,15 +553,26 @@ function listarDetalle(tick_id) {
             $('#panel_checkbox_flujo').data('siguientes-pasos', data.siguientes_pasos);
         }
 
-        if ((data.siguientes_pasos && data.siguientes_pasos.length > 0) || data.paso_actual_info == null) {
-            // SI hay un siguiente paso, el flujo NO ha terminado.
-            // Deshabilitamos el botón de cerrar.
-            $('#btncerrarticket').prop('disabled', true);
+        // Determinar si es el último paso
+        var isLastStep = (!data.siguientes_pasos || data.siguientes_pasos.length === 0) && data.paso_actual_info;
+
+        if (isLastStep && data.tick_estado_texto !== 'Cerrado') {
+            // Último paso: Ocultar editor y mostrar solo botón de cerrar
+            $('#tickd_descrip').closest('.form-group').hide();
+            $('#detalle_form').hide();
+            $('#btnenviar').hide();
+            $('#btncerrarticket').show().prop('disabled', false);
+        } else if (data.tick_estado_texto !== 'Cerrado') {
+            // No es el último paso o no está en un flujo: Mostrar editor y deshabilitar cerrar
+            $('#tickd_descrip').closest('.form-group').show();
+            $('#detalle_form').show();
+            $('#btnenviar').show();
+            $('#btncerrarticket').show().prop('disabled', true);
         } else {
-            // SI NO hay un siguiente paso (o el ticket no está en un flujo),
-            // el botón debe estar habilitado.
-            $('#btncerrarticket').prop('disabled', false);
+            // Ticket cerrado: Ocultar todo
+            $('#boxdetalleticket').hide();
         }
+
         // Ocultamos el panel por defecto en cada recarga
         $('#panel_guia_paso').hide();
     

@@ -475,74 +475,126 @@ class TicketService
         $this->ticketModel->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
     }
 
-    public function LogErrorTicket($dataPost)
-    {
-        $tick_id = $dataPost['tick_id'];
-        $answer_id = $dataPost['answer_id'];
-        $usu_id = $dataPost['usu_id']; // ID del usuario que reporta el error (el analista)
-        $error_descrip = $dataPost['error_descrip']; // Nueva descripción del error
 
-        // Buscamos el nombre de la respuesta rápida
+
+    public function LogErrorTicket($dataPost)
+{
+    try {
+        $tick_id = $dataPost['tick_id'] ?? null;
+        $answer_id = $dataPost['answer_id'] ?? null;
+        $usu_id = $dataPost['usu_id'] ?? null; // analista que reporta
+        $error_descrip = $dataPost['error_descrip'] ?? '';
+
+        if (!$tick_id || !$answer_id || !$usu_id) {
+            echo json_encode(["status" => "error", "msg" => "Parámetros incompletos"]);
+            return;
+        }
+
         require_once('../models/RespuestaRapida.php');
         $respuesta_rapida = new RespuestaRapida();
         $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
-        $nombre_respuesta = $datos_respuesta["answer_nom"];
-        $es_error_proceso = $datos_respuesta["es_error_proceso"];
 
-        // --- LÓGICA UNIFICADA Y CORREGIDA ---
-
-        // 1. Buscamos el registro de la asignación ANTERIOR para saber a quién atribuirle el error.
-        $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
-
-        $nombre_completo_responsable = null;
-        $id_historial_a_sellar = null;
-
-        if ($asignacion_anterior) {
-            $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
-            $id_historial_a_sellar = $asignacion_anterior['th_id'];
-        } else {
-            // Si no hay asignación penúltima (es un flujo de un solo paso), atribuimos al creador.
-            $primera_asignacion = $this->ticketModel->get_primera_asignacion($tick_id);
-            if ($primera_asignacion) {
-                // El responsable es el creador del ticket
-                $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
-                $nombre_completo_responsable = $ticket_data['usu_nom'] . ' ' . $ticket_data['usu_ape'];
-                $id_historial_a_sellar = $primera_asignacion['th_id'];
-            }
+        if (!$datos_respuesta) {
+            echo json_encode(["status" => "error", "msg" => "Respuesta rápida no encontrada"]);
+            return;
         }
 
+        $nombre_respuesta = $datos_respuesta["answer_nom"] ?? 'Respuesta desconocida';
+        $es_error_proceso = !empty($datos_respuesta["es_error_proceso"]);
+
+        // Traer ticket (útil para datos del creador)
+        $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
+        if (!$ticket_data) {
+            echo json_encode(["status" => "error", "msg" => "Ticket no encontrado"]);
+            return;
+        }
+
+        // Buscar asignaciones
+        $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
+        $primera_asignacion = $this->ticketModel->get_primera_asignacion($tick_id);
+
+        // Determinar a quién sellar (historial) y a quién devolver (si aplica)
+        $id_historial_a_sellar = null;
+        if ($asignacion_anterior && !empty($asignacion_anterior['th_id'])) {
+            $id_historial_a_sellar = $asignacion_anterior['th_id'];
+        } elseif ($primera_asignacion && !empty($primera_asignacion['th_id'])) {
+            $id_historial_a_sellar = $primera_asignacion['th_id'];
+        }
+
+        // Sellar historial si aplica
         if ($id_historial_a_sellar) {
-            // 2. "Sellamos" ese registro de historial con el código del error y la descripción.
             $this->ticketModel->update_error_code_paso($id_historial_a_sellar, $answer_id, $error_descrip);
         }
 
-        // 3. Construimos el comentario para el historial visible.
-        $comentario = "Se registró un evento: <b>" . $nombre_respuesta . "</b>.";
-        if (!empty($error_descrip)) {
-            $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
-        }
-        if ($nombre_completo_responsable) {
-            $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>" . $nombre_completo_responsable . "</b></small>";
+        // Preparar comentario visible
+        $nombre_completo_responsable = null;
+        if ($asignacion_anterior && isset($asignacion_anterior['usu_nom'], $asignacion_anterior['usu_ape'])) {
+            $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
+        } elseif (!empty($ticket_data['usu_nom']) && !empty($ticket_data['usu_ape'])) {
+            $nombre_completo_responsable = $ticket_data['usu_nom'] . ' ' . $ticket_data['usu_ape'];
         }
 
-        // 4. Marcamos el ticket con el código de error en la tabla principal (para la alerta visual).
+        $comentario = "Se registró un evento: <b>{$nombre_respuesta}</b>.";
+        if (!empty($error_descrip)) $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
+        if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
+
+        // Marcar ticket con el código de error (bandera visual)
         $this->ticketModel->update_error_proceso($tick_id, $answer_id);
 
-        // 5. Insertamos el nuevo comentario detallado en el historial.
+        // Insertar detalle del ticket
         $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id, $comentario);
 
-        // 6. Si es error de proceso, reasignamos al usuario anterior y retrocedemos el paso.
-        if ($es_error_proceso && $asignacion_anterior) {
-            $usuario_anterior_id = $asignacion_anterior['usu_asig'];
-            $paso_anterior_id = $asignacion_anterior['paso_id'];
-            $quien_asigno_id = $usu_id;
+        // Si es error de proceso, reasignar: preferir usuario anterior; si no existe -> creador
+        $assigned_to = null;
+        $assigned_paso = null;
+        $updateResult = null;
 
-            $comentario_reasignacion = "Ticket devuelto por error de proceso.";
-            $mensaje_notificacion = "Se te ha devuelto el Ticket #" . $tick_id . " por un error en el proceso.";
+        if ($es_error_proceso) {
+            if ($asignacion_anterior && !empty($asignacion_anterior['usu_asig'])) {
+                // devolver al usuario anterior
+                $assigned_to = $asignacion_anterior['usu_asig'];
+                $assigned_paso = $asignacion_anterior['paso_id'] ?? null;
+            } else {
+                // no hay anterior: devolver al creador del ticket
+                $assigned_to = $ticket_data['usu_id'];
+                // si existe paso en la primera asignacion podemos usarlo
+                $assigned_paso = $primera_asignacion['paso_id'] ?? null;
+            }
 
-            $this->ticketModel->update_asignacion_y_paso($tick_id, $usuario_anterior_id, $paso_anterior_id, $quien_asigno_id, $comentario_reasignacion, $mensaje_notificacion);
+            // Ejecutar la reasignación en BD (si existe función)
+            if ($assigned_to !== null) {
+                $comentario_reasignacion = "Ticket devuelto por error de proceso.";
+                $mensaje_notificacion = "Se te ha devuelto el Ticket #{$tick_id} por un error en el proceso.";
+                $updateResult = $this->ticketModel->update_asignacion_y_paso(
+                    $tick_id,
+                    $assigned_to,
+                    $assigned_paso,
+                    $usu_id, // quien reasigna (analista que reporta)
+                    $comentario_reasignacion,
+                    $mensaje_notificacion
+                );
+            }
         }
 
-        echo json_encode(["status" => "success"]);
+        // Traer ticket actualizado y devolver información
+        $ticket_data_actualizado = $this->ticketModel->listar_ticket_x_id($tick_id);
+
+        $response = [
+            "status" => "success",
+            "ticket" => $ticket_data_actualizado,
+            "assigned_to" => $assigned_to,
+            "assigned_paso" => $assigned_paso,
+            "update_asign_result" => $updateResult
+        ];
+
+        echo json_encode($response);
+        return;
+    } catch (Exception $e) {
+        echo json_encode(["status" => "error", "msg" => "Exception: " . $e->getMessage()]);
+        return;
     }
+}
+
+
+
 }
