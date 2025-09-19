@@ -55,7 +55,7 @@ class Ticket extends Conectar
         return $sql->fetchAll();
     }
 
-    public function cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre)
+    public function cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre, $files = [])
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -73,8 +73,44 @@ class Ticket extends Conectar
         $sql_detalle->bindValue(2, $usu_id);
         $sql_detalle->bindValue(3, $nota_cierre);
         $sql_detalle->execute();
+        $tickd_id = $conectar->lastInsertId();
 
-        // 3. Notificar a todos los usuarios involucrados
+        // 3. Manejar archivos adjuntos
+        if (!empty($files['name'][0])) {
+            require_once('DocumentoCierre.php');
+            $documento_cierre = new DocumentoCierre();
+
+            $upload_dir = '../public/document/cierre/' . $tick_id . '/';
+            if (!file_exists($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+
+            foreach ($files['name'] as $key => $name) {
+                $file_tmp = $files['tmp_name'][$key];
+                $file_name = $name;
+                $file_path = $upload_dir . $file_name;
+
+                if (move_uploaded_file($file_tmp, $file_path)) {
+                    $documento_cierre->insert_documento_cierre($tick_id, $file_name);
+                }
+            }
+        }
+
+        // 4. Notificar a todos los usuarios involucrados
+        require_once('DocumentoCierre.php');
+        $documento_cierre = new DocumentoCierre();
+        $documentos = $documento_cierre->get_documentos_cierre_x_ticket($tick_id);
+
+        $mensaje_notificacion = "El Ticket #" . $tick_id . " ha sido cerrado con la siguiente nota: " . strip_tags($nota_cierre);
+
+        if (!empty($documentos)) {
+            $mensaje_notificacion .= "<br><b>Documentos adjuntos:</b><br>";
+            foreach ($documentos as $doc) {
+                $url = '../../public/document/cierre/' . $tick_id . '/' . rawurlencode($doc['doc_nom']);
+                $mensaje_notificacion .= "<a href=\"".$url."\" target=\"_blank\">" . htmlspecialchars($doc['doc_nom']) . "</a><br>";
+            }
+        }
+
         // Obtener el creador del ticket
         $sql_get_creator = "SELECT usu_id FROM tm_ticket WHERE tick_id = ?";
         $stmt_creator = $conectar->prepare($sql_get_creator);
@@ -90,8 +126,6 @@ class Ticket extends Conectar
         $assigned_users = $stmt_assigned->fetchAll(PDO::FETCH_COLUMN);
 
         $involved_users = array_unique(array_merge([$creator['usu_id']], $assigned_users));
-
-        $mensaje_notificacion = "El Ticket #" . $tick_id . " ha sido cerrado con la siguiente nota: " . strip_tags($nota_cierre);
 
         foreach ($involved_users as $user_id_to_notify) {
             if ($user_id_to_notify) {

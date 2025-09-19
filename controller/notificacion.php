@@ -27,6 +27,7 @@ switch ($_GET["op"]) {
         case "notificacionespendientes":
             date_default_timezone_set('America/Bogota');
             $datos = $notificacion->get_notificacion_x_usu_todas($_POST['usu_id']);
+            $conectar = new Conectar();
             if(is_array($datos) and count($datos) >0){
                 foreach ($datos as $row) {
 
@@ -59,7 +60,8 @@ switch ($_GET["op"]) {
                         <?php
                         if ($row['est'] != 0) {   
                         ?>
-                        <a onclick="verNotificacion(<?php echo $row['not_id'] ?>)" href="https://helpdesk.electrocreditosdelcauca.com//view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>">Nueva notificacion </a><?php echo  $row['not_mensaje']?></a>
+                        <a onclick="verNotificacion(<?php echo $row['not_id'] ?>)" href="<?php echo $conectar->ruta() ?>view/DetalleTicket/?ID=<?php echo $row['tick_id'] ?>">Nueva notificacion </a>
+                        <div><?php echo  $row['not_mensaje']?></div>
                         <div class="color-blue-grey-lighter"><?php echo $tiempo ?></div>
                         <?php } ?>
                     </div>

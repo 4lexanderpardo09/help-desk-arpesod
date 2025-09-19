@@ -75,7 +75,8 @@ switch ($_GET["op"]) {
         break;
 
     case 'cerrar_con_nota':
-        $ticket->cerrar_ticket_con_nota($_POST["tick_id"], $_POST["usu_id"], $_POST["nota_cierre"]);
+        $files = isset($_FILES['cierre_files']) ? $_FILES['cierre_files'] : [];
+        $ticket->cerrar_ticket_con_nota($_POST["tick_id"], $_POST["usu_id"], $_POST["nota_cierre"], $files);
         echo json_encode(["success" => true]);
         break;
 

@@ -358,17 +358,26 @@ $(document).on('click', '#btn_confirmar_cierre', function() {
         return;
     }
 
+    var formData = new FormData();
+    formData.append('tick_id', tick_id);
+    formData.append('usu_id', usu_id);
+    formData.append('nota_cierre', nota_cierre);
+
+    var files = $('#cierre_files')[0].files;
+    for (var i = 0; i < files.length; i++) {
+        formData.append('cierre_files[]', files[i]);
+    }
+
     $.ajax({
         url: '../../controller/ticket.php?op=cerrar_con_nota',
         type: 'POST',
-        data: {
-            tick_id: tick_id,
-            usu_id: usu_id,
-            nota_cierre: nota_cierre
-        },
+        data: formData,
+        contentType: false,
+        processData: false,
         success: function(response) {
             $('#modal_nota_cierre').modal('hide');
             $('#nota_cierre_summernote').summernote('reset');
+            $('#cierre_files').val('');
             swal("¡Cerrado!", "El ticket ha sido cerrado correctamente.", "success");
             listarDetalle(tick_id);
         },
