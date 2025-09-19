@@ -38,6 +38,13 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </header>
 
+                <div id="panel_linea_tiempo" class="box-typical box-typical-padding" style="display:none;">
+                    <h5 class="m-t-lg with-border">Progreso del Flujo de Trabajo</h5>
+                    <div class="mermaid">
+                        
+                    </div>
+                </div>
+
                 <div class="box-typical box-typical-padding">
                     <div class="row">
                         <div class="col-lg-12">
@@ -46,16 +53,28 @@ if (isset($_SESSION["usu_id"])) {
                                 <input type="text" class="form-control" id="tick_titulo" name="tick_titulo" readonly>
                             </fieldset>
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_nom">Categoria</label>
                                 <input type="text" class="form-control" id="cat_nom" name="cat_nom" readonly>
                             </fieldset>
                         </div>
-                        <div class="col-lg-4">
+                        <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cats_nom">Subcategoria</label>
                                 <input type="text" class="form-control" id="cats_nom" name="cats_nom" readonly>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="emp_id">Empresa</label>
+                                <input class="form-control" id="emp_id" name="emp_id" readonly>
+                            </fieldset>
+                        </div>
+                        <div class="col-lg-3">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="dp_id">Departamento</label>
+                                <input class="form-control" id="dp_id" name="dp_id" readonly>
                             </fieldset>
                         </div>
                         <div class="col-lg-12">
