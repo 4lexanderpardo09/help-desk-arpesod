@@ -129,6 +129,30 @@ class TicketWorkflowService
         }
     }
 
+    public function approveStep($tick_id)
+    {
+        $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
+        $paso_actual_id = $ticket_data['paso_actual_id'];
+        $siguiente_paso = $this->flujoPasoModel->get_siguiente_paso($paso_actual_id);
+
+        if ($siguiente_paso) {
+            $this->ticketModel->update_asignacion_y_paso($tick_id, $siguiente_paso['cargo_id_asignado'], $siguiente_paso['paso_id'], $_SESSION['usu_id']);
+        } else {
+            $this->ticketModel->update_ticket($tick_id);
+            $this->ticketModel->insert_ticket_detalle_cerrar($tick_id, $_SESSION['usu_id']);
+        }
+    }
+
+    public function rejectStep($tick_id)
+    {
+        $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
+        $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
+
+        if ($asignacion_anterior) {
+            $this->ticketModel->update_asignacion_y_paso($tick_id, $asignacion_anterior['usu_asig'], $asignacion_anterior['paso_actual_id'], $_SESSION['usu_id']);
+        }
+    }
+
     public function ApproveFlow($tickPost, $session)
     {
         $tick_id = $tickPost['tick_id'];

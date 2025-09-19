@@ -1,0 +1,1 @@
+ALTER TABLE tm_flujo_paso ADD es_aprobacion INT DEFAULT 0;

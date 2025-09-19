@@ -23,6 +23,7 @@ switch ($_GET["op"]) {
         // AÑADIDO: Se maneja el valor del checkbox para la selección manual
         $requiere_seleccion_manual = isset($_POST['requiere_seleccion_manual']) ? 1 : 0;
         $es_tarea_nacional = isset($_POST['es_tarea_nacional']) ? 1 : 0;
+        $es_aprobacion = isset($_POST['es_aprobacion']) ? 1 : 0;
 
         if (empty($_POST['paso_id'])) {
             // CAMBIADO: Se pasa el nuevo parámetro a la función de inserción
@@ -34,7 +35,8 @@ switch ($_GET["op"]) {
                 $_POST['paso_tiempo_habil'],
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
-                $es_tarea_nacional
+                $es_tarea_nacional,
+                $es_aprobacion
             );
         } else {
             // CAMBIADO: Se pasa el nuevo parámetro a la función de actualización y se corrigen los parámetros
@@ -46,7 +48,8 @@ switch ($_GET["op"]) {
                 $_POST['paso_tiempo_habil'],
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
-                $es_tarea_nacional
+                $es_tarea_nacional,
+                $es_aprobacion
             );
         }
         break;
@@ -61,6 +64,7 @@ switch ($_GET["op"]) {
             $sub_array[] = $row["car_nom"];
             $sub_array[] = ($row["requiere_seleccion_manual"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
             $sub_array[] = ($row["es_tarea_nacional"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
+            $sub_array[] = ($row["es_aprobacion"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
             $sub_array[] = '<button type="button" onClick="editar(' . $row['paso_id'] . ');" class="btn btn-inline btn-warning btn-sm"><i class="fa fa-edit"></i></button>';
             $sub_array[] = '<button type="button" onClick="eliminar(' . $row['paso_id'] . ');" class="btn btn-inline btn-danger btn-sm"><i class="fa fa-trash"></i></button>';
             $data[] = $sub_array;
@@ -111,6 +115,7 @@ switch ($_GET["op"]) {
             $output = $datos;
             // AÑADIDO: Aseguramos que el estado del checkbox también se envíe
             $output['requiere_seleccion_manual'] = $datos['requiere_seleccion_manual'];
+            $output['es_aprobacion'] = $datos['es_aprobacion'];
             echo json_encode($output);
         }
 }

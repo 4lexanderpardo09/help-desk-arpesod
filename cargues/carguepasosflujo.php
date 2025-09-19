@@ -51,6 +51,7 @@ try {
         $seleccion_manual_str = isset($row[6]) ? trim($row[6]) : 'NO';
         // --- AÑADIDO: Lectura de la nueva columna ---
         $es_tarea_nacional_str = isset($row[7]) ? trim($row[7]) : 'NO'; // Asume que es la columna H
+        $es_aprobacion_str = isset($row[8]) ? trim($row[8]) : 'NO'; // Asume que es la columna I
 
         if (empty($cats_nom) || empty($paso_nombre)) continue;
 
@@ -75,6 +76,7 @@ try {
         $req_seleccion_manual = (strtoupper($seleccion_manual_str) == 'SI') ? 1 : 0;
         // --- AÑADIDO: Convertimos "SI" a 1 y cualquier otra cosa a 0 ---
         $es_tarea_nacional = (strtoupper($es_tarea_nacional_str) == 'SI') ? 1 : 0;
+        $es_aprobacion = (strtoupper($es_aprobacion_str) == 'SI') ? 1 : 0;
 
         // --- 3. Insertar el paso con TODOS los datos ---
         $flujo_paso_model->insert_paso(
@@ -85,7 +87,8 @@ try {
             $paso_tiempo_habil,
             $paso_descripcion,
             $req_seleccion_manual,
-            $es_tarea_nacional // <-- El nuevo parámetro
+            $es_tarea_nacional, // <-- El nuevo parámetro
+            $es_aprobacion
         );
         echo "<p style='color:green;'>CREADO: Se añadió el paso '{$paso_nombre}' al flujo de '{$cats_nom}'.</p>";
         $creados++;

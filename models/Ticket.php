@@ -55,6 +55,30 @@ class Ticket extends Conectar
         return $sql->fetchAll();
     }
 
+    public function approveStep($tick_id)
+    {
+        $ticket_data = $this->listar_ticket_x_id($tick_id);
+        $paso_actual_id = $ticket_data['paso_actual_id'];
+        $flujoPasoModel = new FlujoPaso();
+        $siguiente_paso = $flujoPasoModel->get_siguiente_paso($paso_actual_id);
+
+        if ($siguiente_paso) {
+            $this->update_asignacion_y_paso($tick_id, $siguiente_paso['cargo_id_asignado'], $siguiente_paso['paso_id'], $_SESSION['usu_id']);
+        } else {
+            $this->update_ticket($tick_id);
+            $this->insert_ticket_detalle_cerrar($tick_id, $_SESSION['usu_id']);
+        }
+    }
+
+    public function rejectStep($tick_id)
+    {
+        $asignacion_anterior = $this->get_penultima_asignacion($tick_id);
+
+        if ($asignacion_anterior) {
+            $this->update_asignacion_y_paso($tick_id, $asignacion_anterior['usu_asig'], $asignacion_anterior['paso_id'], $_SESSION['usu_id']);
+        }
+    }
+
     public function cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre, $files = [])
     {
         $conectar = parent::Conexion();

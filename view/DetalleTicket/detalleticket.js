@@ -424,6 +424,54 @@ $(document).on("click", "#btn_aprobar_flujo", function () {
         });
 });
 
+$(document).on("click", "#btn_aprobar_paso", function () {
+    var tick_id = getUrlParameter('ID');
+    swal({
+        title: "¿Estás seguro de aprobar este paso?",
+        text: "Una vez aprobado, el ticket avanzará al siguiente paso del flujo.",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-success",
+        confirmButtonText: "Sí, ¡Aprobar!",
+        cancelButtonText: "No, cancelar",
+        closeOnConfirm: false
+    },
+    function (isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/ticket.php?op=aprobar_paso", { tick_id: tick_id }, function (data) {
+                swal("¡Aprobado!", "El ticket ha sido aprobado y continuará su flujo.", "success");
+                listarDetalle(tick_id);
+            }).fail(function (jqXHR) {
+                swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
+            });
+        }
+    });
+});
+
+$(document).on("click", "#btn_rechazar_paso", function () {
+    var tick_id = getUrlParameter('ID');
+    swal({
+        title: "¿Estás seguro de rechazar este paso?",
+        text: "Una vez rechazado, el ticket será devuelto al paso anterior.",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-danger",
+        confirmButtonText: "Sí, ¡Rechazar!",
+        cancelButtonText: "No, cancelar",
+        closeOnConfirm: false
+    },
+    function (isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/ticket.php?op=rechazar_paso", { tick_id: tick_id }, function (data) {
+                swal("¡Rechazado!", "El ticket ha sido rechazado y devuelto al paso anterior.", "success");
+                listarDetalle(tick_id);
+            }).fail(function (jqXHR) {
+                swal("Error", "No se pudo completar el rechazo. Detalle: " + jqXHR.responseText, "error");
+            });
+        }
+    });
+});
+
 
 function updateTicket(tick_id, usu_id) {
     $.post("../../controller/ticket.php?op=update", { tick_id: tick_id, usu_id: usu_id }, function (data) {
@@ -584,25 +632,32 @@ function listarDetalle(tick_id) {
 
         // Ocultamos el panel por defecto en cada recarga
         $('#panel_guia_paso').hide();
+        $('#panel_aprobacion').hide();
     
         // Verificamos si el ticket está en un paso activo de un flujo
         if (data.paso_actual_info) {
             var pasoInfo = data.paso_actual_info;
-    
-            // Mostramos y llenamos el panel de guía
-            $('#panel_guia_paso').show();
-            $('#guia_paso_nombre').text('Paso Actual: ' + pasoInfo.paso_nombre);
-            $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil);
-    
-            // Llenamos el editor Summernote con la descripción del paso
-            // Si la descripción está vacía, no ponemos nada.
-            if (pasoInfo.paso_descripcion) {
-                var pasoTemplate = pasoInfo.paso_descripcion;
-                $('#tickd_descrip').summernote('code', pasoTemplate);
-                // Guardamos la plantilla para compararla antes de enviar la respuesta
-                $('#tickd_descrip').data('template', pasoTemplate);
+
+            if (pasoInfo.es_aprobacion == 1) {
+                $('#panel_aprobacion').show();
+                $('#boxdetalleticket').hide();
             } else {
-                $('#tickd_descrip').data('template', ''); // limpiar si no hay
+                // Mostramos y llenamos el panel de guía
+                $('#panel_guia_paso').show();
+                $('#guia_paso_nombre').text('Paso Actual: ' + pasoInfo.paso_nombre);
+                $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil);
+        
+                // Llenamos el editor Summernote con la descripción del paso
+                // Si la descripción está vacía, no ponemos nada.
+                if (pasoInfo.paso_descripcion) {
+                    var pasoTemplate = pasoInfo.paso_descripcion;
+                    $('#tickd_descrip').summernote('code', pasoTemplate);
+                    // Guardamos la plantilla para compararla antes de enviar la respuesta
+                    $('#tickd_descrip').data('template', pasoTemplate);
+                } else {
+                    $('#tickd_descrip').data('template', ''); // limpiar si no hay
+
+                }
             }
         }
     });

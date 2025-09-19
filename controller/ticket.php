@@ -111,4 +111,12 @@ switch ($_GET["op"]) {
     case "verificar_inicio_flujo":
         $result = $workflowService->CheckStartFlow($_POST);
     break;
+
+    case "aprobar_paso":
+        $workflowService->approveStep($_POST['tick_id']);
+        break;
+
+    case "rechazar_paso":
+        $workflowService->rejectStep($_POST['tick_id']);
+        break;
 }

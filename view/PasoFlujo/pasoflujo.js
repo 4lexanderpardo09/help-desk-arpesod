@@ -9,6 +9,7 @@ function init() {
 function guardaryeditar(e){
     e.preventDefault();
     var formData = new FormData($("#paso_form")[0])
+    formData.append("es_aprobacion", $("#es_aprobacion").is(":checked") ? 1 : 0);
     $.ajax({
         url: "../../controller/flujopaso.php?op=guardaryeditar",
         type: "POST",
@@ -142,6 +143,14 @@ function editar(paso_id) {
         } else {
             // Si es 0 o null, la desmarcamos
             $('#es_tarea_nacional').prop('checked', false);
+        }
+
+        if (data.es_aprobacion == 1) {
+            // Si el valor es 1, marcamos la casilla
+            $('#es_aprobacion').prop('checked', true);
+        } else {
+            // Si es 0 o null, la desmarcamos
+            $('#es_aprobacion').prop('checked', false);
         }
 
         $('#paso_descripcion').summernote('code', data.paso_descripcion);

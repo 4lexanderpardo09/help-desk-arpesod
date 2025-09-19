@@ -44,6 +44,10 @@
                         <input type="checkbox" id="es_tarea_nacional" name="es_tarea_nacional" value="1">
                         <label for="es_tarea_nacional">¿Es una tarea nacional?</label>
                     </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="es_aprobacion" name="es_aprobacion" value="1">
+                        <label for="es_aprobacion">¿Es un paso de aprobación?</label>
+                    </div>
                     <fieldset class="form-group semibold">
                         <label class="form-label" for="paso_descripcion">Descripción / Plantilla para el Agente</label>
                         <div class="summernote-theme-1">

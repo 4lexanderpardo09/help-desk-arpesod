@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -45,6 +45,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(6, $paso_descripcion);
         $sql->bindValue(7, $requiere_seleccion_manual); // Se añade el nuevo valor
         $sql->bindValue(8, $es_tarea_nacional);
+        $sql->bindValue(9, $es_aprobacion);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -61,7 +62,7 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -74,7 +75,8 @@ class FlujoPaso extends Conectar
                         paso_tiempo_habil = ?, 
                         paso_descripcion = ?,
                         requiere_seleccion_manual = ?,
-                        es_tarea_nacional = ?
+                        es_tarea_nacional = ?,
+                        es_aprobacion = ?
                     WHERE 
                         paso_id = ?";
         $sql = $conectar->prepare($sql);
@@ -85,7 +87,8 @@ class FlujoPaso extends Conectar
         $sql->bindValue(5, $paso_descripcion);
         $sql->bindValue(6, $requiere_seleccion_manual); // Se añade el nuevo valor
         $sql->bindValue(7, $es_tarea_nacional);
-        $sql->bindValue(8, $paso_id); // El ID del paso va al final
+        $sql->bindValue(8, $es_aprobacion);
+        $sql->bindValue(9, $paso_id); // El ID del paso va al final
         $sql->execute();
     }
 
