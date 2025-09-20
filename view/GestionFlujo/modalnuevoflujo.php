@@ -26,10 +26,6 @@
                         <select class="form-control" id="cats_id" name="cats_id" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
-                    <div class="checkbox">
-                            <input type="checkbox" id="requiere_aprobacion_jefe" name="requiere_aprobacion_jefe" value="1">
-                            <label for="requiere_aprobacion_jefe">Requiere Aprobación del Jefe para iniciar el flujo</label>
-                        </div>
                     </div>
                     <div class="form-group">
                 </div>

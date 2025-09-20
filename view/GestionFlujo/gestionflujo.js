@@ -116,12 +116,6 @@ function editar(flujo_id) {
         data = JSON.parse(data);
         $('#flujo_id').val(data.flujo.flujo_id);
         $('#flujo_nom').val(data.flujo.flujo_nom);
-         // Marcar o desmarcar el checkbox según el valor de la BD
-        if (data.flujo.requiere_aprobacion_jefe == 1) {
-            $('#requiere_aprobacion_jefe').prop('checked', true);
-        } else {
-            $('#requiere_aprobacion_jefe').prop('checked', false);
-        }
         $("#cat_id").val(data.flujo.cat_id);
         $.post("../../controller/subcategoria.php?op=combo", { cat_id: data.flujo.cat_id }, function (subcategoriadata) {
             $('#cats_id').html('<option value="">Seleccionar</option>' + subcategoriadata);

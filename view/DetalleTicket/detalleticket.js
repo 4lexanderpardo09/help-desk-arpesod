@@ -517,18 +517,10 @@ function listarDetalle(tick_id) {
             $("#panel_respuestas_rapidas").addClass('hidden');
         };
 
-        $('#panel_aprobacion_jefe').hide();
+        if (data.tick_estado_texto == 'Cerrado') {
+            $('#boxdetalleticket').hide();
+        };
 
-        if ((data.paso_actual_id === null || data.paso_actual_id == 0) && data.tick_estado_texto === 'Abierto' && data.usu_asig == usu_id) {
-            // Si todas las condiciones se cumplen, muestra el panel
-            $('#panel_aprobacion_jefe').show();
-            // $('#boxdetalleticket').hide(); 
-        } else {
-            $('#boxdetalleticket').show();
-            if (data.tick_estado_texto == 'Cerrado') {
-                $('#boxdetalleticket').hide();
-            };
-        }
 
 
     });

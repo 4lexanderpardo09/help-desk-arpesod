@@ -24,10 +24,6 @@ switch ($_GET["op"]) {
         echo json_encode($result);
     break;
     
-    case "aprobar_ticket_jefe":
-        $result = $workflowService->BossTicketApproval($_POST, $_SESSION);   
-    break;
-    
     case "listar_x_usu":
         $result = $lister->listTicketsByUser($_POST['usu_id']);
         echo json_encode($result);

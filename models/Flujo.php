@@ -26,27 +26,31 @@
         public function get_flujotodo(){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT tm_flujo.*,
-                        cats_nom
-            FROM tm_flujo 
-            INNER JOIN tm_subcategoria ON tm_flujo.cats_id = tm_subcategoria.cats_id
-            WHERE tm_flujo.est = 1";
+            $sql = "SELECT 
+            T.flujo_id,
+            T.flujo_nom,
+            T.cats_id,
+            S.cats_nom
+            FROM tm_flujo AS T
+            INNER JOIN tm_subcategoria AS S ON T.cats_id = S.cats_id
+            WHERE T.est = 1";
             $sql = $conectar->prepare($sql);
             $sql->execute();
 
             return $resultado = $sql->fetchAll();
         }
 
-        public function insert_flujo($flujo_nom, $cats_id, $req_aprob_jefe) {
-            $conectar = parent::conexion();
-            parent::set_names();
-            $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, requiere_aprobacion_jefe, est) VALUES (?, ?, ?, '1')";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1, $flujo_nom);
-            $sql->bindValue(2, $cats_id);
-            $sql->bindValue(3, $req_aprob_jefe);
-            $sql->execute();
-        }
+    public function insert_flujo($flujo_nom, $cats_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, fech_crea, est) VALUES (?, ?, now(), 1)";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_nom);
+        $sql->bindValue(2, $cats_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
 
         public function delete_flujo($flujo_id){
             $conectar = parent::Conexion();
@@ -59,22 +63,23 @@
             return $resultado = $sql->fetchAll();
         }
 
-        public function update_flujo($flujo_id, $flujo_nom, $cats_id, $req_aprob_jefe) {
-            $conectar = parent::conexion();
-            parent::set_names();
-            $sql = "UPDATE tm_flujo SET
-                        flujo_nom = ?,
-                        cats_id = ?,
-                        requiere_aprobacion_jefe = ?
-                    WHERE
-                        flujo_id = ?";
-            $sql = $conectar->prepare($sql);
-            $sql->bindValue(1, $flujo_nom);
-            $sql->bindValue(2, $cats_id);
-            $sql->bindValue(3, $req_aprob_jefe);
-            $sql->bindValue(4, $flujo_id);
-            $sql->execute();
-        }
+    public function update_flujo($flujo_id, $flujo_nom, $cats_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_flujo 
+            SET 
+                flujo_nom = ?,
+                cats_id = ?
+            WHERE 
+                flujo_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_nom);
+        $sql->bindValue(2, $cats_id);
+        $sql->bindValue(3, $flujo_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
 
         public function get_flujo_x_id($flujo_id){
             $conectar = parent::Conexion();

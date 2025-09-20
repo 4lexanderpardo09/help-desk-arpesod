@@ -37,13 +37,11 @@ switch ($_GET["op"]) {
         $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
         $flujo_nom = $_POST["flujo_nom"];
         $cats_id = $_POST["cats_id"];
-        // Un checkbox no se envía si no está marcado. Así verificamos su valor.
-        $req_aprob_jefe = isset($_POST["requiere_aprobacion_jefe"]) ? 1 : 0; 
 
         if (empty($flujo_id)) {
-            $flujo->insert_flujo($flujo_nom, $cats_id, $req_aprob_jefe);
+            $flujo->insert_flujo($flujo_nom, $cats_id, 0);
         } else {
-            $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, $req_aprob_jefe);
+            $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, 0);
         }
         break;
     
@@ -53,7 +51,6 @@ switch ($_GET["op"]) {
             foreach ($datos as $row) {
                 $sub_array = array();
                 $sub_array[] = $row["cats_nom"];
-                $sub_array[] = $row["requiere_aprobacion_jefe"] ? '<span class="label label-info">Si</span>' : '<span class="label label-default">No</span>';
                 $sub_array[] = '<button type="button" onClick="editar(' . $row['flujo_id'] . ');" id="' . $row['flujo_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
                 $sub_array[] = '<button type="button" onClick="eliminar(' . $row['flujo_id'] . ');" id="' . $row['flujo_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
                 $sub_array[] = '<button type="button" onClick="ver(' . $row['flujo_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver pasos del flujo"><i class="fa fa-eye"></i></button>';

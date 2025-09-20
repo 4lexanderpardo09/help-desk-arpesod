@@ -135,16 +135,6 @@ if (isset($_SESSION["usu_id"])) {
                     </button>
                 </div>
 
-                <div class="box-typical box-typical-padding" id="panel_aprobacion_jefe" style="display: none;">
-                    <h5 class="m-t-lg with-border">Acción Requerida: Aprobación de Flujo</h5>
-                    <p>
-                        Este ticket requiere tu aprobación para poder iniciar su flujo de trabajo y ser asignado al siguiente responsable.
-                    </p>
-                    <button type="button" id="btn_aprobar_flujo" class="btn btn-rounded btn-success">
-                        <i class="fa fa-check-square"></i> Aprobar y Continuar Flujo
-                    </button>
-                </div>
-
                 <div id="boxdetalleticket" class="box-typical box-typical-padding">
                     <p>
                         Ingrese su duda o consulta
