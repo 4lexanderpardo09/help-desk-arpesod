@@ -131,22 +131,34 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function get_siguiente_paso($paso_actual_id)
+    public function get_siguiente_paso_transicion($paso_actual_id, $condicion_clave, $condicion_nombre)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT * FROM tm_flujo_paso 
-                WHERE 
-                    flujo_id = (SELECT flujo_id FROM tm_flujo_paso WHERE paso_id = ?) 
-                    AND 
-                    paso_orden = (SELECT paso_orden FROM tm_flujo_paso WHERE paso_id = ?) + 1
-                    AND est = 1";
+        $sql = "SELECT paso_destino_id FROM tm_flujo_transiciones WHERE paso_origen_id = ? AND condicion_clave = ? AND condicion_nombre = ? AND est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_actual_id);
-        $sql->bindValue(2, $paso_actual_id);
+        $sql->bindValue(2, $condicion_clave);
+        $sql->bindValue(3, $condicion_nombre);
         $sql->execute();
-        // Usamos fetch() para obtener solo una fila (o false si no hay siguiente paso)
-        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        
+        if ($resultado && $resultado['paso_destino_id']) {
+            // Devolvemos los detalles completos del paso destino
+            return $this->get_paso_por_id($resultado['paso_destino_id']);
+        }
+        return null; // No se encontró transición o es el fin del flujo
+    }
+
+    public function get_transiciones_por_paso($paso_origen_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT condicion_clave, condicion_nombre FROM tm_flujo_transiciones WHERE paso_origen_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_origen_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function get_siguientes_pasos($paso_actual_id)

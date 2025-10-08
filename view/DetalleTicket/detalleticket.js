@@ -1,7 +1,33 @@
+var selected_condicion_clave = null;
+var selected_condicion_nombre = null;
+
+function cargarTransiciones(paso_id) {
+    // NO manipulamos DOM aquí: solo traemos datos y los guardamos en el panel
+    return $.post("../../controller/ticket.php?op=get_transiciones", { paso_id: paso_id }).then(function(data) {
+        try {
+            data = JSON.parse(data);
+        } catch (e) {
+            console.error("Error parsing transiciones:", e);
+            data = [];
+        }
+
+        // Guardar transiciones en el panel para usarlas cuando el usuario marque avanzar flujo
+        $('#panel_checkbox_flujo').data('transiciones-pasos', data || []);
+        return data || [];
+    });
+}
+
+
+$(document).on('click', '.transicion-btn', function() {
+    selected_condicion_clave = $(this).data('clave');
+    // La lógica de envío se moverá a una función reutilizable
+    enviarDetalle(); 
+});
+
 function init() {
 
 }
-boxdetalleticket
+
 $(document).ready(function () {
 
     var rol_id = $("#rol_idx").val();
@@ -156,7 +182,7 @@ function stripHtml(html) {
     return tmp;
 }
 
-$(document).on('click', '#btnenviar', function () {
+function enviarDetalle() {
     // Validar que haya contenido en el summernote
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta", "warning");
@@ -185,30 +211,49 @@ $(document).on('click', '#btnenviar', function () {
     formData.append("usu_id", usu_id);
     formData.append("tickd_descrip", tickd_descrip);
 
+    // AÑADIDO: Si se seleccionó una transición, la añadimos.
+    if (selected_condicion_clave) {
+        formData.append("condicion_clave", selected_condicion_clave);
+        if (selected_condicion_nombre) {
+            formData.append("condicion_nombre", selected_condicion_nombre);
+        } else {
+            // como fallback, enviar el texto del select si existe
+            var optText = $('#select_siguiente_paso option:selected').text();
+            if (optText) formData.append("condicion_nombre", optText.trim());
+        }
+    }
+
     // --- Lógica del flujo: si va a avanzar, validar paso y posible asignado manual ---
     if ($('#checkbox_avanzar_flujo').is(':checked')) {
         var selected_siguiente_paso_id = $('#selected_siguiente_paso_id').val();
-        if (!selected_siguiente_paso_id) {
-            swal("Atención", "Debe seleccionar un paso siguiente para avanzar el flujo.", "warning");
+
+        // Si NO hay paso, pero hay transición seleccionada, entonces está bien
+        if (!selected_siguiente_paso_id && !selected_condicion_clave) {
+            swal("Atención", "Debe seleccionar un paso siguiente o transición para avanzar el flujo.", "warning");
             return false;
         }
-        formData.append("siguiente_paso_id", selected_siguiente_paso_id);
 
-        // Obtenemos la información del paso seleccionado para verificar si requiere selección manual
-        var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos') || [];
-        var selected_paso_info = siguientes_pasos.find(paso => paso.paso_id == selected_siguiente_paso_id);
+        if (selected_siguiente_paso_id) {
+            // lógica para paso siguiente
+            var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos') || [];
+            var selected_paso_info = siguientes_pasos.find(paso => paso.paso_id == selected_siguiente_paso_id);
 
-        if (selected_paso_info && selected_paso_info.requiere_seleccion_manual == 1) {
-            var nuevo_asignado_id = $('#nuevo_asignado_id').val();
-            if (!nuevo_asignado_id) {
-                swal("Atención", "Debe seleccionar un agente para el siguiente paso.", "warning");
-                return false;
+            if (selected_paso_info && selected_paso_info.requiere_seleccion_manual == 1) {
+                var nuevo_asignado_id = $('#nuevo_asignado_id').val();
+                if (!nuevo_asignado_id) {
+                    swal("Atención", "Debe seleccionar un agente para el siguiente paso.", "warning");
+                    return false;
+                }
+                formData.append("nuevo_asignado_id", nuevo_asignado_id);
             }
-            // Si la selección es manual, enviamos el ID del usuario seleccionado
-            formData.append("nuevo_asignado_id", nuevo_asignado_id);
+            formData.append("siguiente_paso_id", selected_siguiente_paso_id);
         }
-        // Si no es manual, no se envía 'nuevo_asignado_id' y el backend lo asignará automáticamente.
+
+        if (selected_condicion_clave) {
+            formData.append("condicion_clave", selected_condicion_clave);
+        }
     }
+
 
     // Archivos: usar files API (más fiable que val().length)
     var fileInput = $('#fileElem')[0];
@@ -278,7 +323,11 @@ $(document).on('click', '#btnenviar', function () {
             swal("Error", msg, "error");
         }
     });
+}
 
+$(document).on('click', '#btnenviar', function () {
+    selected_condicion_clave = null; // No hay clave de condición si se usa el botón de enviar normal
+    enviarDetalle();
 });
 
 
@@ -387,43 +436,6 @@ $(document).on('click', '#btn_confirmar_cierre', function() {
     });
 });
 
-
-$(document).on("click", "#btn_aprobar_flujo", function () {
-    swal({
-        title: "¿Estás seguro de aprobar este ticket?",
-        text: "Una vez aprobado, el ticket avanzará al siguiente paso del flujo y será reasignado automáticamente.",
-        type: "warning",
-        showCancelButton: true,
-        confirmButtonClass: "btn-success",
-        confirmButtonText: "Sí, ¡Aprobar ahora!",
-        cancelButtonText: "No, cancelar",
-        closeOnConfirm: false
-    },
-        function (isConfirm) {
-            if (isConfirm) {
-                var tick_id = getUrlParameter('ID');
-                // Se envía la petición al controlador de tickets
-                $.post("../../controller/ticket.php?op=aprobar_ticket_jefe", { tick_id: tick_id }, function (data) {
-                    swal({
-                        title: "¡Aprobado!",
-                        text: "El ticket ha sido reasignado y el flujo continúa. Serás redirigido a la lista de tickets.",
-                        type: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-
-                    setTimeout(function () {
-                        window.location.href = "../../view/ConsultarTicket/";
-                    }, 2100);
-
-                }).fail(function (jqXHR) {
-                    // Si el backend devuelve un error, lo mostramos
-                    swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
-                });
-            }
-        });
-});
-
 $(document).on("click", "#btn_aprobar_paso", function () {
     var tick_id = getUrlParameter('ID');
     swal({
@@ -492,7 +504,6 @@ function listarDetalle(tick_id) {
 
     $.post("../../controller/ticket.php?op=listardetalle", { tick_id: tick_id }, function (data) {
         $('#lbldetalle').html(data);
-
     });
 
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
@@ -521,60 +532,36 @@ function listarDetalle(tick_id) {
             $('#boxdetalleticket').hide();
         };
 
-
-
-    });
-
-    $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
-        data = JSON.parse(data);
         var usu_asigx = $('#user_idx').val();
         // === Manejo seguro y robusto de mermaid ===
         if (data.timeline_graph && data.timeline_graph.length > 0) {
             $('#panel_linea_tiempo').show();
 
             const mermaidContainer = document.querySelector("#panel_linea_tiempo .mermaid");
-            // Limpia el contenedor antes de dibujar
             mermaidContainer.innerHTML = '';
-
-            // Normalizamos el texto: quitar espacios excesivos, convertir ; a saltos si quieres
             let graph = data.timeline_graph.trim();
-            // opcional: si ves que el ; a final de línea causa problemas, reemplaza:
             graph = graph.replace(/graph\s+(TD|TB)/i, 'graph LR');
-
-            // Inyectar como textContent para evitar que el navegador parsee HTML
             mermaidContainer.textContent = graph;
 
-            // Asegurarnos que el panel está visible antes de renderizar
-            // (en algunas versiones mermaid necesita layout en elementos visibles)
             setTimeout(function () {
                 if (window.mermaid) {
                     try {
-                        // Inicializamos sin startOnLoad (no queremos que busque automáticamente)
                         mermaid.initialize({ startOnLoad: false });
-                    } catch (e) {
-                        // algunas versiones ignoran initialize, no pasa nada
-                    }
+                    } catch (e) {}
 
-                    // Intentamos mermaid.render (maneja versiones modernas y devuelve SVG)
                     try {
-                        const renderResult = mermaid.render
-                            ? mermaid.render('mermaid_graph_' + Date.now(), graph)
-                            : null;
+                        const renderResult = mermaid.render ? mermaid.render('mermaid_graph_' + Date.now(), graph) : null;
 
-                        // renderResult puede ser promesa o resultado inmediato
                         if (renderResult && typeof renderResult.then === 'function') {
                             renderResult.then(res => {
                                 mermaidContainer.innerHTML = (res.svg || res);
                             }).catch(err => {
                                 console.error("mermaid.render (promise) falló:", err);
-                                // fallback a init
                                 try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
                             });
                         } else if (renderResult) {
-                            // resultado inmediato
                             mermaidContainer.innerHTML = (renderResult.svg || renderResult);
                         } else {
-                            // fallback para versiones que usan init
                             try {
                                 mermaid.init(undefined, mermaidContainer);
                             } catch (err) {
@@ -588,67 +575,74 @@ function listarDetalle(tick_id) {
                 } else {
                     console.error("Mermaid no está cargado en window cuando intentamos renderizar.");
                 }
-            }, 50); // un pequeño delay ayuda si el contenedor estaba oculto
+            }, 50); 
         } else {
             $('#panel_linea_tiempo').hide();
         }
 
         $('#panel_checkbox_flujo').hide(); // Ocultamos por defecto
 
-        if (data.siguientes_pasos && data.siguientes_pasos.length > 0) {
-            // Si el servidor nos dice que hay uno o más siguientes pasos, mostramos el checkbox
-            $('#panel_checkbox_flujo').show();
-            // Y guardamos el array completo de siguientes pasos para usarlo después
-            $('#panel_checkbox_flujo').data('siguientes-pasos', data.siguientes_pasos);
-        }
-
         // Determinar si es el último paso
         var isLastStep = (!data.siguientes_pasos || data.siguientes_pasos.length === 0) && data.paso_actual_info;
 
         if (isLastStep && data.tick_estado_texto !== 'Cerrado') {
-            // Último paso: Ocultar editor y mostrar solo botón de cerrar
             $('#tickd_descrip').closest('.form-group').hide();
             $('#detalle_form').hide();
             $('#btnenviar').hide();
             $('#btncerrarticket').show().prop('disabled', false);
         } else if (data.tick_estado_texto !== 'Cerrado') {
-            // No es el último paso o no está en un flujo: Mostrar editor y deshabilitar cerrar
             $('#tickd_descrip').closest('.form-group').show();
             $('#detalle_form').show();
             $('#btnenviar').show();
             $('#btncerrarticket').show().prop('disabled', true);
         } else {
-            // Ticket cerrado: Ocultar todo
             $('#boxdetalleticket').hide();
         }
 
-        // Ocultamos el panel por defecto en cada recarga
         $('#panel_guia_paso').hide();
         $('#panel_aprobacion').hide();
     
-        // Verificamos si el ticket está en un paso activo de un flujo
         if (data.paso_actual_info) {
             var pasoInfo = data.paso_actual_info;
 
-            if (pasoInfo.es_aprobacion == 1) {
+            cargarTransiciones(pasoInfo.paso_id).then(function(transiciones) {
+                // Guardar transiciones
+                $('#panel_checkbox_flujo').data('transiciones-pasos', transiciones);
+
+                // Guardar siguientes pasos (aunque no existan)
+                if (data.siguientes_pasos && data.siguientes_pasos.length > 0) {
+                    $('#panel_checkbox_flujo').data('siguientes-pasos', data.siguientes_pasos);
+                } else {
+                    $('#panel_checkbox_flujo').data('siguientes-pasos', []); // <= aquí estaba el faltante
+                }
+
+                // Mostrar panel si HAY transiciones o HAY siguientes pasos
+                var hasTrans = transiciones && transiciones.length > 0;
+                var hasSiguientes = (data.siguientes_pasos && data.siguientes_pasos.length > 0);
+
+                if (hasTrans || hasSiguientes) {
+                    $('#panel_checkbox_flujo').show();
+                } else {
+                    $('#panel_checkbox_flujo').hide();
+                }
+            });
+
+
+            if (pasoInfo.es_aprobacion == 1){
+                console.log("El paso actual es de aprobación");
                 $('#panel_aprobacion').show();
                 $('#boxdetalleticket').hide();
             } else {
-                // Mostramos y llenamos el panel de guía
                 $('#panel_guia_paso').show();
                 $('#guia_paso_nombre').text('Paso Actual: ' + pasoInfo.paso_nombre);
                 $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil);
         
-                // Llenamos el editor Summernote con la descripción del paso
-                // Si la descripción está vacía, no ponemos nada.
                 if (pasoInfo.paso_descripcion) {
                     var pasoTemplate = pasoInfo.paso_descripcion;
                     $('#tickd_descrip').summernote('code', pasoTemplate);
-                    // Guardamos la plantilla para compararla antes de enviar la respuesta
                     $('#tickd_descrip').data('template', pasoTemplate);
                 } else {
-                    $('#tickd_descrip').data('template', ''); // limpiar si no hay
-
+                    $('#tickd_descrip').data('template', '');
                 }
             }
         }
@@ -681,47 +675,77 @@ function handleSelectedNextStep(selectedPasoId) {
     }
 }
 
-// --- Evento que se activa al marcar/desmarcar el checkbox de avanzar flujo ---
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
-    console.clear(); // Limpiamos la consola para ver mejor
+    console.clear();
 
-    // Obtenemos el array completo de siguientes pasos que guardamos en el panel
-    var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos');
+    // Leemos las transiciones guardadas (si hay)
+    var transiciones = $('#panel_checkbox_flujo').data('transiciones-pasos') || [];
+    var siguientes_pasos = $('#panel_checkbox_flujo').data('siguientes-pasos') || [];
 
     if ($(this).is(':checked')) {
-        if (siguientes_pasos && siguientes_pasos.length > 0) {
+        // PRIORIDAD: si hay transiciones asociadas al paso actual -> pedir selección de transición
+        if (transiciones && transiciones.length > 0) {
+            // si hay más de una transición, llenar select y mostrar modal
+            var options_html = '';
+            transiciones.forEach(function(t) {
+                options_html += '<option value="' + t.condicion_clave + '">' + t.condicion_nombre + '</option>';
+            });
+            $('#select_siguiente_paso').html(options_html);
+            $('#modal_seleccionar_paso_label').text('Seleccionar Transición');
+            $('#modal_seleccionar_paso .modal-body p').text('Hay múltiples transiciones disponibles. Por favor, selecciona una:');
+            $('#modal_seleccionar_paso').data('tipo-seleccion', 'transicion');
+            $('#modal_seleccionar_paso').modal('show');
+        }
+        // Si no hay transiciones, caer en la lógica de pasos (igual que antes)
+        else if (siguientes_pasos && siguientes_pasos.length > 0) {
             if (siguientes_pasos.length > 1) {
-                // Si hay múltiples pasos, mostramos el modal de selección
                 var options_html = '';
                 siguientes_pasos.forEach(function(paso) {
                     options_html += '<option value="' + paso.paso_id + '">' + paso.paso_nombre + '</option>';
                 });
                 $('#select_siguiente_paso').html(options_html);
+                $('#modal_seleccionar_paso_label').text('Seleccionar Siguiente Paso');
+                $('#modal_seleccionar_paso .modal-body p').text('Hay múltiples opciones para el siguiente paso. Por favor, selecciona uno:');
+                $('#modal_seleccionar_paso').data('tipo-seleccion', 'paso');
                 $('#modal_seleccionar_paso').modal('show');
             } else {
-                // Si solo hay un paso, lo seleccionamos automáticamente
+                // Si solo hay un paso, lo seleccionamos automáticamente (igual que antes)
                 handleSelectedNextStep(siguientes_pasos[0].paso_id);
             }
         } else {
-            console.error("Error: No se encontraron los datos de los siguientes pasos en el panel. Revisa la función listarDetalle.");
+            console.error("No hay transiciones ni siguientes pasos disponibles.");
         }
     } else {
         // Si se desmarca, siempre ocultamos el combo de agentes y limpiamos el paso seleccionado
         $('#panel_siguiente_asignado').hide();
         $('#selected_siguiente_paso_id').val('');
+        // Aseguramos limpiar selección de transición también
+        selected_condicion_clave = null;
     }
 });
 
-// --- Evento para el botón de confirmar selección en el modal ---
+
 $(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
-    var selectedPasoId = $('#select_siguiente_paso').val();
-    if (selectedPasoId) {
+    var tipoSeleccion = $('#modal_seleccionar_paso').data('tipo-seleccion');
+    var selectedValue = $('#select_siguiente_paso').val();
+
+    if (selectedValue) {
         $('#modal_seleccionar_paso').modal('hide');
-        handleSelectedNextStep(selectedPasoId);
+        if (tipoSeleccion === 'transicion') {
+            // seleccionó una transición -> asignarla y enviar directamente
+            selected_condicion_clave = selectedValue;
+            selected_condicion_nombre = $('#select_siguiente_paso option:selected').text().trim();
+            // importante: limpiar cualquier posible selected_siguiente_paso_id
+            $('#selected_siguiente_paso_id').val('');
+            enviarDetalle();
+        } else { // 'paso'
+            // seleccionó un paso -> manejar selección de paso (puede requerir asignado manual)
+            handleSelectedNextStep(selectedValue);
+        }
     } else {
-        swal("Atención", "Por favor, selecciona un paso.", "warning");
+        swal("Atención", "Por favor, selecciona una opción.", "warning");
     }
 });
+
 
 init();
-

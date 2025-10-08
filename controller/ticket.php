@@ -60,9 +60,16 @@ switch ($_GET["op"]) {
     case "mostrar":
         $result = $ticketService->showTicket($_POST['tick_id']);
     break;
+
+    case "get_transiciones":
+        require_once('../models/FlujoPaso.php');
+        $flujoPaso = new FlujoPaso();
+        $transiciones = $flujoPaso->get_transiciones_por_paso($_POST["paso_id"]);
+        echo json_encode($transiciones);
+    break;
     
     case "insertdetalle":
-        $result = $ticketService->createDetailTicket($_POST["tick_id"], $_POST["usu_id"], $_POST['tickd_descrip']);
+        $result = $ticketService->createDetailTicket($_POST["tick_id"], $_POST["usu_id"], $_POST['tickd_descrip'], $_POST['condicion_nombre'] ?? null);
     break;
 
     case "update":

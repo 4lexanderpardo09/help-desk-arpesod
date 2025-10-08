@@ -3,7 +3,26 @@ var tabla;
 function init() {
     $("#paso_form").on("submit", function(e){
         guardaryeditar(e);
-    })
+    });
+
+    // Nuevo: Submit para el form dentro del modal de transiciones
+    $("#transicion_form_modal").on("submit", function(e){
+        e.preventDefault();
+        var formData = new FormData($("#transicion_form_modal")[0]);
+        $.ajax({
+            url: "../../controller/flujotransicion.php?op=guardaryeditar",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(datos) {
+                $('#transicion_form_modal')[0].reset();
+                // Recargar la lista de transiciones en el modal
+                abrirModalTransiciones(formData.get('paso_origen_id'), $("#nombre_paso_origen").text());
+                swal("Correcto!", "Transición guardada.", "success");
+            }
+        });
+    });
 }
 
 function guardaryeditar(e){
@@ -18,28 +37,61 @@ function guardaryeditar(e){
         processData: false,
         success: function(datos){
             $("#paso_form")[0].reset();
-            $("#paso_id").val('');
-            $("#paso_orden").val('');
-            $('#paso_nombre').val('');
-            $('#cargo_id_asignado').val('');
-            $('#paso_tiempo_habil').val('');
-            $('#requiere_seleccion_manual').prop('checked', false);
-            $('#paso_descripcion').summernote('code', '');
             $("#modalnuevopaso").modal('hide');
             $("#paso_data").DataTable().ajax.reload();
-            swal({
-                title: "Guardado!",
-                text: "Se ha guardado correctamente el nuevo registro.",
-                type: "success",
-                confirmButtonClass: "btn-success"
-            });          
+            swal("Guardado!", "Se ha guardado correctamente el registro.", "success");          
         }
     })
 }
 
-function ver(flujo_id) {
-    window.location.href = '/view/PasoFlujo/?ID='+ flujo_id
+// --- NUEVA FUNCIONALIDAD PARA TRANSICIONES ---
+function abrirModalTransiciones(paso_id, paso_nombre) {
+    $('#modalGestionTransicionesLabel').html('Gestionar Transiciones para: ' + paso_nombre);
+    $('#paso_origen_id_modal').val(paso_id);
+    $('#nombre_paso_origen').text(paso_nombre);
+
+    // Cargar pasos para el dropdown de destino
+    $.post("../../controller/flujotransicion.php?op=combo_pasos", { flujo_id: getUrlParameter('ID') }, function(data) {
+        $('#paso_destino_id_modal').html('<option value="">-- Fin del Flujo --</option>' + data);
+    });
+
+    // Cargar tabla de transiciones existentes
+    $('#transiciones_data tbody').html('');
+    $.post("../../controller/flujotransicion.php?op=listar_por_paso", { paso_origen_id: paso_id }, function(data) {
+        var transiciones = JSON.parse(data);
+        transiciones.aaData.forEach(function(row) {
+            var fila = '<tr>';
+            fila += '<td>' + row[1] + '</td>'; // paso_destino
+            fila += '<td>' + row[2] + '</td>'; // condicion_clave
+            fila += '<td>' + row[3] + '</td>'; // condicion_nombre
+            fila += '<td>' + row[5] + '</td>'; // Botón eliminar
+            fila += '</tr>';
+            $('#transiciones_data tbody').append(fila);
+        });
+    });
+
+    $('#modalGestionTransiciones').modal('show');
 }
+
+function eliminarTransicion(transicion_id, paso_id, paso_nombre) {
+    swal({
+        title: "Confirmar",
+        text: "¿Está seguro de eliminar la transición?",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "No",
+    }, function(isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/flujotransicion.php?op=eliminar", { transicion_id: transicion_id }, function() {
+                // Recargar la lista de transiciones en el modal
+                abrirModalTransiciones(paso_id, paso_nombre);
+                swal("Eliminado!", "La transición se eliminó.", "success");
+            });
+        }
+    });
+}
+// --- FIN NUEVA FUNCIONALIDAD ---
 
 var getUrlParameter = function getUrlParameter(sParam) {
     var sPageURL = decodeURIComponent(window.location.search.substring(1)),
@@ -81,8 +133,17 @@ $(document).ready(function () {
             type: 'post',
             data: {flujo_id: getUrlParameter('ID')},
             dataType: 'json',
+            "dataSrc": function(json) {
+                // Añadir el botón de transiciones a cada fila
+                json.aaData.forEach(function(row) {
+                    var paso_id = row[6].match(/editar\((\d+)\)/)[1];
+                    var paso_nombre = row[1];
+                    row.splice(6, 0, '<button type="button" onClick="abrirModalTransiciones(' + paso_id + ',\'' + paso_nombre + '\');" class="btn btn-inline btn-info btn-sm"><i class="fa fa-eye"></i></button>');
+                });
+                return json.aaData;
+            },
             error: function (e) {
-                (e.responseText);
+                console.log(e.responseText);
             }
         },
         "bDestroy": true,
@@ -130,26 +191,20 @@ function editar(paso_id) {
         $('#cargo_id_asignado').val(data.cargo_id_asignado);
         $('#paso_tiempo_habil').val(data.paso_tiempo_habil);
         if (data.requiere_seleccion_manual == 1) {
-            // Si el valor es 1, marcamos la casilla
             $('#requiere_seleccion_manual').prop('checked', true);
         } else {
-            // Si es 0 o null, la desmarcamos
             $('#requiere_seleccion_manual').prop('checked', false);
         }
 
         if (data.es_tarea_nacional == 1) {
-            // Si el valor es 1, marcamos la casilla
             $('#es_tarea_nacional').prop('checked', true);
         } else {
-            // Si es 0 o null, la desmarcamos
             $('#es_tarea_nacional').prop('checked', false);
         }
 
         if (data.es_aprobacion == 1) {
-            // Si el valor es 1, marcamos la casilla
             $('#es_aprobacion').prop('checked', true);
         } else {
-            // Si es 0 o null, la desmarcamos
             $('#es_aprobacion').prop('checked', false);
         }
 
@@ -161,7 +216,7 @@ function editar(paso_id) {
 }
 function eliminar(paso_id) {
     swal({
-        title: "¿Estas que quieres eliminar esta flujo?",
+        title: "¿Estas seguro que quieres eliminar este paso?",
         text: "Una vez eliminado no podrás volver a recuperarlo",
         type: "warning",
         showCancelButton: true,
@@ -177,7 +232,7 @@ function eliminar(paso_id) {
                 $('#paso_data').DataTable().ajax.reload(); 
                 swal({
                     title: "Eliminado!",
-                    text: "flujo eliminada correctamente",
+                    text: "Paso eliminado correctamente",
                     type: "success",
                     confirmButtonClass: "btn-success"
                 }); 
@@ -185,7 +240,7 @@ function eliminar(paso_id) {
         } else {
             swal({
                 title: "Cancelado",
-                text: "La flujo no fue eliminada",
+                text: "El paso no fue eliminado",
                 type: "error",
                 confirmButtonClass: "btn-danger"
                 
@@ -203,7 +258,7 @@ $(document).on("click", "#btnnuevopaso", function(){
 
 function cargarUsuarios() {
     $.post("../../controller/cargo.php?op=combo", function(data) {
-        $('#cargo_id_asignado').html('<option value="">Seleccionar un usuario</option>' + data);
+        $('#cargo_id_asignado').html('<option value="">Seleccionar un cargo</option>' + data);
     });
 
 }
@@ -214,11 +269,11 @@ function descripcionPaso(){
         lang: "es-ES",
         callbacks: {
             onImageUpload: function (image) {
-                ("Image detect...");
+                console.log("Image detect...");
                 myimagetreat(image[0]);
             },
             onPaste: function (e) {
-                ("Text detect...");
+                console.log("Text detect...");
             }
         }
     });
@@ -231,7 +286,6 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $("#paso_id").val('');
     $("#paso_orden").val('');
     $('#paso_nombre').val('');
-    $('#cargo_id_asignado').val('');
     $('#cargo_id_asignado').val('');
     $('#requiere_seleccion_manual').prop('checked', false);
     $('#paso_tiempo_habil').val('');

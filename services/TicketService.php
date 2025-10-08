@@ -7,6 +7,8 @@ require_once('../models/Flujo.php');
 require_once('../models/FlujoPaso.php');
 require_once('../models/Departamento.php');
 require_once('../models/DateHelper.php');
+require_once('../models/FlujoTransicion.php');
+require_once('../services/TicketWorkflowService.php');
 
 use models\repository\TicketRepository;
 use models\repository\NotificationRepository;
@@ -24,6 +26,8 @@ class TicketService
     private $flujoPasoModel;
     private $departamentoModel;
     private $dateHelper;
+    private $workflowService;
+    private $flujoTransicionModel;
 
     private TicketRepository $ticketRepository;
     private NotificationRepository $notificationRepository;
@@ -39,6 +43,8 @@ class TicketService
         $this->flujoPasoModel = new FlujoPaso();
         $this->departamentoModel = new Departamento();
         $this->dateHelper = new DateHelper();
+        $this->workflowService = new TicketWorkflowService();
+        $this->flujoTransicionModel = new FlujoTransicion();
 
         $this->pdo = $pdo;
         $this->ticketRepository = new TicketRepository($pdo);
@@ -53,32 +59,7 @@ class TicketService
         $errors = [];
         $paso_actual_id_final = null;
 
-        if ($flujo) {
-            if ($flujo['requiere_aprobacion_jefe'] == 1) {
-                require_once('../models/Organigrama.php');
-                $organigrama = new Organigrama();
-
-                $jefe_cargo_id = $organigrama->get_jefe_cargo_id($creador_car_id);
-
-                if (!$jefe_cargo_id) {
-                    $errors[] = "No existe definición de cargo de jefe para el cargo del creador (cargo_id: {$creador_car_id}).";
-                } else {
-                    $jefe_info = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
-
-                    if (!$jefe_info) {
-                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $ticket_reg_id);
-                    }
-                    if (!$jefe_info) {
-                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_departamento($jefe_cargo_id, $dp_id);
-                    }
-
-                    if ($jefe_info && !empty($jefe_info['usu_id'])) {
-                        $usu_asig_final = $jefe_info['usu_id'];
-                    } else {
-                        $errors[] = "No se encontró un jefe asignable para el cargo (cargo_id: {$jefe_cargo_id}).";
-                    }
-                }
-            } else {
+        if ($flujo) { {
                 $paso_inicial = $this->flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
                 $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
 
@@ -356,9 +337,9 @@ class TicketService
         }
     }
 
-    public function createDetailTicket($tickId, $usuId, $tickdDescrip)
+    public function createDetailTicket($tickId, $usuId, $tickdDescrip, $condicion_nombre = null)
     {
-        // 1. Guardar comentario y archivos (tu código existente no cambia)
+        // 1. Guardar comentario y archivos
         $datos = $this->ticketModel->insert_ticket_detalle($tickId, $usuId, $tickdDescrip);
         if (is_array($datos) && count($datos) > 0) {
             $tickd_id = $datos[0]['tickd_id'];
@@ -378,69 +359,71 @@ class TicketService
             }
         }
 
-        // 2. Verificar si se debe avanzar en el flujo
-        if (isset($_POST["siguiente_paso_id"]) && !empty($_POST["siguiente_paso_id"])) {
-            $tick_id = $_POST["tick_id"];
-            $estado_paso_actual = 'N/A';
+        // 2. Avanzar en el flujo (prioridad: condicion_clave > siguiente_paso_id)
+        $reassigned = false;
 
-            // Medir el tiempo del paso que está por terminar (tu lógica es correcta y no cambia)
-            $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
-            if ($asignacion_actual) {
-                $paso_actual_info = $this->flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
-                if ($paso_actual_info) {
-                    $fecha_asignacion = $asignacion_actual['fech_asig'];
-                    $dias_habiles = $paso_actual_info['paso_tiempo_habil'];
+        $tick_id = $_POST['tick_id'] ?? $tickId;
+        $condicion_clave = isset($_POST['condicion_clave']) && $_POST['condicion_clave'] !== '' ? trim($_POST['condicion_clave']) : null;
+        $siguiente_paso_id = isset($_POST['siguiente_paso_id']) && $_POST['siguiente_paso_id'] !== '' ? (int) $_POST['siguiente_paso_id'] : null;
+        $usu_id_que_acciona = $_POST['usu_id'] ?? $usuId;
 
-                    if ($dias_habiles > 0) {
-                        // b. Calculamos si se completó a tiempo
-                        $fecha_limite = $this->dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
-                        $fecha_hoy = new DateTime();
-                        $estado_paso_actual = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
-                    }
-                }
-            }
+        // 1) Si llega condicion_clave -> delegar a transitionStep (resuelve transiciones, inserciones, cierre, etc.)
+        if ($condicion_clave && $condicion_nombre) {
+            $this->workflowService->transitionStep($tick_id, $condicion_clave, $usu_id_que_acciona, $condicion_nombre);
+            $reassigned = true;
+        }
+        // 2) Si no llega condicion_clave y viene un siguiente_paso_id (selección manual desde frontend)
+        elseif ($siguiente_paso_id) {
+            // Obtener el paso seleccionado
+            $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($siguiente_paso_id);
 
-            // --- INICIA LÓGICA DE ASIGNACIÓN AVANZADA ---
-            $nuevo_asignado_info = null;
-            $siguiente_paso_id = $_POST["siguiente_paso_id"];
-            $datos_siguiente_paso = $this->flujoPasoModel->get_paso_por_id($siguiente_paso_id);
+            if ($siguiente_paso) {
+                // Lógica de asignación análoga a transitionStep (manual)
+                $nuevo_asignado_info = null;
 
-            if ($datos_siguiente_paso) {
-                $siguiente_cargo_id = $datos_siguiente_paso["cargo_id_asignado"];
-
-                // 1. VERIFICAR SI HAY SELECCIÓN MANUAL
-                if (isset($_POST['nuevo_asignado_id']) && !empty($_POST['nuevo_asignado_id'])) {
-                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_x_id($_POST['nuevo_asignado_id']);
+                if (!empty($_POST['nuevo_asignado_id'])) {
+                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_x_id((int)$_POST['nuevo_asignado_id']);
                 } else {
-                    // 2. SI NO HAY SELECCIÓN MANUAL, APLICAR LÓGICA AUTOMÁTICA
-                    if ($datos_siguiente_paso['es_tarea_nacional'] == 1) {
-                        // a. Si la tarea es nacional, buscar especialista nacional
+                    $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
+                    if ($siguiente_paso['es_tarea_nacional'] == 1) {
                         $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
                     } else {
-                        // b. Si la tarea es regional, buscar por región
                         $regional_origen_id = $this->ticketModel->get_ticket_region($tick_id);
                         $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
                     }
                 }
-            }
-            // --- FINALIZA LÓGICA DE ASIGNACIÓN AVANZADA ---
 
-            // Si se encontró un usuario, se procede (esta parte no cambia)
-            if ($nuevo_asignado_info) {
-                $nuevo_usuario_asignado = $nuevo_asignado_info["usu_id"];
-                $quien_asigno_id = $_SESSION["usu_id"];
+                if ($nuevo_asignado_info) {
+                    $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
+                    $this->ticketModel->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $usu_id_que_acciona);
 
-                $this->ticketModel->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $quien_asigno_id);
+                    // Actualizar estado de tiempo del último paso
+                    $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
+                    if ($asignacion_actual) {
+                        // puedes calcular estado_paso_actual aquí si lo necesitas; 
+                        // si ya lo calculaste antes en este flujo, reutilízalo.
+                        $this->ticketModel->update_estado_tiempo_paso($asignacion_actual['th_id'], 'Finalizado');
+                    }
 
-                if ($asignacion_actual) {
-                    $this->ticketModel->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_actual);
+                    // Si quieres centralizar la notificación/registrar historial, hazlo aquí.
+                    $reassigned = true;
+                } else {
+                    // no se encontró usuario; opcional: devolver error o log
+                    // por ahora no reasignamos
+                    $reassigned = false;
                 }
+            } else {
+                // paso no encontrado: no reasignamos
+                $reassigned = false;
             }
         }
 
-        $reassigned = isset($nuevo_asignado_info) && $nuevo_asignado_info;
-        echo json_encode(["status" => "success", "reassigned" => $reassigned]);
+        // Respuesta final
+        echo json_encode(["status" => "success", "reassigned" => (bool)$reassigned]);
+
     }
+
+
 
     public function updateTicket($tickId)
     {

@@ -183,6 +183,11 @@ if (isset($_SESSION["usu_id"])) {
                                     <textarea id="tickd_descrip" name="tickd_descrip" class="summernote" name="name"></textarea>
                                 </div>
                             </fieldset>
+
+                            <div id="transiciones_buttons_container" class="form-group">
+                                <!-- Los botones de transición se insertarán aquí dinámicamente -->
+                            </div>
+
                             <div id="panel_checkbox_flujo" class="form-group" style="display: none;">
                                 <div class="checkbox-toggle">
                                     <input type="checkbox" id="checkbox_avanzar_flujo" name="avanzar_flujo">
