@@ -16,6 +16,28 @@ class RutaPaso extends Conectar {
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_paso_por_id_de_ruta($paso_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT
+                    rp.ruta_paso_id,
+                    rp.ruta_id,
+                    rp.paso_id,
+                    fp.paso_nombre,
+                    rp.orden
+                FROM
+                    tm_ruta_paso rp
+                INNER JOIN tm_flujo_paso fp ON rp.paso_id = fp.paso_id
+                WHERE
+                    rp.paso_id = ?
+                AND rp.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function insert_paso_en_ruta($ruta_id, $paso_id, $orden) {
         $conectar = parent::Conexion();
         $sql = "INSERT INTO tm_ruta_paso (ruta_id, paso_id, orden, est) VALUES (?, ?, ?, 1)";

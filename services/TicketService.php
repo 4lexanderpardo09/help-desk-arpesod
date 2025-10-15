@@ -273,51 +273,118 @@ class TicketService
                 }
             }
 
-
-
-            $output["timeline_graph"] = ""; // Creamos una nueva variable para el string del diagrama
+            $output["timeline_graph"] = "";
             if (!empty($row["paso_actual_id"])) {
                 $flujo_id = $this->flujoPasoModel->get_flujo_id_from_paso($row["paso_actual_id"]);
                 if ($flujo_id) {
-                    $todos_los_pasos = $this->flujoPasoModel->get_pasos_por_flujo($flujo_id);
+                    $todos_los_pasos_flujo = $this->flujoPasoModel->get_pasos_por_flujo($flujo_id);
                     $paso_actual_info = $this->flujoPasoModel->get_paso_por_id($row["paso_actual_id"]);
-                    $orden_actual = $paso_actual_info['paso_orden'];
+                    $orden_actual_flujo = $paso_actual_info['paso_orden'] ?? 0;
+                    $ruta_actual_id = !empty($row['ruta_id']) ? $row['ruta_id'] : null;
 
-                    // --- INICIA NUEVA LÓGICA PARA GENERAR EL "GUION" DE MERMAID ---
-                    $mermaid_string = "graph TD;\n"; // TD = Top Down
-                    $pasos_por_orden = [];
-                    foreach ($todos_los_pasos as $paso) {
-                        $pasos_por_orden[$paso['paso_orden']][] = $paso;
-                    }
+                    $mermaid_string = "graph TD;\n";
+                    $declared_nodes = [];
+                    $connections = "";
 
-                    // Definimos los nodos y sus estilos
-                    foreach ($todos_los_pasos as $paso) {
-                        $estado = '';
-                        if ($paso['paso_orden'] < $orden_actual) $estado = 'completed';
-                        elseif ($paso['paso_orden'] == $orden_actual && $paso['paso_id'] == $row["paso_actual_id"]) $estado = 'active';
-                        else $estado = 'pending';
+                    // 1. Declarar todos los nodos del flujo principal y de las rutas
+                    foreach ($todos_los_pasos_flujo as $paso) {
+                        $paso_id_unico = "flujo_{$paso['paso_id']}";
+                        if (!in_array($paso_id_unico, $declared_nodes)) {
+                            $mermaid_string .= "    {$paso_id_unico}[\"{$paso['paso_nombre']}\"];\n";
+                            $declared_nodes[] = $paso_id_unico;
+                        }
 
-                        // Sintaxis de Mermaid para un nodo: ID_NODO["Texto del Nodo"]
-                        $mermaid_string .= "    paso{$paso['paso_id']}_[\"{$paso['paso_nombre']}\"];\n";
-                        // Sintaxis para aplicar un estilo
-                        $mermaid_string .= "    class paso{$paso['paso_id']}_ {$estado};\n";
-                    }
-
-                    // Definimos las conexiones (flechas)
-                    ksort($pasos_por_orden); // Ordenamos los niveles
-                    $ordenes = array_keys($pasos_por_orden);
-                    for ($i = 0; $i < count($ordenes) - 1; $i++) {
-                        $nivel_actual = $pasos_por_orden[$ordenes[$i]];
-                        $siguiente_nivel = $pasos_por_orden[$ordenes[$i + 1]];
-                        foreach ($nivel_actual as $paso_padre) {
-                            foreach ($siguiente_nivel as $paso_hijo) {
-                                // Sintaxis de conexión: ID_PADRE --> ID_HIJO
-                                $mermaid_string .= "    paso{$paso_padre['paso_id']}_ --> paso{$paso_hijo['paso_id']}_;\n";
+                        $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($paso["paso_id"]);
+                        if (count($transiciones) > 0) {
+                            foreach ($transiciones as $transicion) {
+                                if (!empty($transicion['ruta_id'])) {
+                                    $pasos_de_la_ruta = $this->rutaPasoModel->get_pasos_por_ruta($transicion['ruta_id']);
+                                    if ($pasos_de_la_ruta) {
+                                        foreach ($pasos_de_la_ruta as $paso_ruta) {
+                                            $paso_ruta_id_unico = "ruta{$transicion['ruta_id']}_paso{$paso_ruta['paso_id']}";
+                                            if (!in_array($paso_ruta_id_unico, $declared_nodes)) {
+                                                $mermaid_string .= "    {$paso_ruta_id_unico}[\"{$paso_ruta['paso_nombre']}\"];\n";
+                                                $declared_nodes[] = $paso_ruta_id_unico;
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
 
-                    // Definimos los estilos CSS para los estados
+                    // 2. Aplicar estilos, crear subgrafos y generar las conexiones
+                    $rutas_procesadas = [];
+                    for ($i = 0; $i < count($todos_los_pasos_flujo); $i++) {
+                        $paso = $todos_los_pasos_flujo[$i];
+                        $paso_id_unico = "flujo_{$paso['paso_id']}";
+                        
+                        // Aplicar estilo al paso del flujo principal
+                        $estado = 'pending';
+                        if ($ruta_actual_id) {
+                            if ($paso['paso_orden'] <= $orden_actual_flujo) $estado = 'completed';
+                        } else {
+                            if ($paso['paso_orden'] < $orden_actual_flujo) $estado = 'completed';
+                            if ($paso['paso_id'] == $row["paso_actual_id"]) $estado = 'active';
+                        }
+                        $mermaid_string .= "    class {$paso_id_unico} {$estado};\n";
+
+                        // Generar Conexiones y Subgrafos
+                        $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($paso["paso_id"]);
+                        $has_valid_branches = false;
+
+                        if (count($transiciones) > 0) {
+                            foreach ($transiciones as $transicion) {
+                                if (!empty($transicion['ruta_id'])) {
+                                    $ruta_id = $transicion['ruta_id'];
+                                    $ruta_info = $this->rutaModel->get_ruta_por_id($ruta_id);
+                                    $pasos_de_la_ruta = $this->rutaPasoModel->get_pasos_por_ruta($ruta_id);
+
+                                    if ($ruta_info && $pasos_de_la_ruta) {
+                                        $has_valid_branches = true;
+                                        
+                                        // Conectar el flujo principal al inicio de la ruta
+                                        $inicio_ruta = "ruta{$ruta_id}_paso{$pasos_de_la_ruta[0]['paso_id']}";
+                                        $connections .= "    {$paso_id_unico} -- \"{$transicion['decision_nombre']}\" --> {$inicio_ruta};\n";
+                                        
+                                        if (!in_array($ruta_id, $rutas_procesadas)) {
+                                            $mermaid_string .= "    subgraph " . $ruta_info['ruta_nombre'] . "\n";
+                                            foreach ($pasos_de_la_ruta as $paso_ruta) {
+                                                $paso_ruta_id_unico = "ruta{$ruta_id}_paso{$paso_ruta['paso_id']}";
+                                                $mermaid_string .= "        {$paso_ruta_id_unico}\n";
+                                                
+                                                $estado_ruta = 'pending';
+                                                if ($ruta_actual_id == $ruta_id && $paso_ruta['paso_id'] == $row["paso_actual_id"]) {
+                                                    $estado_ruta = 'active';
+                                                }
+                                                $mermaid_string .= "        class {$paso_ruta_id_unico} {$estado_ruta};\n";
+                                            }
+                                            $mermaid_string .= "    end\n";
+                                            
+                                            // Conexiones internas de la ruta
+                                            for ($j = 0; $j < count($pasos_de_la_ruta) - 1; $j++) {
+                                                $origen = "ruta{$ruta_id}_paso{$pasos_de_la_ruta[$j]['paso_id']}";
+                                                $destino = "ruta{$ruta_id}_paso{$pasos_de_la_ruta[$j+1]['paso_id']}";
+                                                $connections .= "        {$origen} --> {$destino};\n";
+                                            }
+                                            $rutas_procesadas[] = $ruta_id;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Si no tiene ramas válidas, es una conexión lineal
+                        if (!$has_valid_branches && isset($todos_los_pasos_flujo[$i + 1])) {
+                            $siguiente_paso_id = $todos_los_pasos_flujo[$i + 1]['paso_id'];
+                            $destino_id = "flujo_{$siguiente_paso_id}";
+                            $connections .= "    {$paso_id_unico} --> {$destino_id};\n";
+                        }
+                    }
+                    
+                    $mermaid_string .= $connections;
+
+                    // 3. Definir los estilos
                     $mermaid_string .= "classDef completed fill:#dff0d8,stroke:#3c763d,stroke-width:2px;\n";
                     $mermaid_string .= "classDef active fill:#d9edf7,stroke:#31708f,stroke-width:4px;\n";
                     $mermaid_string .= "classDef pending fill:#f5f5f5,stroke:#ccc,stroke-width:2px;\n";
@@ -386,7 +453,7 @@ class TicketService
             // SOLO avanzamos si se dio una instrucción para ello
             if ($decision_tomada || $avanzar_lineal) {
                 
-                if ($ticket["ruta_id"]) {
+                if (!empty($ticket["ruta_id"])) {
                     // CASO 1: El ticket YA ESTÁ en una ruta. Simplemente avanzamos.
                     $this->avanzar_ticket_en_ruta($ticket);
                 } elseif ($decision_tomada) {
