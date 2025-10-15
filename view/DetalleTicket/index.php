@@ -142,66 +142,59 @@ if (isset($_SESSION["usu_id"])) {
 
 
                     <div class="row">
-                        <div class="col-lg-12">
-                            <form method="post" id="detalle_form">
-                                <input type="hidden" id="selected_siguiente_paso_id" name="selected_siguiente_paso_id">
-                                <div class="row">
-                                    <div class="col-lg-4">
-                                        <fieldset class="form-group">
-                                            <label class="form-label semibold" for="cat_id">Documento adicional</label>
-                                            <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
-                                        </fieldset>
-                                    </div>
-                                </div>
-                            </form>
-                            <div class="box-typical box-typical-padding" id="panel_respuestas_rapidas">
-                                <h5 class="m-t-lg with-border">Registrar Evento</h5>
-                                <div class="row">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label class="form-label" for="fast_answer_id">Tipo de Evento (Respuesta Rápida)</label>
-                                            <select class="select2" id="fast_answer_id" name="fast_answer_id" data-placeholder="Seleccione un tipo de evento...">
-                                            </select>
+                        <form method="post" id="detalle_form">
+                            <div class="col-lg-12">
+                                
+                                    <input type="hidden" id="selected_siguiente_paso_id" name="selected_siguiente_paso_id">
+                                    <div class="row">
+                                        <div class="col-lg-4">
+                                            <fieldset class="form-group">
+                                                <label class="form-label semibold" for="cat_id">Documento adicional</label>
+                                                <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                            </fieldset>
                                         </div>
                                     </div>
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label class="form-label" for="error_descrip">Descripción Detallada del Evento</label>
-                                            <textarea class="form-control" id="error_descrip" name="error_descrip" rows="4" placeholder="Añada aquí cualquier detalle relevante sobre el evento que está registrando..."></textarea>
+                                
+                                <div class="box-typical box-typical-padding" id="panel_respuestas_rapidas">
+                                    <h5 class="m-t-lg with-border">Registrar Evento</h5>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label class="form-label" for="fast_answer_id">Tipo de Evento (Respuesta Rápida)</label>
+                                                <select class="select2" id="fast_answer_id" name="fast_answer_id" data-placeholder="Seleccione un tipo de evento...">
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label class="form-label" for="error_descrip">Descripción Detallada del Evento</label>
+                                                <textarea class="form-control" id="error_descrip" name="error_descrip" rows="4" placeholder="Añada aquí cualquier detalle relevante sobre el evento que está registrando..."></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <button type="button" id="btn_registrar_evento" class="btn btn-primary">
+                                                <i class="fa fa-plus"></i> Registrar Evento en Historial
+                                            </button>
                                         </div>
                                     </div>
-                                    <div class="col-md-12">
-                                        <button type="button" id="btn_registrar_evento" class="btn btn-primary">
-                                            <i class="fa fa-plus"></i> Registrar Evento en Historial
-                                        </button>
+                                </div>
+                                <fieldset class="form-group semibold">
+                                    <label class="form-label" for="tickd_descrip">Descripcion</label>
+                                    <div class="summernote-theme-1">
+                                        <textarea id="tickd_descrip" name="tickd_descrip" class="summernote" name="name"></textarea>
                                     </div>
-                                </div>
+                                </fieldset>
+
+                                <div id="panel_checkbox_flujo" class="form-group" style="display: none;">
+                                    <div class="checkbox-toggle">
+                                        <input type="checkbox" id="checkbox_avanzar_flujo" name="avanzar_flujo">
+                                        <label for="checkbox_avanzar_flujo" class="form-label semibold">
+                                            Completar este paso y avanzar al siguiente flujo
+                                        </label>
+                                    </div>
+                                </div> 
                             </div>
-                            <fieldset class="form-group semibold">
-                                <label class="form-label" for="tickd_descrip">Descripcion</label>
-                                <div class="summernote-theme-1">
-                                    <textarea id="tickd_descrip" name="tickd_descrip" class="summernote" name="name"></textarea>
-                                </div>
-                            </fieldset>
-
-                            <div id="transiciones_buttons_container" class="form-group">
-                                <!-- Los botones de transición se insertarán aquí dinámicamente -->
-                            </div>
-
-                            <div id="panel_checkbox_flujo" class="form-group" style="display: none;">
-                                <div class="checkbox-toggle">
-                                    <input type="checkbox" id="checkbox_avanzar_flujo" name="avanzar_flujo">
-                                    <label for="checkbox_avanzar_flujo" class="form-label semibold">
-                                        Completar este paso y avanzar al siguiente flujo
-                                    </label>
-                                </div>
-                                <div id="panel_siguiente_asignado" class="form-group" style="display: none; margin-top: 15px; border-top: 1px solid #e5e5e5; padding-top: 15px;">
-                                    <label class="form-label semibold" for="nuevo_asignado_id">Seleccionar Siguiente Agente:</label>
-                                    <select id="nuevo_asignado_id" name="nuevo_asignado_id" class="form-control" data-placeholder="Seleccione un usuario..." style="width: 100%;"></select>
-                                </div>
-                            </div> 
-                        </div>
-
+                        </form>
                         <div style="display: inline-flex;">
                             <div class="col-lg-12">
                                 <button type="button" id="btnenviar" class="btn btn-inline">Enviar</button>

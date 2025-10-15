@@ -8,6 +8,8 @@ require_once('../models/FlujoPaso.php');
 require_once('../models/Departamento.php');
 require_once('../models/DateHelper.php');
 require_once('../models/FlujoTransicion.php');
+require_once('../models/Ruta.php');
+require_once('../models/RutaPaso.php');
 require_once('../services/TicketWorkflowService.php');
 
 use models\repository\TicketRepository;
@@ -28,6 +30,9 @@ class TicketService
     private $dateHelper;
     private $workflowService;
     private $flujoTransicionModel;
+    private $rutaModel;
+    private $rutaPasoModel;
+
 
     private TicketRepository $ticketRepository;
     private NotificationRepository $notificationRepository;
@@ -45,6 +50,8 @@ class TicketService
         $this->dateHelper = new DateHelper();
         $this->workflowService = new TicketWorkflowService();
         $this->flujoTransicionModel = new FlujoTransicion();
+        $this->rutaModel = new Ruta();
+        $this->rutaPasoModel = new RutaPaso();
 
         $this->pdo = $pdo;
         $this->ticketRepository = new TicketRepository($pdo);
@@ -129,7 +136,6 @@ class TicketService
             }
         }
     }
-
 
     public function createTicket($postData)
     {
@@ -243,19 +249,27 @@ class TicketService
                 $output['pd_nom'] = '<span class="label label-danger">Alta</span>';
             }
 
-            $output["siguientes_pasos"] = []; // Valor por defecto
-            if (!empty($row["paso_actual_id"])) {
-                $siguientes_pasos = $this->flujoPasoModel->get_siguientes_pasos($row["paso_actual_id"]);
-                if ($siguientes_pasos) {
-                    $output["siguientes_pasos"] = $siguientes_pasos;
-                }
-            }
+            $output["decisiones_disponibles"] = [];
+            $output["siguientes_pasos_lineales"] = [];
+            $output["paso_actual_info"] = []; // Valor por defecto
 
-            $output["paso_actual_info"] = null; // Valor por defecto
-            if (!empty($row["paso_actual_id"])) {
-                $paso_actual_info = $this->flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
-                if ($paso_actual_info) {
-                    $output["paso_actual_info"] = $paso_actual_info;
+            if (!empty($datos["paso_actual_id"])) {
+                // 1. ¿Existen transiciones (decisiones) para este paso?
+                $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
+
+                if (count($transiciones) > 0) {
+                    // Si hay decisiones, estas son las acciones principales para el usuario.
+                    $output["decisiones_disponibles"] = $transiciones;
+                } else {
+                    // Si NO hay decisiones, buscamos el siguiente paso lineal.
+                    $siguientes_pasos = $this->flujoPasoModel->get_siguientes_pasos($datos["paso_actual_id"]);
+                    if ($siguientes_pasos) {
+                        $output["siguientes_pasos_lineales"] = $siguientes_pasos;
+                    }
+                    $paso_actual_info = $this->flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
+                    if ($paso_actual_info) {
+                        $output["paso_actual_info"] = $paso_actual_info;
+                    }
                 }
             }
 
@@ -359,71 +373,125 @@ class TicketService
             }
         }
 
-        // 2. Avanzar en el flujo (prioridad: condicion_clave > siguiente_paso_id)
-        $reassigned = false;
+        $this->pdo->beginTransaction();
+        try {
+            $ticket = $this->ticketModel->listar_ticket_x_id($tickId);
+            
+            // Recogemos la decisión que el usuario tomó en el frontend
+            $decision_tomada = $_POST['decision_nombre'] ?? null;
+            $avanzar_lineal = isset($_POST['avanzar_lineal']) && $_POST['avanzar_lineal'] === 'true';
 
-        $tick_id = $_POST['tick_id'] ?? $tickId;
-        $condicion_clave = isset($_POST['condicion_clave']) && $_POST['condicion_clave'] !== '' ? trim($_POST['condicion_clave']) : null;
-        $siguiente_paso_id = isset($_POST['siguiente_paso_id']) && $_POST['siguiente_paso_id'] !== '' ? (int) $_POST['siguiente_paso_id'] : null;
-        $usu_id_que_acciona = $_POST['usu_id'] ?? $usuId;
+            $reassigned = false; // Por defecto, no se reasigna
 
-        // 1) Si llega condicion_clave -> delegar a transitionStep (resuelve transiciones, inserciones, cierre, etc.)
-        if ($condicion_clave && $condicion_nombre) {
-            $this->workflowService->transitionStep($tick_id, $condicion_clave, $usu_id_que_acciona, $condicion_nombre);
-            $reassigned = true;
-        }
-        // 2) Si no llega condicion_clave y viene un siguiente_paso_id (selección manual desde frontend)
-        elseif ($siguiente_paso_id) {
-            // Obtener el paso seleccionado
-            $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($siguiente_paso_id);
-
-            if ($siguiente_paso) {
-                // Lógica de asignación análoga a transitionStep (manual)
-                $nuevo_asignado_info = null;
-
-                if (!empty($_POST['nuevo_asignado_id'])) {
-                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_x_id((int)$_POST['nuevo_asignado_id']);
-                } else {
-                    $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
-                    if ($siguiente_paso['es_tarea_nacional'] == 1) {
-                        $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
-                    } else {
-                        $regional_origen_id = $this->ticketModel->get_ticket_region($tick_id);
-                        $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
-                    }
+            // SOLO avanzamos si se dio una instrucción para ello
+            if ($decision_tomada || $avanzar_lineal) {
+                
+                if ($ticket["ruta_id"]) {
+                    // CASO 1: El ticket YA ESTÁ en una ruta. Simplemente avanzamos.
+                    $this->avanzar_ticket_en_ruta($ticket);
+                } elseif ($decision_tomada) {
+                    // CASO 2: El usuario eligió una decisión específica.
+                    $this->iniciar_ruta_desde_decision($ticket, $decision_tomada);
+                } elseif ($avanzar_lineal) {
+                    // CASO 3: El usuario quiere avanzar en un flujo sin decisiones.
+                    $this->avanzar_ticket_lineal($ticket);
                 }
-
-                if ($nuevo_asignado_info) {
-                    $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
-                    $this->ticketModel->update_asignacion_y_paso($tick_id, $nuevo_usuario_asignado, $siguiente_paso_id, $usu_id_que_acciona);
-
-                    // Actualizar estado de tiempo del último paso
-                    $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
-                    if ($asignacion_actual) {
-                        // puedes calcular estado_paso_actual aquí si lo necesitas; 
-                        // si ya lo calculaste antes en este flujo, reutilízalo.
-                        $this->ticketModel->update_estado_tiempo_paso($asignacion_actual['th_id'], 'Finalizado');
-                    }
-
-                    // Si quieres centralizar la notificación/registrar historial, hazlo aquí.
-                    $reassigned = true;
-                } else {
-                    // no se encontró usuario; opcional: devolver error o log
-                    // por ahora no reasignamos
-                    $reassigned = false;
-                }
-            } else {
-                // paso no encontrado: no reasignamos
-                $reassigned = false;
+                $reassigned = true; // Si entramos en este bloque, significa que se avanzó/reasignó.
             }
-        }
+            $this->pdo->commit();
+            echo json_encode(["status" => "success", "reassigned" => $reassigned]);
 
-        // Respuesta final
-        echo json_encode(["status" => "success", "reassigned" => (bool)$reassigned]);
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            // Es importante devolver el mensaje de error para depurar
+            echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+        }
 
     }
 
+    private function iniciar_ruta_desde_decision($ticket, $decision_tomada)
+    {
+        // Buscamos la transición que corresponde al paso actual y la decisión tomada
+        $transicion = $this->flujoTransicionModel->get_transicion_por_decision($ticket['paso_actual_id'], $decision_tomada);
 
+        if ($transicion && !empty($transicion['ruta_id'])) {
+            // Si encontramos la transición, obtenemos la ruta_id y la iniciamos
+            $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id']);
+        } else {
+            // Si no se encuentra una transición válida, lanzamos un error.
+            throw new Exception("La decisión '{$decision_tomada}' no es una transición válida para el paso actual.");
+        }
+    }
+
+    public function avanzar_ticket_en_ruta($ticket)
+    {
+        $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
+        $siguiente_orden = $ruta_paso_orden_actual + 1;
+        $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
+
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
+        }
+    }
+
+    public function iniciar_ruta_para_ticket($ticket, $ruta_id)
+    {
+        $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
+        if ($primer_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1);
+        } else {
+            throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
+        }
+    }
+
+    public function avanzar_ticket_lineal($ticket)
+    {
+        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+        }
+    }
+
+    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden)
+    {
+        $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
+        if (!$siguiente_paso) {
+            throw new Exception("No se encontró la información del siguiente paso (ID: $nuevo_paso_id).");
+        }
+
+        $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
+        $nuevo_asignado_info = null;
+
+        if ($siguiente_paso['es_tarea_nacional'] == 1) {
+            $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
+        } else {
+            $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+            $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+        }
+
+        if ($nuevo_asignado_info) {
+            $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
+            $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
+            
+            // Añadir al historial y enviar notificaciones...
+            $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id);
+            $mensaje_notificacion = "Se le ha asignado el ticket #{$ticket_id}.";
+            $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
+
+        } else {
+            throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
+        }
+    }
+
+    private function cerrar_ticket($ticket_id, $mensaje)
+    {
+        $this->ticketModel->update_ticket($ticket_id);
+        $this->ticketModel->insert_ticket_detalle_cerrar($ticket_id, $_SESSION['usu_id']);
+    }
 
     public function updateTicket($tickId)
     {
@@ -458,125 +526,123 @@ class TicketService
         $this->ticketModel->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
     }
 
-
-
     public function LogErrorTicket($dataPost)
-{
-    try {
-        $tick_id = $dataPost['tick_id'] ?? null;
-        $answer_id = $dataPost['answer_id'] ?? null;
-        $usu_id = $dataPost['usu_id'] ?? null; // analista que reporta
-        $error_descrip = $dataPost['error_descrip'] ?? '';
+    {
+        try {
+            $tick_id = $dataPost['tick_id'] ?? null;
+            $answer_id = $dataPost['answer_id'] ?? null;
+            $usu_id = $dataPost['usu_id'] ?? null; // analista que reporta
+            $error_descrip = $dataPost['error_descrip'] ?? '';
 
-        if (!$tick_id || !$answer_id || !$usu_id) {
-            echo json_encode(["status" => "error", "msg" => "Parámetros incompletos"]);
-            return;
-        }
-
-        require_once('../models/RespuestaRapida.php');
-        $respuesta_rapida = new RespuestaRapida();
-        $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
-
-        if (!$datos_respuesta) {
-            echo json_encode(["status" => "error", "msg" => "Respuesta rápida no encontrada"]);
-            return;
-        }
-
-        $nombre_respuesta = $datos_respuesta["answer_nom"] ?? 'Respuesta desconocida';
-        $es_error_proceso = !empty($datos_respuesta["es_error_proceso"]);
-
-        // Traer ticket (útil para datos del creador)
-        $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
-        if (!$ticket_data) {
-            echo json_encode(["status" => "error", "msg" => "Ticket no encontrado"]);
-            return;
-        }
-
-        // Buscar asignaciones
-        $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
-        $primera_asignacion = $this->ticketModel->get_primera_asignacion($tick_id);
-
-        // Determinar a quién sellar (historial) y a quién devolver (si aplica)
-        $id_historial_a_sellar = null;
-        if ($asignacion_anterior && !empty($asignacion_anterior['th_id'])) {
-            $id_historial_a_sellar = $asignacion_anterior['th_id'];
-        } elseif ($primera_asignacion && !empty($primera_asignacion['th_id'])) {
-            $id_historial_a_sellar = $primera_asignacion['th_id'];
-        }
-
-        // Sellar historial si aplica
-        if ($id_historial_a_sellar) {
-            $this->ticketModel->update_error_code_paso($id_historial_a_sellar, $answer_id, $error_descrip);
-        }
-
-        // Preparar comentario visible
-        $nombre_completo_responsable = null;
-        if ($asignacion_anterior && isset($asignacion_anterior['usu_nom'], $asignacion_anterior['usu_ape'])) {
-            $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
-        } elseif (!empty($ticket_data['usu_nom']) && !empty($ticket_data['usu_ape'])) {
-            $nombre_completo_responsable = $ticket_data['usu_nom'] . ' ' . $ticket_data['usu_ape'];
-        }
-
-        $comentario = "Se registró un evento: <b>{$nombre_respuesta}</b>.";
-        if (!empty($error_descrip)) $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
-        if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
-
-        // Marcar ticket con el código de error (bandera visual)
-        $this->ticketModel->update_error_proceso($tick_id, $answer_id);
-
-        // Insertar detalle del ticket
-        $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id, $comentario);
-
-        // Si es error de proceso, reasignar: preferir usuario anterior; si no existe -> creador
-        $assigned_to = null;
-        $assigned_paso = null;
-        $updateResult = null;
-
-        if ($es_error_proceso) {
-            if ($asignacion_anterior && !empty($asignacion_anterior['usu_asig'])) {
-                // devolver al usuario anterior
-                $assigned_to = $asignacion_anterior['usu_asig'];
-                $assigned_paso = $asignacion_anterior['paso_id'] ?? null;
-            } else {
-                // no hay anterior: devolver al creador del ticket
-                $assigned_to = $ticket_data['usu_id'];
-                // si existe paso en la primera asignacion podemos usarlo
-                $assigned_paso = $primera_asignacion['paso_id'] ?? null;
+            if (!$tick_id || !$answer_id || !$usu_id) {
+                echo json_encode(["status" => "error", "msg" => "Parámetros incompletos"]);
+                return;
             }
 
-            // Ejecutar la reasignación en BD (si existe función)
-            if ($assigned_to !== null) {
-                $comentario_reasignacion = "Ticket devuelto por error de proceso.";
-                $mensaje_notificacion = "Se te ha devuelto el Ticket #{$tick_id} por un error en el proceso.";
-                $updateResult = $this->ticketModel->update_asignacion_y_paso(
-                    $tick_id,
-                    $assigned_to,
-                    $assigned_paso,
-                    $usu_id, // quien reasigna (analista que reporta)
-                    $comentario_reasignacion,
-                    $mensaje_notificacion
-                );
+            require_once('../models/RespuestaRapida.php');
+            $respuesta_rapida = new RespuestaRapida();
+            $datos_respuesta = $respuesta_rapida->get_respuestarapida_x_id($answer_id);
+
+            if (!$datos_respuesta) {
+                echo json_encode(["status" => "error", "msg" => "Respuesta rápida no encontrada"]);
+                return;
             }
+
+            $nombre_respuesta = $datos_respuesta["answer_nom"] ?? 'Respuesta desconocida';
+            $es_error_proceso = !empty($datos_respuesta["es_error_proceso"]);
+
+            // Traer ticket (útil para datos del creador)
+            $ticket_data = $this->ticketModel->listar_ticket_x_id($tick_id);
+            if (!$ticket_data) {
+                echo json_encode(["status" => "error", "msg" => "Ticket no encontrado"]);
+                return;
+            }
+
+            // Buscar asignaciones
+            $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tick_id);
+            $primera_asignacion = $this->ticketModel->get_primera_asignacion($tick_id);
+
+            // Determinar a quién sellar (historial) y a quién devolver (si aplica)
+            $id_historial_a_sellar = null;
+            if ($asignacion_anterior && !empty($asignacion_anterior['th_id'])) {
+                $id_historial_a_sellar = $asignacion_anterior['th_id'];
+            } elseif ($primera_asignacion && !empty($primera_asignacion['th_id'])) {
+                $id_historial_a_sellar = $primera_asignacion['th_id'];
+            }
+
+            // Sellar historial si aplica
+            if ($id_historial_a_sellar) {
+                $this->ticketModel->update_error_code_paso($id_historial_a_sellar, $answer_id, $error_descrip);
+            }
+
+            // Preparar comentario visible
+            $nombre_completo_responsable = null;
+            if ($asignacion_anterior && isset($asignacion_anterior['usu_nom'], $asignacion_anterior['usu_ape'])) {
+                $nombre_completo_responsable = $asignacion_anterior['usu_nom'] . ' ' . $asignacion_anterior['usu_ape'];
+            } elseif (!empty($ticket_data['usu_nom']) && !empty($ticket_data['usu_ape'])) {
+                $nombre_completo_responsable = $ticket_data['usu_nom'] . ' ' . $ticket_data['usu_ape'];
+            }
+
+            $comentario = "Se registró un evento: <b>{$nombre_respuesta}</b>.";
+            if (!empty($error_descrip)) $comentario .= "<br><b>Descripción:</b> " . htmlspecialchars($error_descrip);
+            if ($nombre_completo_responsable) $comentario .= "<br><small class='text-muted'>Error atribuido a: <b>{$nombre_completo_responsable}</b></small>";
+
+            // Marcar ticket con el código de error (bandera visual)
+            $this->ticketModel->update_error_proceso($tick_id, $answer_id);
+
+            // Insertar detalle del ticket
+            $this->ticketModel->insert_ticket_detalle($tick_id, $usu_id, $comentario);
+
+            // Si es error de proceso, reasignar: preferir usuario anterior; si no existe -> creador
+            $assigned_to = null;
+            $assigned_paso = null;
+            $updateResult = null;
+
+            if ($es_error_proceso) {
+                if ($asignacion_anterior && !empty($asignacion_anterior['usu_asig'])) {
+                    // devolver al usuario anterior
+                    $assigned_to = $asignacion_anterior['usu_asig'];
+                    $assigned_paso = $asignacion_anterior['paso_id'] ?? null;
+                } else {
+                    // no hay anterior: devolver al creador del ticket
+                    $assigned_to = $ticket_data['usu_id'];
+                    // si existe paso en la primera asignacion podemos usarlo
+                    $assigned_paso = $primera_asignacion['paso_id'] ?? null;
+                }
+
+                // Ejecutar la reasignación en BD (si existe función)
+                if ($assigned_to !== null) {
+                    $comentario_reasignacion = "Ticket devuelto por error de proceso.";
+                    $mensaje_notificacion = "Se te ha devuelto el Ticket #{$tick_id} por un error en el proceso.";
+                    $updateResult = $this->ticketModel->update_asignacion_y_paso(
+                        $tick_id,
+                        $assigned_to,
+                        $assigned_paso,
+                        $usu_id, // quien reasigna (analista que reporta)
+                        $comentario_reasignacion,
+                        $mensaje_notificacion
+                    );
+                }
+            }
+
+            // Traer ticket actualizado y devolver información
+            $ticket_data_actualizado = $this->ticketModel->listar_ticket_x_id($tick_id);
+
+            $response = [
+                "status" => "success",
+                "ticket" => $ticket_data_actualizado,
+                "assigned_to" => $assigned_to,
+                "assigned_paso" => $assigned_paso,
+                "update_asign_result" => $updateResult
+            ];
+
+            echo json_encode($response);
+            return;
+        } catch (Exception $e) {
+            echo json_encode(["status" => "error", "msg" => "Exception: " . $e->getMessage()]);
+            return;
         }
-
-        // Traer ticket actualizado y devolver información
-        $ticket_data_actualizado = $this->ticketModel->listar_ticket_x_id($tick_id);
-
-        $response = [
-            "status" => "success",
-            "ticket" => $ticket_data_actualizado,
-            "assigned_to" => $assigned_to,
-            "assigned_paso" => $assigned_paso,
-            "update_asign_result" => $updateResult
-        ];
-
-        echo json_encode($response);
-        return;
-    } catch (Exception $e) {
-        echo json_encode(["status" => "error", "msg" => "Exception: " . $e->getMessage()]);
-        return;
     }
-}
 
 
 

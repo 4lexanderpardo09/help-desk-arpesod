@@ -19,6 +19,21 @@ switch ($_GET["op"]) {
         }
         break;
 
+    case "combo_por_flujo":
+        if (isset($_POST["flujo_id"])) {
+            // Necesitas una función en tu modelo FlujoPaso que obtenga los pasos por flujo_id
+            $datos = $flujopaso->get_pasos_por_flujo($_POST["flujo_id"]);
+            $html = "<option value='' selected disabled>-- Seleccione un Paso --</option>";
+            if (is_array($datos) && count($datos) > 0) {
+                foreach ($datos as $row) {
+                    // El valor es el ID del paso, el texto es el nombre del paso
+                    $html .= "<option value='" . $row['paso_id'] . "'>" . $row['paso_nombre'] . "</option>";
+                }
+            }
+            echo $html;
+        }
+        break;
+
     case "guardaryeditar":
         // AÑADIDO: Se maneja el valor del checkbox para la selección manual
         $requiere_seleccion_manual = isset($_POST['requiere_seleccion_manual']) ? 1 : 0;

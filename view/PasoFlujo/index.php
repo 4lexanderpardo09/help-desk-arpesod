@@ -62,59 +62,145 @@ if (isset($_SESSION["usu_id"])) {
         <div class="modal fade" id="modalGestionTransiciones" tabindex="-1" role="dialog" aria-labelledby="modalGestionTransicionesLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
+
                     <div class="modal-header">
-                        <button type="button" class="modal-close" data-dismiss="modal" aria-label="Close">
-                            <i class="font-icon-close-2"></i>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
                         </button>
-                        <h4 class="modal-title" id="modalGestionTransicionesLabel">Gestionar Transiciones para: <span id="nombre_paso_origen"></span></h4>
+                        <h5 class="modal-title" id="modalGestionTransicionesLabel">
+                            <i class="fa fa-sitemap"></i> Gestionar Transiciones
+                        </h5>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="alert alert-light border" role="alert">
+                            Configurando transiciones para el paso: <strong id="nombre_paso_origen"></strong>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <strong>Añadir Nueva Transición</strong>
+                            </div>
+                            <div class="card-body">
+                                <form id="transicion_form" method="post">
+                                    <input type="hidden" id="paso_origen_id_modal" name="paso_origen_id_modal">
+
+                                    <div class="form-row mb-3" id="areaNuevaRuta" style="display: none;">
+                                        <div class="col-md-7">
+                                            <label for="nueva_ruta_nombre">Nombre de la Nueva Ruta</label>
+                                            <div class="input-group">
+                                                <input type="text" id="nueva_ruta_nombre" class="form-control" placeholder="Ej: Proceso de Aprobación Gerente">
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-success" type="button" id="btnGuardarRuta"><i class="fa fa-check"></i> Guardar</button>
+                                                    <button class="btn btn-secondary" type="button" id="btnCancelarNuevaRuta" title="Cancelar"><i class="fa fa-times"></i></button>
+                                                </div>
+                                            </div>
+                                            <small class="form-text text-muted">Crea una nueva ruta si no existe en la lista de abajo.</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row align-items-end">
+                                        <div class="form-group col-lg-5 col-md-12">
+                                            <label for="ruta_id_modal">1. Seleccione la Ruta de Destino</label>
+                                            <div class="input-group">
+                                                <select id="ruta_id_modal" name="ruta_id_modal" class="form-control selectpicker" data-live-search="true" title="Ninguna ruta seleccionada" required></select>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-primary" type="button" id="btnNuevaRuta" title="Crear Nueva Ruta"><i class="fa fa-plus"></i></button>
+                                                    <button class="btn btn-outline-info" type="button" id="btnGestionarPasos" title="Gestionar Pasos de la Ruta"><i class="fa fa-cogs"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group col-lg-4 col-md-6">
+                                            <label for="condicion_nombre_modal">2. Nombre esta Decisión</label>
+                                            <input type="text" id="condicion_nombre_modal" name="condicion_nombre_modal" class="form-control" placeholder="Ej: Aprobar Solicitud" required>
+                                        </div>
+                                        <div class="form-group col-lg-3 col-md-6">
+                                            <label for="condicion_clave_modal">Clave (Opcional)</label>
+                                            <input type="text" id="condicion_clave_modal" name="condicion_clave_modal" class="form-control" placeholder="Ej: APROBADO">
+                                        </div>
+                                    </div>
+
+                                    <div class="text-right mt-3">
+                                        <button type="submit" name="action" value="add" class="btn btn-primary"><i class="fa fa-plus-circle"></i> Añadir Transición</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5>Transiciones Existentes</h5>
+                            <div class="table-responsive">
+                                <table id="transiciones_data" class="table table-bordered table-striped table-hover mt-2">
+                                    <thead>
+                                        <tr>
+                                            <th>Ruta Destino</th>
+                                            <th>Nombre de la Decisión</th>
+                                            <th>Clave</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalGestionPasosRuta" tabindex="-1" role="dialog" aria-labelledby="modalGestionPasosRutaLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalGestionPasosRutaLabel">Gestionar Pasos de la Ruta</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
                     <div class="modal-body">
-                        <h5>Transiciones Existentes</h5>
-                        <table id="transiciones_data" class="table table-bordered table-striped">
+                        <input type="hidden" id="gestion_ruta_id" name="gestion_ruta_id">
+                        
+                        <div class="alert alert-info" role="alert">
+                            Estás añadiendo pasos a la ruta: <strong id="gestion_ruta_nombre"></strong>
+                        </div>
+
+                        <form id="rutapaso_form" class="row">
+                            <div class="col-md-6">
+                                <label for="paso_id_para_ruta">Paso a añadir</label>
+                                <select id="paso_id_para_ruta" name="paso_id_para_ruta" class="form-control" required></select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="orden_del_paso">Orden</label>
+                                <input type="number" id="orden_del_paso" name="orden_del_paso" class="form-control" required min="1">
+                            </div>
+                            <div class="col-md-3">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-block">Añadir Paso</button>
+                            </div>
+                        </form>
+
+                        <hr>
+
+                        <h5>Pasos Asignados</h5>
+                        <table id="rutapasos_data" class="table table-bordered table-striped mt-2">
                             <thead>
                                 <tr>
-                                    <th>Paso Destino</th>
-                                    <th>Clave Condición</th>
-                                    <th>Nombre Condición</th>
-                                    <th></th>
+                                    <th style="width: 15%;">Orden</th>
+                                    <th>Nombre del Paso</th>
+                                    <th style="width: 10%;"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Se llenará con JS -->
-                            </tbody>
+                                </tbody>
                         </table>
-                        <hr>
-                        <h5>Nueva Transición</h5>
-                        <form method="post" id="transicion_form_modal">
-                            <input type="hidden" id="transicion_id_modal" name="transicion_id">
-                            <input type="hidden" id="paso_origen_id_modal" name="paso_origen_id">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label" for="paso_destino_id_modal">Paso Destino</label>
-                                        <select class="form-control" id="paso_destino_id_modal" name="paso_destino_id" data-placeholder="Seleccionar (o dejar en blanco si es fin de flujo)">
-                                            <!-- Opciones se llenan por JS -->
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label class="form-label" for="condicion_clave_modal">Clave Condición</label>
-                                        <input type="text" class="form-control" id="condicion_clave_modal" name="condicion_clave" placeholder="Ej: APROBADO" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label class="form-label" for="condicion_nombre_modal">Nombre Visible Condición</label>
-                                        <input type="text" class="form-control" id="condicion_nombre_modal" name="condicion_nombre" placeholder="Ej: Aprobar y continuar" required>
-                                    </div>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Añadir Transición</button>
-                        </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
             </div>

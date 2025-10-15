@@ -41,5 +41,19 @@ class TicketRepository
             throw $e;
         }
     }
+
+    public function updateTicketFlowState($ticket_id, $usu_asig, $paso_id, $ruta_id, $ruta_paso_orden)
+    {
+        $sql = "UPDATE tm_ticket
+                SET
+                    usu_asig = ?,
+                    paso_actual_id = ?,
+                    ruta_id = ?,
+                    ruta_paso_orden = ?
+                WHERE
+                    tick_id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$usu_asig, $paso_id, $ruta_id, $ruta_paso_orden, $ticket_id]);
+    }
 }
 ?>
