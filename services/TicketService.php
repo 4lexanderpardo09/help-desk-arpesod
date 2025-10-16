@@ -562,10 +562,46 @@ class TicketService
 
     public function updateTicket($tickId)
     {
-        // a. Obtenemos la información de la última asignación (el paso que está por terminar)
-        $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tickId);
+        $tick_id = $_POST['tick_id'];
+        $usu_id = $_POST['usu_id'];
 
-        // Solo ejecutamos la lógica de tiempo si el ticket estaba en un flujo
+        $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
+
+        // Si el ticket tiene un flujo asignado, verificamos que esté en el último paso
+        if ($ticket && !empty($ticket['paso_actual_id'])) {
+            $is_last_step = false;
+
+            // Caso 1: El ticket está en una ruta específica
+            if (!empty($ticket['ruta_id'])) {
+                $siguiente_orden = (int)$ticket["ruta_paso_orden"] + 1;
+                $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
+                if (!$siguiente_paso_info) {
+                    $is_last_step = true;
+                }
+            } 
+            // Caso 2: El ticket está en el flujo principal
+            else {
+                $siguientes_pasos = $this->flujoPasoModel->get_siguientes_pasos($ticket["paso_actual_id"]);
+                $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($ticket["paso_actual_id"]);
+                
+                // Un paso es final si no tiene pasos lineales siguientes NI transiciones a otras rutas
+                if (empty($siguientes_pasos) && empty($transiciones)) {
+                    $is_last_step = true;
+                }
+            }
+
+            // Si después de las validaciones, no es el último paso, devolvemos un error
+            if (!$is_last_step) {
+                header('Content-Type: application/json');
+                echo json_encode(["status" => "error", "message" => "El ticket no se puede cerrar porque no ha llegado al final de su flujo."]);
+                return;
+            }
+        }
+
+        // --- Si es el último paso o no tiene flujo, procede a cerrar ---
+
+        $asignacion_actual = $this->ticketModel->get_ultima_asignacion($tick_id);
+
         if ($asignacion_actual && !empty($asignacion_actual['paso_actual_id'])) {
             $paso_actual_info = $this->flujoPasoModel->get_paso_por_id($asignacion_actual['paso_actual_id']);
 
@@ -575,22 +611,20 @@ class TicketService
                 $dias_habiles = $paso_actual_info['paso_tiempo_habil'];
 
                 if ($dias_habiles > 0) {
-                    // b. Calculamos si se completó a tiempo
                     $fecha_limite = $this->dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
                     $fecha_hoy = new DateTime();
                     $estado_paso_final = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
                 }
 
-                // c. Actualizamos el historial de ESE ÚLTIMO PASO con su estado final
                 $this->ticketModel->update_estado_tiempo_paso($asignacion_actual['th_id'], $estado_paso_final);
             }
         }
-        // --- FINALIZA LÓGICA DE MEDICIÓN ---
+        
+        $this->ticketModel->update_ticket($tick_id);
+        $this->ticketModel->insert_ticket_detalle_cerrar($tick_id, $usu_id);
 
-
-        // --- TU LÓGICA ORIGINAL PARA CERRAR EL TICKET (AHORA VA DESPUÉS) ---
-        $this->ticketModel->update_ticket($_POST['tick_id']);
-        $this->ticketModel->insert_ticket_detalle_cerrar($_POST['tick_id'], $_POST['usu_id']);
+        header('Content-Type: application/json');
+        echo json_encode(["status" => "success", "message" => "Ticket cerrado correctamente."]);
     }
 
     public function LogErrorTicket($dataPost)
@@ -708,6 +742,79 @@ class TicketService
         } catch (Exception $e) {
             echo json_encode(["status" => "error", "msg" => "Exception: " . $e->getMessage()]);
             return;
+        }
+    }
+
+    public function approveStep($tickId)
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $ticket = $this->ticketModel->listar_ticket_x_id($tickId);
+            if (!$ticket) {
+                throw new Exception("Ticket no encontrado.");
+            }
+
+            $usuId = $_SESSION['usu_id'];
+            $this->ticketModel->insert_ticket_detalle($tickId, $usuId, "Aprobó el paso actual.");
+
+            if (!empty($ticket["ruta_id"])) {
+                // Si está en una ruta, avanza en la ruta.
+                $this->avanzar_ticket_en_ruta($ticket);
+            } else {
+                // Si está en el flujo principal, avanza de forma lineal.
+                $this->avanzar_ticket_lineal($ticket);
+            }
+            
+            $this->pdo->commit();
+            return ["status" => "success", "message" => "Paso aprobado. El ticket ha avanzado."];
+
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            // Devolvemos el mensaje de la excepción para que el frontend lo muestre.
+            return ["status" => "error", "message" => $e->getMessage()];
+        }
+    }
+
+    public function rejectStep($tickId)
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $ticket = $this->ticketModel->listar_ticket_x_id($tickId);
+            if (!$ticket) {
+                throw new Exception("Ticket no encontrado.");
+            }
+
+            // Buscamos la penúltima asignación para saber a quién devolverle el ticket
+            $asignacion_anterior = $this->ticketModel->get_penultima_asignacion($tickId);
+            if (!$asignacion_anterior || empty($asignacion_anterior['usu_asig'])) {
+                throw new Exception("No se encontró un paso anterior al cual devolver el ticket.");
+            }
+
+            $usuId_actual = $_SESSION['usu_id'];
+            $usuId_devolver = $asignacion_anterior['usu_asig'];
+            $pasoId_devolver = $asignacion_anterior['paso_id'];
+
+            // Comentario para el historial
+            $comentario_rechazo = "Se rechazó el paso actual. El ticket ha sido devuelto.";
+            // Mensaje para la notificación
+            $mensaje_notificacion = "Se te ha devuelto el Ticket #{$tickId} por un rechazo en el flujo.";
+
+            // Usamos la función existente para reasignar
+            $this->ticketModel->update_asignacion_y_paso(
+                $tickId,
+                $usuId_devolver,
+                $pasoId_devolver,
+                $usuId_actual,
+                $comentario_rechazo,
+                $mensaje_notificacion
+            );
+
+            $this->pdo->commit();
+            return ["status" => "success", "message" => "Paso rechazado. El ticket ha sido devuelto."];
+
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return ["status" => "error", "message" => $e->getMessage()];
         }
     }
 

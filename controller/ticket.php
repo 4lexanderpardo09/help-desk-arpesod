@@ -116,10 +116,12 @@ switch ($_GET["op"]) {
     break;
 
     case "aprobar_paso":
-        $workflowService->approveStep($_POST['tick_id']);
+        $resultado = $ticketService->approveStep($_POST['tick_id']);
+        echo json_encode($resultado);
         break;
 
     case "rechazar_paso":
-        $workflowService->rejectStep($_POST['tick_id']);
+        $resultado = $ticketService->rejectStep($_POST['tick_id']);
+        echo json_encode($resultado);
         break;
 }

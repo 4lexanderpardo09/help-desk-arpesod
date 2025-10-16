@@ -419,9 +419,91 @@ function listarDetalle(tick_id) {
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
 
+        // --- Reinserción del bloque de paso que tenías antes ---
+        var pasoInfo = ticketData.paso_actual_info || {};
+
+        if (pasoInfo && Object.keys(pasoInfo).length > 0) {
+            if (pasoInfo.es_aprobacion == 1) {
+                console.log("El paso actual es de aprobación");
+                $('#boxdetalleticket').hide();
+                $('#panel_aprobacion').show();
+            } else {
+                $('#panel_guia_paso').show();
+                $('#guia_paso_nombre').text('Paso Actual: ' + (pasoInfo.paso_nombre || ''));
+                $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil || '');
+                
+                if (pasoInfo.paso_descripcion) {
+                    var pasoTemplate = pasoInfo.paso_descripcion;
+                    // Setear el contenido en el editor y almacenar la plantilla
+                    $('#tickd_descrip').summernote('code', pasoTemplate);
+                    $('#tickd_descrip').data('template', pasoTemplate);
+                } else {
+                    $('#tickd_descrip').data('template', '');
+                }
+            }
+        } else {
+            // Si no hay info del paso, ocultamos la guía por seguridad
+            $('#panel_guia_paso').hide();
+            // no tocar panel_aprobacion aquí (queda según la lógica principal)
+        }
+
+
         // Ocultar paneles por defecto y resetear
         $('#panel_checkbox_flujo').hide().data('acciones', null);
-        $('#panel_aprobacion').hide();
+        $('#btncerrarticket').hide().prop('disabled', true);
+        $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true);
+
+        // Evaluar permisos y estado del flujo
+        var user_id = $('#user_idx').val();
+        var isAssigned = String(ticketData.usu_asig) === String(user_id); // comparar como strings por seguridad
+        console.log(isAssigned);
+        
+        var hasDecisions = ticketData.decisiones_disponibles && ticketData.decisiones_disponibles.length > 0;
+        var hasNextLinear = ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0;
+        var isLastStep = !hasDecisions && !hasNextLinear;
+
+        // Guardar flags en el contenedor para consultas posteriores (event handlers)
+        $('#boxdetalleticket').data('isAssigned', isAssigned);
+        $('#boxdetalleticket').data('isLastStep', isLastStep);
+
+        // Si ya está cerrado, ocultar todo y salir
+        if (ticketData.tick_estado_texto === 'Cerrado') {
+            $('#boxdetalleticket').hide();
+            return;
+        }
+
+        // Solo el usuario asignado puede ver/usar controles de avance o cierre
+        if (isAssigned) {
+            // Si es el último paso: mostrar botón cerrar activado, ocultar / desactivar avanzar
+            if (isLastStep) {
+                $('#btncerrarticket').show().prop('disabled', false);
+                $('#panel_checkbox_flujo').hide().data('acciones', null);
+                $('#checkbox_avanzar_flujo').prop('disabled', true);
+            } 
+            // Si NO es el último paso: mostrar opción de avanzar (si aplica) y ocultar botón cerrar
+            else {
+                $('#btncerrarticket').hide().prop('disabled', true);
+
+                if (hasDecisions || hasNextLinear) {
+                    // Guardar acciones exactas para que el modal/checkbox las use
+                    var acciones = {
+                        decisiones: ticketData.decisiones_disponibles || [],
+                        siguiente_paso: hasNextLinear
+                    };
+                    $('#panel_checkbox_flujo').data('acciones', acciones).show();
+                    $('#checkbox_avanzar_flujo').prop('disabled', false);
+                } else {
+                    $('#panel_checkbox_flujo').hide().data('acciones', null);
+                    $('#checkbox_avanzar_flujo').prop('disabled', true);
+                }
+            }
+        } else {
+            // No es usuario asignado: ocultar/desactivar todos los controles relacionados
+            $('#panel_checkbox_flujo').hide().data('acciones', null);
+            $('#btncerrarticket').hide().prop('disabled', true);
+            $('#checkbox_avanzar_flujo').prop('disabled', true);
+        }
+
 
         // === Manejo seguro y robusto de mermaid ===
         if (ticketData.timeline_graph && ticketData.timeline_graph.length > 0) {
@@ -475,21 +557,6 @@ function listarDetalle(tick_id) {
             return; // No procesar más si el ticket está cerrado
         }
 
-        // --- NUEVA LÓGICA DE VISIBILIDAD DEL CHECKBOX ---
-        if (ticketData.paso_actual_info) {
-            var acciones = {
-                decisiones: ticketData.decisiones_disponibles || [],
-                siguiente_paso: ticketData.siguientes_pasos_lineales || null
-            };
-            $('#panel_checkbox_flujo').data('acciones', acciones);
-
-            var hayDecisiones = acciones.decisiones.length > 0;
-            var hayAvanceLineal = acciones.siguiente_paso;
-
-            if (hayDecisiones || hayAvanceLineal) {
-                $('#panel_checkbox_flujo').show();
-            }
-        }
     });
 }
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
