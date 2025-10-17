@@ -398,6 +398,16 @@ function editar(paso_id) {
 
         $('#paso_descripcion').summernote('code', data.paso_descripcion);
 
+        // Handle attachment display
+        if (data.paso_nom_adjunto) {
+            $('#current_paso_nom_adjunto').val(data.paso_nom_adjunto);
+            var attachmentLink = '<a href="../../public/document/paso/' + data.paso_nom_adjunto + '" target="_blank">Ver Adjunto Actual</a>';
+            $('#paso_attachment_display').html(attachmentLink);
+        } else {
+            $('#current_paso_nom_adjunto').val('');
+            $('#paso_attachment_display').html('');
+        }
+
     });    
 
     $("#modalnuevopaso").modal("show");
@@ -441,6 +451,8 @@ $(document).on("click", "#btnnuevopaso", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#paso_form")[0].reset();
     $('#requiere_seleccion_manual').prop('checked', false);
+    $('#paso_nom_adjunto').val('');
+    $('#paso_attachment_display').html('');
     $("#modalnuevopaso").modal("show");
 });
 
@@ -478,6 +490,8 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#requiere_seleccion_manual').prop('checked', false);
     $('#paso_tiempo_habil').val('');
     $('#paso_descripcion').summernote('code', '');
+    $('#paso_nom_adjunto').val('');
+    $('#paso_attachment_display').html('');
 
 });
 

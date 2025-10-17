@@ -47,14 +47,17 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
 
                 <div id="panel_guia_paso" class="alert alert-info" role="alert" style="display: none;">
-                    <h4 class="alert-heading" id="guia_paso_nombre"></h4>
-                    <p>
+                      <div class="card-body">
+                        <h4 class="alert-heading" id="guia_paso_nombre"></h4>
+                        <p>
                         <strong>Descripción de la Tarea:</strong> Tienes <strong id="guia_paso_tiempo"></strong> día(s) hábiles para completar este paso.
-                    </p>
-                    <hr>
-                    <p class="mb-0">
+                        </p>
+                        <hr>
+                        <p class="mb-0">
                         A continuación, en el editor de texto, encontrarás una plantilla o guía con las instrucciones para esta tarea.
-                    </p>
+                        </p>
+                        <!-- Aquí se insertará el adjunto -->
+                    </div>
                 </div>
 
                 <div class="box-typical box-typical-padding">

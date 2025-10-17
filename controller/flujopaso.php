@@ -35,13 +35,27 @@ switch ($_GET["op"]) {
         break;
 
     case "guardaryeditar":
-        // AÑADIDO: Se maneja el valor del checkbox para la selección manual
         $requiere_seleccion_manual = isset($_POST['requiere_seleccion_manual']) ? 1 : 0;
         $es_tarea_nacional = isset($_POST['es_tarea_nacional']) ? 1 : 0;
         $es_aprobacion = isset($_POST['es_aprobacion']) ? 1 : 0;
 
+        $paso_nom_adjunto = '';
+        if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
+            $file_name = $_FILES['paso_nom_adjunto']['name'];
+            $extension = pathinfo($file_name, PATHINFO_EXTENSION);
+            $new_file_name = uniqid('paso_', true) . '.' . $extension;
+            $destination_path = '../public/document/paso/' . $new_file_name;
+            if (move_uploaded_file($_FILES['paso_nom_adjunto']['tmp_name'], $destination_path)) {
+                $paso_nom_adjunto = $new_file_name;
+            } else {
+                // Handle file upload error if necessary
+                $paso_nom_adjunto = '';
+            }
+        } else {
+            $paso_nom_adjunto = isset($_POST['current_paso_nom_adjunto']) ? $_POST['current_paso_nom_adjunto'] : '';
+        }
+
         if (empty($_POST['paso_id'])) {
-            // CAMBIADO: Se pasa el nuevo parámetro a la función de inserción
             $flujopaso->insert_paso(
                 $_POST['flujo_id'],
                 $_POST['paso_orden'],
@@ -51,10 +65,10 @@ switch ($_GET["op"]) {
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
-                $es_aprobacion
+                $es_aprobacion,
+                $paso_nom_adjunto
             );
         } else {
-            // CAMBIADO: Se pasa el nuevo parámetro a la función de actualización y se corrigen los parámetros
             $flujopaso->update_paso(
                 $_POST['paso_id'],
                 $_POST['paso_orden'],
@@ -64,7 +78,8 @@ switch ($_GET["op"]) {
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
-                $es_aprobacion
+                $es_aprobacion,
+                $paso_nom_adjunto
             );
         }
         break;
@@ -123,14 +138,12 @@ switch ($_GET["op"]) {
         break;
 
     case "mostrar":
-        // CAMBIADO: Se usa la función get_paso_por_id que es más directa
         $datos = $flujopaso->get_paso_por_id($_POST['paso_id']);
         if ($datos) {
-            // No es necesario un bucle, ya que fetch() devuelve un solo resultado
             $output = $datos;
-            // AÑADIDO: Aseguramos que el estado del checkbox también se envíe
             $output['requiere_seleccion_manual'] = $datos['requiere_seleccion_manual'];
             $output['es_aprobacion'] = $datos['es_aprobacion'];
+            $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
             echo json_encode($output);
         }
 }

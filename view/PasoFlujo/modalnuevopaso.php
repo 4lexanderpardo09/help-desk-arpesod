@@ -12,7 +12,7 @@
                 </button>
                 <h4 class="modal-title" id="mdltitulo"></h4>
             </div>
-            <form method="post" id="paso_form">
+            <form method="post" id="paso_form" enctype="multipart/form-data">
                 <div class="modal-body">
 
                     <input type="hidden" id="paso_id" name="paso_id">
@@ -47,6 +47,12 @@
                     <div class="checkbox" style="margin-top: 1rem;">
                         <input type="checkbox" id="es_aprobacion" name="es_aprobacion" value="1">
                         <label for="es_aprobacion">¿Es un paso de aprobación?</label>
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
+                        <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">
+                        <input type="hidden" id="current_paso_nom_adjunto" name="current_paso_nom_adjunto">
+                        <div id="paso_attachment_display" style="margin-top: 10px;"></div>
                     </div>
                     <fieldset class="form-group semibold">
                         <label class="form-label" for="paso_descripcion">Descripción / Plantilla para el Agente</label>

@@ -440,6 +440,14 @@ function listarDetalle(tick_id) {
                 } else {
                     $('#tickd_descrip').data('template', '');
                 }
+
+                if (pasoInfo.paso_nom_adjunto) {
+                    var attachmentHtml = '<div class="attachment-section">' +
+                                           '<p><strong>Adjunto del Paso:</strong></p>' +
+                                           '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
+                                         '</div>';
+                    $('#panel_guia_paso .card-body').append(attachmentHtml);
+                }
             }
         } else {
             // Si no hay info del paso, ocultamos la guía por seguridad
