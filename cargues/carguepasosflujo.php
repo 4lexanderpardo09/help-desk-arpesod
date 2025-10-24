@@ -67,8 +67,8 @@ try {
         }
         $cargo_id = $cargo_model->get_id_por_nombre($cargo_nom);
 
-        if (!$flujo_id || !$cargo_id) {
-            echo "<p style='color:orange;'>OMITIDO: El paso '{$paso_nombre}' no se pudo crear porque su Subcategoría o Cargo no existen.</p>";
+        if (!$flujo_id) {
+            echo "<p style='color:orange;'>OMITIDO: El paso '{$cats_nom}' no se pudo crear porque su Subcategoría no existen.</p>";
             $omitidos++;
             continue;
         }
