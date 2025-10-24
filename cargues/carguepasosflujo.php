@@ -49,9 +49,10 @@ try {
         $paso_tiempo_habil = isset($row[4]) && is_numeric($row[4]) ? intval($row[4]) : 1;
         $paso_descripcion_raw = isset($row[5]) ? trim($row[5]) : '';
         $seleccion_manual_str = isset($row[6]) ? trim($row[6]) : 'NO';
-        // --- AÑADIDO: Lectura de la nueva columna ---
-        $es_tarea_nacional_str = isset($row[7]) ? trim($row[7]) : 'NO'; // Asume que es la columna H
-        $es_aprobacion_str = isset($row[8]) ? trim($row[8]) : 'NO'; // Asume que es la columna I
+        $es_tarea_nacional_str = isset($row[7]) ? trim($row[7]) : 'NO';
+        $es_aprobacion_str = isset($row[8]) ? trim($row[8]) : 'NO';
+        // --- NUEVO: Lectura de la columna paso_nom_adjunto ---
+        $paso_nom_adjunto = isset($row[9]) ? trim($row[9]) : null; // Asume que es la columna J
 
         if (empty($cats_nom) || empty($paso_nombre)) continue;
 
@@ -74,9 +75,13 @@ try {
 
         $paso_descripcion = nl2br($paso_descripcion_raw);
         $req_seleccion_manual = (strtoupper($seleccion_manual_str) == 'SI') ? 1 : 0;
-        // --- AÑADIDO: Convertimos "SI" a 1 y cualquier otra cosa a 0 ---
         $es_tarea_nacional = (strtoupper($es_tarea_nacional_str) == 'SI') ? 1 : 0;
         $es_aprobacion = (strtoupper($es_aprobacion_str) == 'SI') ? 1 : 0;
+
+        // Si la celda está vacía, nos aseguramos de que sea NULL para la BD
+        if (empty($paso_nom_adjunto)) {
+            $paso_nom_adjunto = null;
+        }
 
         // --- 3. Insertar el paso con TODOS los datos ---
         $flujo_paso_model->insert_paso(
@@ -87,8 +92,9 @@ try {
             $paso_tiempo_habil,
             $paso_descripcion,
             $req_seleccion_manual,
-            $es_tarea_nacional, // <-- El nuevo parámetro
-            $es_aprobacion
+            $es_tarea_nacional,
+            $es_aprobacion,
+            $paso_nom_adjunto // <-- El nuevo parámetro
         );
         echo "<p style='color:green;'>CREADO: Se añadió el paso '{$paso_nombre}' al flujo de '{$cats_nom}'.</p>";
         $creados++;
@@ -102,3 +108,4 @@ try {
 } catch (Exception $e) {
     echo "<h3 style='color:red;'>Error al leer el archivo Excel: " . $e->getMessage() . "</h3>";
 }
+?>

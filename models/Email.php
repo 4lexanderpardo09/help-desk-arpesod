@@ -15,8 +15,8 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 class Email extends PHPMailer{
-    protected $gcorreo = 'jhonalexander2016.com@gmail.com';
-    protected $gpass = 'duuu rrvx zlov qhtz ';
+    protected $gcorreo = '';
+    protected $gpass = '';
 
     public function ticket_abierto($ticket_id){
         $ticket = new Ticket();

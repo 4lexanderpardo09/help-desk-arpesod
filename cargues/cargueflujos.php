@@ -41,7 +41,6 @@ try {
     foreach ($rows as $row) {
         $flujo_nom = trim($row[0]);
         $cats_nom = trim($row[1]);
-        $req_aprob_str = trim($row[2]);
 
         $cats_id = $subcategoria_model->get_id_por_nombre($cats_nom);
 
@@ -51,9 +50,6 @@ try {
             continue;
         }
 
-        // Convertimos "SI" a 1 y cualquier otra cosa a 0
-        $req_aprob_jefe = (strtoupper($req_aprob_str) == 'SI') ? 1 : 0;
-
         // 4. Verificar si ya existe un flujo para esa subcategoría (solo puede haber uno)
         $flujo_existente = $flujo_model->get_flujo_por_subcategoria($cats_id);
 
@@ -62,7 +58,7 @@ try {
             $omitidos++;
         } else {
             // Si no existe, lo insertamos
-            $flujo_model->insert_flujo($flujo_nom, $cats_id, $req_aprob_jefe);
+            $flujo_model->insert_flujo($flujo_nom, $cats_id);
             echo "<p style='color:green;'>CREADO: Se ha añadido el flujo '{$flujo_nom}'.</p>";
             $creados++;
         }
