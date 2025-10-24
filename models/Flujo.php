@@ -44,7 +44,7 @@
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, fech_crea, est) VALUES (?, ?, now(), 1)";
+        $sql = "INSERT INTO tm_flujo (flujo_nom, cats_id, est) VALUES (?, ?, now(), 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_nom);
         $sql->bindValue(2, $cats_id);
