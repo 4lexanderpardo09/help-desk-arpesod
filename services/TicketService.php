@@ -545,7 +545,10 @@ class TicketService
             $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
             
             // Añadir al historial y enviar notificaciones...
-            $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id);
+            $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id);
+
+            // Actualizar el estado de tiempo para la última asignación
+            $this->computeAndUpdateEstadoPaso($ticket_id);            
             $mensaje_notificacion = "Se le ha asignado el ticket #{$ticket_id}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
 
@@ -816,6 +819,47 @@ class TicketService
             $this->pdo->rollBack();
             return ["status" => "error", "message" => $e->getMessage()];
         }
+    }
+
+    public function computeAndUpdateEstadoPaso(int $ticketId): string
+    {
+        // 1) Obtener la última asignación (th_ticket_asignacion)
+        $asignacion_actual = $this->ticketModel->get_ultima_asignacion($ticketId);
+        if (!$asignacion_actual || empty($asignacion_actual['th_id'])) {
+            return 'N/A';
+        }
+
+        $th_id = $asignacion_actual['th_id'];
+        $fech_asig = $asignacion_actual['fech_asig'] ?? null;
+        $paso_id = $asignacion_actual['paso_id'] ?? null;
+
+        // 2) Obtener info del paso
+        $estado = 'N/A';
+        if ($paso_id) {
+            $paso_info = $this->flujoPasoModel->get_paso_por_id($paso_id);
+            $dias_habiles_permitidos = (int)($paso_info['paso_tiempo_habil'] ?? 0);
+
+            if ($fech_asig && $dias_habiles_permitidos > 0) {
+                // calcular fecha límite usando el DateHelper existente
+                $fecha_limite = $this->dateHelper->calcularFechaLimiteHabil($fech_asig, $dias_habiles_permitidos);
+                $fecha_hoy = new \DateTime();
+
+                $estado = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
+            } else {
+                // Si no hay tiempo habil definido, dejamos 'N/A'
+                $estado = 'N/A';
+            }
+        }
+
+        // 3) Actualizar en la tabla de historial (método ya usado en tu código)
+        try {
+            $this->ticketModel->update_estado_tiempo_paso($th_id, $estado);
+        } catch (\Exception $e) {
+            // No romper el flujo si la actualización falla — loguear si tienes logger
+            // error_log("computeAndUpdateEstadoPaso error: " . $e->getMessage());
+        }
+
+        return $estado;
     }
 
 
