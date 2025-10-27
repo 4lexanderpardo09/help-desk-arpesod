@@ -43,7 +43,6 @@ var getUrlParameter = function getUrlParameter(sParam) {
 function guardaryeditar(e){
     e.preventDefault();
     var formData = new FormData($("#paso_form")[0])
-    formData.append("es_aprobacion", $("#es_aprobacion").is(":checked") ? 1 : 0);
     $.ajax({
         url: "../../controller/flujopaso.php?op=guardaryeditar",
         type: "POST",
