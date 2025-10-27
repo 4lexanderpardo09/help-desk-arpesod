@@ -125,18 +125,6 @@ if (isset($_SESSION["usu_id"])) {
 
                 </section>
 
-                <div class="box-typical box-typical-padding" id="panel_aprobacion" style="display: none;">
-                    <h5 class="m-t-lg with-border">Acción Requerida: Aprobar o Rechazar</h5>
-                    <p>
-                        Este paso del flujo requiere su aprobación para continuar. Puede aprobar para avanzar al siguiente paso o rechazar para devolverlo al paso anterior.
-                    </p>
-                    <button type="button" id="btn_aprobar_paso" class="btn btn-rounded btn-success">
-                        <i class="fa fa-check"></i> Aprobar
-                    </button>
-                    <button type="button" id="btn_rechazar_paso" class="btn btn-rounded btn-danger">
-                        <i class="fa fa-times"></i> Rechazar
-                    </button>
-                </div>
 
                 <div id="boxdetalleticket" class="box-typical box-typical-padding">
                     <p>
@@ -205,6 +193,18 @@ if (isset($_SESSION["usu_id"])) {
                             <div class="col-lg-12">
                                 <button type="button" id="btncerrarticket" class="btn btn-danger">Cerrar ticket</button>
                             </div>
+                        </div>
+                         <div class="box-typical box-typical-padding" id="panel_aprobacion" style="display: none;">
+                            <h5 class="m-t-lg with-border">Acción Requerida: Aprobar o Rechazar</h5>
+                            <p>
+                                Este paso del flujo requiere su aprobación para continuar. Puede aprobar para avanzar al siguiente paso o rechazar para devolverlo al paso anterior.
+                            </p>
+                            <button type="button" id="btn_aprobar_paso" class="btn btn-rounded btn-success">
+                                <i class="fa fa-check"></i> Aprobar
+                            </button>
+                            <button type="button" id="btn_rechazar_paso" class="btn btn-rounded btn-danger">
+                                <i class="fa fa-times"></i> Rechazar
+                            </button>
                         </div>
                     </div><!--.row-->
                     

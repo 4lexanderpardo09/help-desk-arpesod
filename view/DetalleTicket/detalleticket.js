@@ -103,6 +103,17 @@ $(document).ready(function () {
 
 });
 
+function updateEnviarButtonState() {
+    // El botón solo está habilitado si el checkbox está realmente marcado
+    var enabled = $('#checkbox_avanzar_flujo').is(':checked');
+    $('#btnenviar').prop('disabled', !enabled);
+}
+
+// al terminar de inicializar (por ejemplo justo después de getRespuestasRapidas();)
+$('#btnenviar').prop('disabled', true); // deshabilitado por defecto
+updateEnviarButtonState();
+
+
 function getRespuestasRapidas() {
 
     $.post("../../controller/respuestarapida.php?op=combo", function (data) {
@@ -162,6 +173,8 @@ function stripHtml(html) {
 function enviarDetalle() {
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
+        $('#btnenviar').data('processing', false);
+        updateEnviarButtonState();
         return false;
     }
 
@@ -213,16 +226,34 @@ function enviarDetalle() {
         error: function (jqXHR) {
             swal("Error Fatal", "Ocurrió un error con el servidor. Revisa la consola.", "error");
             console.error(jqXHR.responseText);
+        },
+        complete: function() {
+            // Siempre liberar el bloqueo del botón cuando la petición termine
+            $('#btnenviar').data('processing', false);
+            updateEnviarButtonState();
         }
     });
 }
 
 
 $(document).on('click', '#btnenviar', function () {
-    selected_condicion_clave = null; // No hay clave de condición si se usa el botón de enviar normal
-    enviarDetalle();
-});
+    var $btn = $(this);
 
+    // Protección contra múltiples clicks: si ya está en procesamiento, salir
+    if ($btn.data('processing')) return;
+
+    // Si el checkbox está visible, exigir que esté marcado
+    if ($('#checkbox_avanzar_flujo').is(':visible') && !$('#checkbox_avanzar_flujo').is(':checked')) {
+        swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
+        return false;
+    }
+
+    // Marcar en procesamiento y deshabilitar el botón
+    $btn.data('processing', true).prop('disabled', true);
+
+    selected_condicion_clave = null; // No hay clave de condición si se usa el botón de enviar normal
+    enviarDetalle(); // enviarDetalle ahora liberará el botón en el complete del ajax
+});
 
 $(document).on('click', '#btn_registrar_evento', function () {
     var tick_id = getUrlParameter('ID');
@@ -425,7 +456,8 @@ function listarDetalle(tick_id) {
         if (pasoInfo && Object.keys(pasoInfo).length > 0) {
             if (pasoInfo.es_aprobacion == 1) {
                 console.log("El paso actual es de aprobación");
-                $('#boxdetalleticket').hide();
+                $('#panel_respuestas_rapidas').hide();
+                $('#btnenviar').prop('disabled', false)
                 $('#panel_aprobacion').show();
             } else {
                 $('#panel_guia_paso').show();
@@ -468,6 +500,7 @@ function listarDetalle(tick_id) {
         
         var hasDecisions = ticketData.decisiones_disponibles && ticketData.decisiones_disponibles.length > 0;
         var hasNextLinear = ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0;
+        var aprobacion = ticketData.paso_actual_info ? ticketData.paso_actual_info.es_aprobacion : 0;
         var isLastStep = !hasDecisions && !hasNextLinear;
 
         // Guardar flags en el contenedor para consultas posteriores (event handlers)
@@ -494,6 +527,11 @@ function listarDetalle(tick_id) {
 
                 if (hasDecisions || hasNextLinear) {
                     // Guardar acciones exactas para que el modal/checkbox las use
+                    if(aprobacion == 1) {
+                        console.log('entre');
+                        $('#checkbox_avanzar_flujo').prop('disabled', true);
+                        return;
+                    }
                     var acciones = {
                         decisiones: ticketData.decisiones_disponibles || [],
                         siguiente_paso: hasNextLinear
@@ -590,6 +628,7 @@ $(document).on('change', '#checkbox_avanzar_flujo', function() {
         $(this).prop('checked', true); // Marcar el checkbox directamente
         swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
     }
+    updateEnviarButtonState();
 });
 
 
@@ -600,6 +639,7 @@ $(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
         $('#checkbox_avanzar_flujo').prop('checked', true); // Marcamos el checkbox
         $('#modal_seleccionar_paso').modal('hide');
         swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
+        updateEnviarButtonState();
     } else {
         swal("Atención", "Por favor, selecciona una opción para continuar.", "warning");
     }
