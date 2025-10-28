@@ -16,7 +16,7 @@
         public function get_notificacion_x_usu_todas($usu_id){
             $conectar = parent::Conexion();
             parent::set_names();
-            $sql = "SELECT * FROM tm_notificacion WHERE usu_id = ? AND est = 1";
+            $sql = "SELECT * FROM tm_notificacion WHERE usu_id = ? AND est = 1 ORDER BY fech_not DESC";
 
             $sql = $conectar->prepare($sql);
             $sql->bindValue(1, $usu_id);    

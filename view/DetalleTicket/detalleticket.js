@@ -442,7 +442,7 @@ function listarDetalle(tick_id) {
         $('#lblnomusuario').html(ticketData.usu_nom + ' ' + ticketData.usu_ape);
         $('#lblestado_tiempo').html(ticketData.estado_tiempo);
         $('#lblfechacrea').html(ticketData.fech_crea);
-        $('#lblticketid').html("Detalle del ticket #" + ticketData.tick_id);
+        $('#lblticketid').html("Detalle del ticket #" + ticketData.tick_id + " - " + ticketData.cats_nom);
         $('#cat_id').val(ticketData.cat_nom);
         $('#cats_id').val(ticketData.cats_nom);
         $('#emp_id').val(ticketData.emp_nom);

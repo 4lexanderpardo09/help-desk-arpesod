@@ -126,6 +126,21 @@ class Subcategoria extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_nombre_subcategoria($cats_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        $sql = "SELECT cats_nom FROM tm_subcategoria WHERE cats_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $cats_id);
+        $sql->execute();
+        $row = $sql->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? $row['cats_nom'] : null;
+    }
+
+
     public function get_id_por_nombre($cats_nom)
     {
         $conectar = parent::conexion();

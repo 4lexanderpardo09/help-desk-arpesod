@@ -2,6 +2,7 @@
 
 require_once('../models/Ticket.php');
 require_once('../models/Usuario.php');
+require_once('../models/Subcategoria.php');
 require_once('../models/Documento.php');
 require_once('../models/Flujo.php');
 require_once('../models/FlujoPaso.php');
@@ -22,6 +23,7 @@ use Exception;
 class TicketService
 {
     private $ticketModel;
+    private $subcategoriaModel;
     private $usuarioModel;
     private $documentoModel;
     private $flujoModel;
@@ -52,6 +54,8 @@ class TicketService
         $this->flujoTransicionModel = new FlujoTransicion();
         $this->rutaModel = new Ruta();
         $this->rutaPasoModel = new RutaPaso();
+        $this->subcategoriaModel = new Subcategoria();
+
 
         $this->pdo = $pdo;
         $this->ticketRepository = new TicketRepository($pdo);
@@ -149,6 +153,8 @@ class TicketService
             $usu_asig = $postData['usu_asig'] ?? null;
             $usu_asig_final = null;
 
+            $cats_nom = $this->subcategoriaModel->get_nombre_subcategoria($cats_id);
+
             $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
             $ticket_reg_id = null;
             if (!empty($datos_creador['es_nacional']) && $datos_creador['es_nacional'] == 1) {
@@ -194,7 +200,7 @@ class TicketService
             $this->assignmentRepository->insertAssignment($datos, $resolveResult['usu_asig_final'], $session_usu, $resolveResult['paso_actual_id_final']);
 
             if ($resolveResult['usu_asig_final'] && $resolveResult['usu_asig_final'] != $usu_id_creador) {
-                $mensaje_notificacion = "Se le ha asignado el ticket # {$datos}.";
+                $mensaje_notificacion = "Se le ha asignado el ticket # {$datos} - {$cats_nom}.";
                 $this->notificationRepository->insertNotification($resolveResult['usu_asig_final'], $mensaje_notificacion, $datos);
             }
 
@@ -525,6 +531,9 @@ class TicketService
 
     public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden)
     {
+
+        $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
+
         $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
         if (!$siguiente_paso) {
             throw new Exception("No se encontró la información del siguiente paso (ID: $nuevo_paso_id).");
@@ -549,7 +558,7 @@ class TicketService
 
             // Actualizar el estado de tiempo para la última asignación
             $this->computeAndUpdateEstadoPaso($ticket_id);            
-            $mensaje_notificacion = "Se le ha asignado el ticket #{$ticket_id}.";
+            $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
 
         } else {
