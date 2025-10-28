@@ -526,6 +526,9 @@ function listarDetalle(tick_id) {
                 $('#btncerrarticket').hide().prop('disabled', true);
 
                 if (hasDecisions || hasNextLinear) {
+                    if (!hasNextLinear) {
+                        $('#btncerrarticket').show().prop('disabled', false);
+                    }
                     // Guardar acciones exactas para que el modal/checkbox las use
                     if(aprobacion == 1) {
                         console.log('entre');
