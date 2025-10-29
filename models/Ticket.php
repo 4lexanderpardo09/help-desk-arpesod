@@ -785,9 +785,8 @@ class Ticket extends Conectar
         $conectar = parent::conexion();
         parent::set_names();
         // Esta consulta busca el ticket, luego al usuario creador, y finalmente la regional de ese usuario.
-        $sql = "SELECT u.reg_id
+        $sql = "SELECT t.reg_id
                 FROM tm_ticket t
-                INNER JOIN tm_usuario u ON t.usu_id = u.usu_id
                 WHERE t.tick_id = ?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
