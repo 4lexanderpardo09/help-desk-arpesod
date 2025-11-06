@@ -130,8 +130,13 @@ class FlujoPaso extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
-        // Usamos fetch() porque solo esperamos un resultado
-        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    
+        if ($resultado) {
+            $resultado['usuarios_especificos'] = $this->get_usuarios_especificos($paso_id);
+        }
+    
+        return $resultado;
     }
 
     public function get_siguiente_paso_transicion($paso_actual_id, $condicion_clave, $condicion_nombre)
@@ -241,5 +246,36 @@ class FlujoPaso extends Conectar
         $sql->execute();
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
         return $resultado['total'] > 0;
+    }
+
+    public function set_usuarios_especificos($paso_id, $user_ids)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "DELETE FROM tm_flujo_paso_usuarios WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+
+        if (is_array($user_ids)) {
+            foreach ($user_ids as $user_id) {
+                $sql = "INSERT INTO tm_flujo_paso_usuarios (paso_id, usu_id) VALUES (?, ?)";
+                $sql = $conectar->prepare($sql);
+                $sql->bindValue(1, $paso_id);
+                $sql->bindValue(2, $user_id);
+                $sql->execute();
+            }
+        }
+    }
+
+    public function get_usuarios_especificos($paso_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT usu_id FROM tm_flujo_paso_usuarios WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
     }
 }

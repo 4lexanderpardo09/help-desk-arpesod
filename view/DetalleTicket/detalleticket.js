@@ -449,6 +449,18 @@ function listarDetalle(tick_id) {
         $('#dp_id').val(ticketData.dp_nom);
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
+        
+        if (ticketData.siguientes_pasos_lineales[0].requiere_seleccion_manual) {
+            console.log('entre');
+            
+            $('#panel_seleccion_usuario').show();
+            var options = '<option value="">Seleccionar Usuario</option>';
+            ticketData.usuarios_seleccionables.forEach(function(usuario) {
+                options += '<option value="' + usuario.usu_id + '">' + usuario.usu_nom + ' ' + usuario.usu_ape + ' (' + usuario.usu_correo + ')</option>';
+            });
+            $('#usuario_seleccionado').html(options);
+            $('#usuario_seleccionado').select2();
+        }
 
         // --- Reinserción del bloque de paso que tenías antes ---
         var pasoInfo = ticketData.paso_actual_info || {};
@@ -608,6 +620,40 @@ function listarDetalle(tick_id) {
 
     });
 }
+
+$(document).on('click', '#btn_asignar_usuario', function() {
+    var tick_id = getUrlParameter('ID');
+    var usu_asig = $('#usuario_seleccionado').val();
+    var usu_id = $('#user_idx').val();
+
+    if (!usu_asig) {
+        swal("Atención", "Por favor, seleccione un usuario para asignar el ticket.", "warning");
+        return;
+    }
+
+    swal({
+        title: "¿Estás seguro?",
+        text: "Se asignará este ticket al usuario seleccionado.",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonClass: "btn-primary",
+        confirmButtonText: "Sí, asignar ahora",
+        cancelButtonText: "Cancelar",
+        closeOnConfirm: false
+    }, function(isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/ticket.php?op=updateasignacion", { tick_id: tick_id, usu_asig: usu_asig, how_asig: usu_id })
+                .done(function() {
+                    swal("¡Asignado!", "El ticket ha sido asignado correctamente.", "success");
+                    listarDetalle(tick_id);
+                })
+                .fail(function() {
+                    swal("Error", "No se pudo asignar el ticket.", "error");
+                });
+        }
+    });
+});
+
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
     // Limpiar selección previa al cambiar el checkbox
     decisionSeleccionada = null;

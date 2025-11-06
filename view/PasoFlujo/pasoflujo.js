@@ -299,6 +299,17 @@ $(document).ready(function () {
 
     descripcionPaso();
     cargarUsuarios();
+    cargarTodosLosUsuarios();
+
+    $('#usuarios_especificos').select2();
+
+    $('#requiere_seleccion_manual').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#usuarios_especificos_container').show();
+        } else {
+            $('#usuarios_especificos_container').hide();
+        }
+    });
 
     $('#flujo_id').val(getUrlParameter('ID'));
 
@@ -379,8 +390,11 @@ function editar(paso_id) {
         $('#paso_tiempo_habil').val(data.paso_tiempo_habil);
         if (data.requiere_seleccion_manual == 1) {
             $('#requiere_seleccion_manual').prop('checked', true);
+            $('#usuarios_especificos_container').show();
+            $('#usuarios_especificos').val(data.usuarios_especificos).trigger('change');
         } else {
             $('#requiere_seleccion_manual').prop('checked', false);
+            $('#usuarios_especificos_container').hide();
         }
 
         if (data.es_tarea_nacional == 1) {
@@ -450,6 +464,8 @@ $(document).on("click", "#btnnuevopaso", function(){
     $("#mdltitulo").html('Nuevo registro');
     $("#paso_form")[0].reset();
     $('#requiere_seleccion_manual').prop('checked', false);
+    $('#usuarios_especificos_container').hide();
+    $('#usuarios_especificos').val(null).trigger('change');
     $('#paso_nom_adjunto').val('');
     $('#paso_attachment_display').html('');
     $("#modalnuevopaso").modal("show");
@@ -460,6 +476,12 @@ function cargarUsuarios() {
         $('#cargo_id_asignado').html('<option value="">Seleccionar un cargo</option>' + data);
     });
 
+}
+
+function cargarTodosLosUsuarios() {
+    $.post("../../controller/usuario.php?op=combo", function(data) {
+        $('#usuarios_especificos').html(data);
+    });
 }
 
 function descripcionPaso(){
@@ -487,6 +509,8 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#paso_nombre').val('');
     $('#cargo_id_asignado').val('');
     $('#requiere_seleccion_manual').prop('checked', false);
+    $('#usuarios_especificos_container').hide();
+    $('#usuarios_especificos').val(null).trigger('change');
     $('#paso_tiempo_habil').val('');
     $('#paso_descripcion').summernote('code', '');
     $('#paso_nom_adjunto').val('');

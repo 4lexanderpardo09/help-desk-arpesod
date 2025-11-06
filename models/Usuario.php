@@ -356,4 +356,18 @@ class Usuario extends Conectar
         $sql->execute();
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function get_usuarios_por_ids($user_ids)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $inQuery = implode(',', array_fill(0, count($user_ids), '?'));
+        $sql = "SELECT usu_id, usu_nom, usu_ape, usu_correo FROM tm_usuario WHERE usu_id IN ($inQuery) AND est = 1";
+        $stmt = $conectar->prepare($sql);
+        foreach ($user_ids as $k => $id) {
+            $stmt->bindValue(($k + 1), $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

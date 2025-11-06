@@ -136,4 +136,15 @@ switch ($_GET["op"]) {
             echo $html;
         }
     break; 
+
+    case "combo":
+        $datos = $usuario->get_usuario();
+        if(is_array($datos) and count($datos)>0){
+            $html= "";
+            foreach($datos as $row){
+                $html.= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
+            }
+            echo $html;
+        }
+    break;
 }

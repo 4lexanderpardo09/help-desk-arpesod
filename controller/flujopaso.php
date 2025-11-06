@@ -56,7 +56,7 @@ switch ($_GET["op"]) {
         }
 
         if (empty($_POST['paso_id'])) {
-            $flujopaso->insert_paso(
+            $paso_id = $flujopaso->insert_paso(
                 $_POST['flujo_id'],
                 $_POST['paso_orden'],
                 $_POST['paso_nombre'],
@@ -69,8 +69,9 @@ switch ($_GET["op"]) {
                 $paso_nom_adjunto
             );
         } else {
+            $paso_id = $_POST['paso_id'];
             $flujopaso->update_paso(
-                $_POST['paso_id'],
+                $paso_id,
                 $_POST['paso_orden'],
                 $_POST['paso_nombre'],
                 $_POST['cargo_id_asignado'],
@@ -82,6 +83,14 @@ switch ($_GET["op"]) {
                 $paso_nom_adjunto
             );
         }
+
+        if ($requiere_seleccion_manual && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
+            $flujopaso->set_usuarios_especificos($paso_id, $_POST['usuarios_especificos']);
+        } else {
+            // Si no se requiere selección manual o no se envían usuarios, se limpia la tabla
+            $flujopaso->set_usuarios_especificos($paso_id, []);
+        }
+
         break;
 
     case "listar":

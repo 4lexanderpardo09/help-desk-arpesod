@@ -183,6 +183,21 @@ if (isset($_SESSION["usu_id"])) {
                                             Completar este paso y avanzar al siguiente flujo
                                         </label>
                                     </div>
+                                </div>
+                                <div id="panel_seleccion_usuario" class="box-typical box-typical-padding" style="display: none;">
+                                    <h5 class="m-t-lg with-border">Seleccionar Usuario para Asignación</h5>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label class="form-label" for="usuario_seleccionado">Asignar a:</label>
+                                                <select class="select2" id="usuario_seleccionado" name="usuario_seleccionado" data-placeholder="Buscar por correo electrónico...">
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <button type="button" id="btn_asignar_usuario" class="btn btn-primary">Asignar Usuario</button>
+                                        </div>
+                                    </div>
                                 </div> 
                             </div>
                         </form>

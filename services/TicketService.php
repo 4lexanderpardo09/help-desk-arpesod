@@ -260,6 +260,10 @@ class TicketService
             $output["paso_actual_info"] = []; // Valor por defecto
 
             if (!empty($datos["paso_actual_id"])) {
+                $paso_actual_info = $this->flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
+                if ($paso_actual_info) {
+                    $output["paso_actual_info"] = $paso_actual_info;
+                }
                 // 1. ¿Existen transiciones (decisiones) para este paso?
                 $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
 
@@ -272,9 +276,14 @@ class TicketService
                     if ($siguientes_pasos) {
                         $output["siguientes_pasos_lineales"] = $siguientes_pasos;
                     }
-                    $paso_actual_info = $this->flujoPasoModel->get_paso_actual($row["paso_actual_id"]);
-                    if ($paso_actual_info) {
-                        $output["paso_actual_info"] = $paso_actual_info;
+                }
+                if ($siguientes_pasos && $siguientes_pasos[0]['requiere_seleccion_manual'] == 1) {
+                    $output['requiere_seleccion_manual'] = true;
+                    $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguientes_pasos[0]['paso_id']);
+                    if (count($usuarios_especificos) > 0) {
+                        $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos);
+                    } else {
+                        $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_cargo($paso_actual_info['cargo_id_asignado']);
                     }
                 }
             }

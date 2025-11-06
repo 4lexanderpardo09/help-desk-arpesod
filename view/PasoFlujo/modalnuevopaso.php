@@ -40,6 +40,13 @@
                         <input type="checkbox" id="requiere_seleccion_manual" name="requiere_seleccion_manual" value="1">
                         <label for="requiere_seleccion_manual">¿Requiere selección manual del anterior agente?</label>
                     </div>
+                    <div id="usuarios_especificos_container" style="display: none;">
+                        <fieldset class="form-group">
+                            <label class="form-label" for="usuarios_especificos">Usuarios Específicos</label>
+                            <select class="select2" id="usuarios_especificos" name="usuarios_especificos[]" multiple="multiple" data-placeholder="Seleccione usuarios específicos">
+                            </select>
+                        </fieldset>
+                    </div>
                     <div class="checkbox" style="margin-top: 1rem;">
                         <input type="checkbox" id="es_tarea_nacional" name="es_tarea_nacional" value="1">
                         <label for="es_tarea_nacional">¿Es una tarea nacional?</label>
