@@ -433,8 +433,14 @@ class TicketService
         }
     }
 
-    public function createDetailTicket($tickId, $usuId, $tickdDescrip, $condicion_nombre = null)
+    public function createDetailTicket($postData)
     {
+        
+        $tickId = $postData['tick_id'] ;
+        $usuId = $postData['usu_id'] ;
+        $tickdDescrip = $postData['tickd_descrip'];
+        $usu_asig = $postData['usu_asig'] ?? null;
+
         // 1. Guardar comentario y archivos
         $datos = $this->ticketModel->insert_ticket_detalle($tickId, $usuId, $tickdDescrip);
         if (is_array($datos) && count($datos) > 0) {
@@ -479,6 +485,9 @@ class TicketService
                     $this->avanzar_ticket_lineal($ticket);
                 }
                 $reassigned = true; // Si entramos en este bloque, significa que se avanzó/reasignó.
+            }else{
+                $this->avanzar_ticket_con_usuario_asignado($ticket, $usu_asig);
+                $reassigned = true;
             }
             $this->pdo->commit();
             echo json_encode(["status" => "success", "reassigned" => $reassigned]);
@@ -490,12 +499,12 @@ class TicketService
         }
 
     }
-
+    
     private function iniciar_ruta_desde_decision($ticket, $decision_tomada)
     {
         // Buscamos la transición que corresponde al paso actual y la decisión tomada
         $transicion = $this->flujoTransicionModel->get_transicion_por_decision($ticket['paso_actual_id'], $decision_tomada);
-
+        
         if ($transicion && !empty($transicion['ruta_id'])) {
             // Si encontramos la transición, obtenemos la ruta_id y la iniciamos
             $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id']);
@@ -504,41 +513,51 @@ class TicketService
             throw new Exception("La decisión '{$decision_tomada}' no es una transición válida para el paso actual.");
         }
     }
-
+    
     public function avanzar_ticket_en_ruta($ticket)
     {
         $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
         $siguiente_orden = $ruta_paso_orden_actual + 1;
         $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
-
+        
         if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden);
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
         }
     }
-
+    
     public function iniciar_ruta_para_ticket($ticket, $ruta_id)
     {
         $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
         if ($primer_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1);
+            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, null);
         } else {
             throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
         }
     }
-
+    
+    public function avanzar_ticket_con_usuario_asignado($ticket, $usu_asig)
+    {
+        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+        }
+    }
+    
     public function avanzar_ticket_lineal($ticket)
     {
         $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null);
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
         }
     }
 
-    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden)
+    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig)
     {
 
         $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
@@ -551,15 +570,26 @@ class TicketService
         $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
         $nuevo_asignado_info = null;
 
-        if ($siguiente_paso['es_tarea_nacional'] == 1) {
-            $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
-        } else {
-            $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
-            $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
-        }
+        if (!empty($usu_asig) || $usu_asig != null) {
 
+            $nuevo_asignado_info = $usu_asig;
+        
+        } else{
+            
+            if ($siguiente_paso['es_tarea_nacional'] == 1) {
+                $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
+            } else {
+                $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+                $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+            }
+        
+        }
         if ($nuevo_asignado_info) {
-            $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
+            if (!empty($usu_asig) || $usu_asig != null) {
+                $nuevo_usuario_asignado = $usu_asig;
+            }else{
+                $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
+            }
             $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
             
             // Añadir al historial y enviar notificaciones...

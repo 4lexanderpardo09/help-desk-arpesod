@@ -69,7 +69,8 @@ switch ($_GET["op"]) {
     break;
     
     case "insertdetalle":
-        $result = $ticketService->createDetailTicket($_POST["tick_id"], $_POST["usu_id"], $_POST['tickd_descrip'], $_POST['condicion_nombre'] ?? null);
+        var_dump($_POST);
+        $result = $ticketService->createDetailTicket($_POST);
     break;
 
     case "update":

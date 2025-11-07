@@ -194,9 +194,6 @@ if (isset($_SESSION["usu_id"])) {
                                                 </select>
                                             </div>
                                         </div>
-                                        <div class="col-md-12">
-                                            <button type="button" id="btn_asignar_usuario" class="btn btn-primary">Asignar Usuario</button>
-                                        </div>
                                     </div>
                                 </div> 
                             </div>

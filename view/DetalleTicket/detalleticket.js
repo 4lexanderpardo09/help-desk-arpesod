@@ -11,6 +11,8 @@ $(document).ready(function () {
 
     var tick_id = getUrlParameter('ID');
 
+    $('#usuario_seleccionado').on('change', updateEnviarButtonState);
+
     listarDetalle(tick_id);
 
     $('#tickd_descrip').summernote({
@@ -104,8 +106,12 @@ $(document).ready(function () {
 });
 
 function updateEnviarButtonState() {
-    // El botón solo está habilitado si el checkbox está realmente marcado
-    var enabled = $('#checkbox_avanzar_flujo').is(':checked');
+    // El botón solo está habilitado si el checkbox está realmente marcado  
+    var panelVisible = $('#panel_seleccion_usuario').is(':visible');
+
+    var enabledCheckbox = $('#checkbox_avanzar_flujo').is(':checked');
+    var enabledSelectUserAssign =panelVisible &&  !!$('#usuario_seleccionado').val();
+    var enabled = enabledCheckbox == true || enabledSelectUserAssign == true;
     $('#btnenviar').prop('disabled', !enabled);
 }
 
@@ -170,10 +176,40 @@ function stripHtml(html) {
     return tmp;
 }
 
+function htmlToPlainText(html) {
+    // usa tu función stripHtml para normalizar
+    return stripHtml(html || '');
+}
+
 function enviarDetalle() {
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
         $('#btnenviar').data('processing', false);
+        updateEnviarButtonState();
+        return false;
+    }
+
+    // 2) Validar plantilla vs contenido real (usar summernote('code'))
+    var templateHtml = $('#tickd_descrip').data('template') || '';
+    var currentHtml = $('#tickd_descrip').summernote ? $('#tickd_descrip').summernote('code') : $('#tickd_descrip').val() || '';
+
+    var cleanTemplate = htmlToPlainText(templateHtml);
+    var cleanContent = htmlToPlainText(currentHtml);
+
+    // Opcional: console.log para debug (quita en producción)
+    console.log("cleanTemplate:", JSON.stringify(cleanTemplate));
+    console.log("cleanContent:", JSON.stringify(cleanContent));
+
+    if (!cleanContent || cleanContent.length === 0) {
+        swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
+        $('#btnenviar').data('processing', false).prop('disabled', false);
+        updateEnviarButtonState();
+        return false;
+    }
+
+    if (cleanContent === cleanTemplate) {
+        swal("Atención", "Debe agregar información adicional a la plantilla de descripción.", "warning");
+        $('#btnenviar').data('processing', false).prop('disabled', false);
         updateEnviarButtonState();
         return false;
     }
@@ -189,6 +225,22 @@ function enviarDetalle() {
         } else {
             formData.append("avanzar_lineal", "true");
         }
+    }
+
+    if ($('#panel_seleccion_usuario').is(':visible')) {
+        var usu_asig = $('#usuario_seleccionado').val();
+        console.log(usu_asig);
+        
+        if (!usu_asig) {
+            swal("Atención", "Por favor, selecciona un usuario para asignar antes de enviar.", "warning");
+            // liberar botón para que el usuario intente de nuevo
+            $('#btnenviar').data('processing', false).prop('disabled', false);
+            updateEnviarButtonState();
+            return false;
+        }
+        // Añadir la asignación al formData para que el backend la procese
+        formData.append('usu_asig', usu_asig);
+        formData.append('assign_on_send', 'true'); // flag opcional para proceso server-side
     }
 
     $.ajax({
@@ -460,6 +512,8 @@ function listarDetalle(tick_id) {
             });
             $('#usuario_seleccionado').html(options);
             $('#usuario_seleccionado').select2();
+            $('#panel_checkbox_flujo').hide().data('acciones', null);
+            $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
         }
 
         // --- Reinserción del bloque de paso que tenías antes ---
@@ -547,12 +601,19 @@ function listarDetalle(tick_id) {
                         $('#checkbox_avanzar_flujo').prop('disabled', true);
                         return;
                     }
-                    var acciones = {
-                        decisiones: ticketData.decisiones_disponibles || [],
-                        siguiente_paso: hasNextLinear
-                    };
-                    $('#panel_checkbox_flujo').data('acciones', acciones).show();
-                    $('#checkbox_avanzar_flujo').prop('disabled', false);
+                    // Si el panel de selección de usuario está visible, NO mostrar el checkbox de avance
+                    if ($('#panel_seleccion_usuario').is(':visible')) {
+                        // ocultar y deshabilitar checkbox de avance (la asignación se hará con ENVIAR)
+                        $('#panel_checkbox_flujo').hide().data('acciones', null);
+                        $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
+                    } else {
+                        var acciones = {
+                            decisiones: ticketData.decisiones_disponibles || [],
+                            siguiente_paso: hasNextLinear
+                        };
+                        $('#panel_checkbox_flujo').data('acciones', acciones).show();
+                        $('#checkbox_avanzar_flujo').prop('disabled', false).show();
+                    }
                 } else {
                     $('#panel_checkbox_flujo').hide().data('acciones', null);
                     $('#checkbox_avanzar_flujo').prop('disabled', true);
