@@ -8,6 +8,7 @@ require_once('../services/TicketDetailLister.php');
 require_once('../models/repository/TicketRepository.php');
 require_once('../models/repository/NotificationRepository.php');
 require_once('../models/repository/AssignmentRepository.php');
+require_once('../models/repository/NovedadRepository.php');
 
 $pdo = Conectar::getConexion();
 
@@ -124,5 +125,44 @@ switch ($_GET["op"]) {
     case "rechazar_paso":
         $resultado = $ticketService->rejectStep($_POST['tick_id']);
         echo json_encode($resultado);
+        break;
+    
+    case "crear_novedad":
+        $result = $ticketService->crearNovedad($_POST);
+        echo json_encode($result);
+        break;
+
+    case "resolver_novedad":
+        $result = $ticketService->resolverNovedad($_POST);
+        echo json_encode($result);
+        break;
+    
+    case "get_novedad_abierta":
+        $novedadRepository = new \models\repository\NovedadRepository($pdo);
+        $novedad = $novedadRepository->getNovedadAbiertaPorTicket($_POST['tick_id']);
+        echo json_encode($novedad);
+        break;
+
+    case "listar_novedades_x_usu":
+        $novedadRepository = new \models\repository\NovedadRepository($pdo);
+        $novedades = $novedadRepository->getNovedadesAbiertasPorUsuario($_POST['usu_id']);
+        $data = array();
+        foreach ($novedades as $row) {
+            $sub_array = array();
+            $sub_array[] = $row["tick_id"];
+            $sub_array[] = $row["descripcion_novedad"];
+            $sub_array[] = $row["fecha_inicio"];
+            $sub_array[] = $row["usu_crea_novedad"];
+            $sub_array[] = '<button type="button" onClick="ver(' . $row["tick_id"] . ');"  id="' . $row["tick_id"] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
+            $data[] = $sub_array;
+        }
+
+        $results = array(
+            "sEcho" => 1,
+            "iTotalRecords" => count($data),
+            "iTotalDisplayRecords" => count($data),
+            "aaData" => $data
+        );
+        echo json_encode($results);
         break;
 }

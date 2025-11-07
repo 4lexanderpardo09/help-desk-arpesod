@@ -12,10 +12,12 @@ require_once('../models/FlujoTransicion.php');
 require_once('../models/Ruta.php');
 require_once('../models/RutaPaso.php');
 require_once('../services/TicketWorkflowService.php');
+require_once('../models/repository/NovedadRepository.php');
 
 use models\repository\TicketRepository;
 use models\repository\NotificationRepository;
 use models\repository\AssignmentRepository;
+use models\repository\NovedadRepository;
 use PDO;
 use Exception;
 
@@ -39,6 +41,7 @@ class TicketService
     private TicketRepository $ticketRepository;
     private NotificationRepository $notificationRepository;
     private AssignmentRepository $assignmentRepository;
+    private NovedadRepository $novedadRepository;
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -61,6 +64,7 @@ class TicketService
         $this->ticketRepository = new TicketRepository($pdo);
         $this->notificationRepository = new NotificationRepository($pdo);
         $this->assignmentRepository = new AssignmentRepository($pdo);
+        $this->novedadRepository = new NovedadRepository($pdo);
     }
 
     public function resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id)
@@ -234,6 +238,8 @@ class TicketService
 
             if ($row['tick_estado'] == 'Abierto') {
                 $output['tick_estado'] = '<span class="label label-success">Abierto</span>';
+            } elseif ($row['tick_estado'] == 'Pausado') {
+                $output['tick_estado'] = '<span class="label label-info">Pausado</span>';
             } else {
                 $output['tick_estado'] = '<span class="label label-danger">Cerrado</span>';
             }
@@ -246,6 +252,7 @@ class TicketService
             $output['dp_nom'] = $row['dp_nom'];
             $output['paso_actual_id'] = $row['paso_actual_id'];
             $output['paso_nombre'] = $row['paso_nombre'];
+            $output['novedad_abierta'] = $this->novedadRepository->getNovedadAbiertaPorTicket($tickId);
 
             if ($row['pd_nom'] == 'Baja') {
                 $output['prioridad_usuario'] = '<span class="label label-default">Baja</span>';
@@ -908,6 +915,87 @@ class TicketService
         }
 
         return $estado;
+    }
+
+    public function crearNovedad(array $data): array
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $tick_id = (int)$data['tick_id'];
+            $usu_crea_novedad = (int)$data['usu_id'];
+            $usu_asig_novedad = (int)$data['usu_asig_novedad'];
+            $descripcion_novedad = $data['descripcion_novedad'];
+
+            $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
+            if (!$ticket) {
+                throw new Exception("Ticket no encontrado.");
+            }
+
+            $paso_id_pausado = $ticket['paso_actual_id'];
+
+            $this->novedadRepository->crearNovedad($tick_id, $paso_id_pausado, $usu_asig_novedad, $usu_crea_novedad, $descripcion_novedad);
+
+            $this->ticketRepository->updateTicketStatus($tick_id, 'Pausado');
+
+            $comentario = "Se ha creado una novedad: " . htmlspecialchars($descripcion_novedad);
+            $this->ticketModel->insert_ticket_detalle($tick_id, $usu_crea_novedad, $comentario);
+
+            // Registrar la asignación de la novedad en el historial principal
+            $comentario_asignacion = "Novedad asignada: " . htmlspecialchars($descripcion_novedad);
+            $this->assignmentRepository->insertAssignment($tick_id, $usu_asig_novedad, $usu_crea_novedad, $paso_id_pausado, $comentario_asignacion);
+
+            $mensaje_notificacion = "Se te ha asignado una novedad para el ticket #{$tick_id}.";
+            $this->notificationRepository->insertNotification($usu_asig_novedad, $mensaje_notificacion, $tick_id);
+
+            $this->pdo->commit();
+            return ["status" => "success", "message" => "Novedad creada y ticket pausado."];
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return ["status" => "error", "message" => $e->getMessage()];
+        }
+    }
+
+    public function resolverNovedad(array $data): array
+    {
+        $this->pdo->beginTransaction();
+        try {
+            $tick_id = (int)$data['tick_id'];
+            $usu_resuelve_novedad = (int)$data['usu_id'];
+
+            $novedad = $this->novedadRepository->getNovedadAbiertaPorTicket($tick_id);
+            if (!$novedad) {
+                throw new Exception("No se encontró una novedad abierta para este ticket.");
+            }
+
+            $this->novedadRepository->resolverNovedad($novedad['novedad_id']);
+
+            $this->ticketRepository->updateTicketStatus($tick_id, 'Abierto');
+
+            $fecha_inicio = new DateTime($novedad['fecha_inicio']);
+            $fecha_fin = new DateTime();
+            $duracion = $fecha_inicio->diff($fecha_fin);
+            $duracion_formateada = $duracion->format('%d días, %h horas, %i minutos');
+
+            $comentario = "Se ha resuelto la novedad: " . htmlspecialchars($novedad['descripcion_novedad']) . ".<br><b>Tiempo de resolución de la novedad:</b> " . $duracion_formateada;
+            $this->ticketModel->insert_ticket_detalle($tick_id, $usu_resuelve_novedad, $comentario);
+
+            // Notificar al agente que tenía el paso pausado
+            $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
+            $usu_asig_original = $ticket['usu_asig'];
+
+            // Registrar el retorno del ticket en el historial de asignaciones
+            $comentario_asignacion = "Novedad resuelta. El ticket vuelve al agente original.";
+            $this->assignmentRepository->insertAssignment($tick_id, $usu_asig_original, $usu_resuelve_novedad, $novedad['paso_id_pausado'], $comentario_asignacion);
+
+            $mensaje_notificacion = "La novedad del ticket #{$tick_id} ha sido resuelta. Puedes continuar con tu trabajo.";
+            $this->notificationRepository->insertNotification($usu_asig_original, $mensaje_notificacion, $tick_id);
+
+            $this->pdo->commit();
+            return ["status" => "success", "message" => "Novedad resuelta y ticket reactivado."];
+        } catch (Exception $e) {
+            $this->pdo->rollBack();
+            return ["status" => "error", "message" => $e->getMessage()];
+        }
     }
 
 

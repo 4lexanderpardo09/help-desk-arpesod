@@ -103,6 +103,75 @@ $(document).ready(function () {
 
     getRespuestasRapidas();
 
+    // Cargar usuarios para el modal de novedad
+    $.post("../../controller/usuario.php?op=combo", function (data) {
+        $('#usu_asig_novedad').html(data);
+    });
+
+    // Evento para abrir el modal de crear novedad
+    $(document).on('click', '#btncrearnovedad', function () {
+        $('#modal_crear_novedad').modal('show');
+    });
+
+    // Evento para guardar la novedad
+    $('#novedad_form').on('submit', function (e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        formData.append('tick_id', getUrlParameter('ID'));
+        formData.append('usu_id', $('#user_idx').val());
+
+        $.ajax({
+            url: '../../controller/ticket.php?op=crear_novedad',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function (response) {
+                var data = JSON.parse(response);
+                if (data.status === 'success') {
+                    swal("¡Éxito!", data.message, "success");
+                    $('#modal_crear_novedad').modal('hide');
+                    listarDetalle(getUrlParameter('ID'));
+                } else {
+                    swal("Error", data.message, "error");
+                }
+            },
+            error: function () {
+                swal("Error", "No se pudo crear la novedad.", "error");
+            }
+        });
+    });
+
+    // Evento para resolver la novedad
+    $(document).on('click', '#btnresolvernovedad', function () {
+        swal({
+            title: "¿Estás seguro?",
+            text: "Se resolverá la novedad y el ticket volverá a su estado anterior.",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonClass: "btn-success",
+            confirmButtonText: "Sí, resolver",
+            cancelButtonText: "Cancelar",
+            closeOnConfirm: false
+        }, function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=resolver_novedad", { tick_id: getUrlParameter('ID'), usu_id: $('#user_idx').val() })
+                    .done(function (response) {
+                        var data = JSON.parse(response);
+                        if (data.status === 'success') {
+                            swal("¡Éxito!", data.message, "success");
+                            listarDetalle(getUrlParameter('ID'));
+                        } else {
+                            swal("Error", data.message, "error");
+                        }
+                    })
+                    .fail(function () {
+                        swal("Error", "No se pudo resolver la novedad.", "error");
+                    });
+            }
+        });
+    });
+
 });
 
 function updateEnviarButtonState() {
@@ -677,6 +746,23 @@ function listarDetalle(tick_id) {
         if (ticketData.tick_estado_texto === 'Cerrado') {
             $('#boxdetalleticket').hide();
             return; // No procesar más si el ticket está cerrado
+        }
+
+        if (ticketData.tick_estado_texto === 'Pausado') {
+            $('#btnenviar').hide();
+            $('#btncrearnovedad').hide();
+            $('#btncerrarticket').hide();
+            $('#panel_checkbox_flujo').hide();
+            $('#panel_respuestas_rapidas').hide();
+            $('#panel_aprobacion').hide();
+
+            // Lógica para mostrar el botón de resolver novedad
+            $.post("../../controller/ticket.php?op=get_novedad_abierta", { tick_id: tick_id }, function (novedadData) {
+                var novedad = JSON.parse(novedadData);
+                if (novedad && String(novedad.usu_asig_novedad) === String(user_id)) {
+                    $('#btnresolvernovedad').show();
+                }
+            });
         }
 
     });

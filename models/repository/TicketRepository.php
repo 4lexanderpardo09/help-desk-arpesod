@@ -55,5 +55,21 @@ class TicketRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$usu_asig, $paso_id, $ruta_id, $ruta_paso_orden, $ticket_id]);
     }
+
+    public function updateTicketStatus($tick_id, $status)
+    {
+        $sql = "UPDATE tm_ticket
+                SET
+                    tick_estado = ?
+                WHERE
+                    tick_id = ?";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(1, $status);
+        $stmt->bindValue(2, $tick_id);
+        $stmt->execute();
+    }
+
+
+
 }
 ?>

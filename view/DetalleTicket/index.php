@@ -201,6 +201,8 @@ if (isset($_SESSION["usu_id"])) {
                         <div style="display: inline-flex;">
                             <div class="col-lg-12">
                                 <button type="button" id="btnenviar" class="btn btn-inline">Enviar</button>
+                                <button type="button" id="btncrearnovedad" class="btn btn-inline btn-warning">Crear Novedad</button>
+                                <button type="button" id="btnresolvernovedad" class="btn btn-inline btn-success" style="display: none;">Resolver Novedad</button>
                             </div>
                             <div class="col-lg-12">
                                 <button type="button" id="btncerrarticket" class="btn btn-danger">Cerrar ticket</button>
@@ -275,6 +277,37 @@ if (isset($_SESSION["usu_id"])) {
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-primary" id="btn_confirmar_cierre">Confirmar Cierre</button>
             </div>
+        </div>
+    </div>
+</div>
+<!-- Modal para crear novedad -->
+<div class="modal fade" id="modal_crear_novedad" tabindex="-1" role="dialog" aria-labelledby="modal_crear_novedad_label" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal_crear_novedad_label">Crear Novedad</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="novedad_form">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="descripcion_novedad">Descripción de la Novedad</label>
+                        <textarea class="form-control" id="descripcion_novedad" name="descripcion_novedad" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="usu_asig_novedad">Asignar a</label>
+                        <select class="select2" id="usu_asig_novedad" name="usu_asig_novedad" data-placeholder="Seleccione un usuario" required>
+                            <!-- Opciones de usuario se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Novedad</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
