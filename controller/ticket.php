@@ -70,7 +70,6 @@ switch ($_GET["op"]) {
     break;
     
     case "insertdetalle":
-        var_dump($_POST);
         $result = $ticketService->createDetailTicket($_POST);
     break;
 
