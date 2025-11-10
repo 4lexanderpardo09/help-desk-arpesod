@@ -128,19 +128,6 @@ class TicketWorkflowService
         }
     }
 
-
-    public function approveStep($tick_id)
-    {
-        // Ahora solo llama a la nueva función con la condición correcta
-        $this->transitionStep($tick_id, 'APROBADO', $_SESSION['usu_id']);
-    }
-
-    public function rejectStep($tick_id)
-    {
-        // Ahora solo llama a la nueva función con la condición de rechazo
-        $this->transitionStep($tick_id, 'RECHAZADO', $_SESSION['usu_id']);
-    }
-
     public function ApproveFlow($tickPost, $session)
     {
         $tick_id = $tickPost['tick_id'];
