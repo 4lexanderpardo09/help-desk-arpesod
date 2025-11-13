@@ -571,7 +571,7 @@ function listarDetalle(tick_id) {
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
         
-        if (ticketData.siguientes_pasos_lineales[0].requiere_seleccion_manual) {
+        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0) {
             console.log('entre');
             
             $('#panel_seleccion_usuario').show();
