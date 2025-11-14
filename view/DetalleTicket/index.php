@@ -201,11 +201,15 @@ if (isset($_SESSION["usu_id"])) {
                         <div style="display: inline-flex;">
                             <div class="col-lg-12">
                                 <button type="button" id="btnenviar" class="btn btn-inline">Enviar</button>
-                                <button type="button" id="btncrearnovedad" class="btn btn-inline btn-warning">Crear Novedad</button>
-                                <button type="button" id="btnresolvernovedad" class="btn btn-inline btn-success" style="display: none;">Resolver Novedad</button>
                             </div>
                             <div class="col-lg-12">
                                 <button type="button" id="btncerrarticket" class="btn btn-danger">Cerrar ticket</button>
+                            </div>
+                            <div class="col-lg-12">
+                                <button type="button" id="btncrearnovedad" class="btn btn-inline btn-warning">Crear Novedad</button>
+                            </div>
+                            <div class="col-lg-12">
+                                <button type="button" id="btnresolvernovedad" class="btn btn-inline btn-success" style="display: none;">Resolver Novedad</button>
                             </div>
                         </div>
                          <div class="box-typical box-typical-padding" id="panel_aprobacion" style="display: none;">
