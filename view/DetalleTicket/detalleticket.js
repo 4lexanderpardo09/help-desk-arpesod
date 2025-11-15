@@ -1,5 +1,6 @@
 var selected_condicion_clave = null;
 var selected_condicion_nombre = null;
+var decisionSeleccionada = null; // Asegúrate de que esta variable esté definida globalmente
 
 function init() {
 
@@ -8,7 +9,6 @@ function init() {
 $(document).ready(function () {
 
     var rol_id = $("#rol_idx").val();
-
     var tick_id = getUrlParameter('ID');
 
     $('#usuario_seleccionado').on('change', updateEnviarButtonState);
@@ -131,7 +131,17 @@ $(document).ready(function () {
                 if (data.status === 'success') {
                     swal("¡Éxito!", data.message, "success");
                     $('#modal_crear_novedad').modal('hide');
-                    listarDetalle(getUrlParameter('ID'));
+                    
+                    // MODIFICADO: Redirigir si la creación de novedad implica reasignación
+                    swal({
+                        title: "¡Éxito!",
+                        text: "Novedad creada y ticket pausado. Redirigiendo a la lista...",
+                        type: "success",
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                    setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
                 } else {
                     swal("Error", data.message, "error");
                 }
@@ -159,8 +169,17 @@ $(document).ready(function () {
                     .done(function (response) {
                         var data = JSON.parse(response);
                         if (data.status === 'success') {
-                            swal("¡Éxito!", data.message, "success");
-                            listarDetalle(getUrlParameter('ID'));
+                            
+                            // MODIFICADO: Redirigir después de resolver la novedad
+                            swal({
+                                title: "¡Éxito!",
+                                text: data.message + " Redirigiendo a la lista...",
+                                type: "success",
+                                timer: 1600,
+                                showConfirmButton: false
+                            });
+                            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
                         } else {
                             swal("Error", data.message, "error");
                         }
@@ -175,11 +194,11 @@ $(document).ready(function () {
 });
 
 function updateEnviarButtonState() {
-    // El botón solo está habilitado si el checkbox está realmente marcado  
+    // El botón solo está habilitado si el checkbox está realmente marcado 	
     var panelVisible = $('#panel_seleccion_usuario').is(':visible');
 
     var enabledCheckbox = $('#checkbox_avanzar_flujo').is(':checked');
-    var enabledSelectUserAssign =panelVisible &&  !!$('#usuario_seleccionado').val();
+    var enabledSelectUserAssign = panelVisible && !!$('#usuario_seleccionado').val();
     var enabled = enabledCheckbox == true || enabledSelectUserAssign == true;
     $('#btnenviar').prop('disabled', !enabled);
 }
@@ -193,7 +212,6 @@ function getRespuestasRapidas() {
 
     $.post("../../controller/respuestarapida.php?op=combo", function (data) {
         $('#fast_answer_id').html('<option value="">Seleccionar</option>' + data);
-
     });
 
 }
@@ -335,6 +353,7 @@ function enviarDetalle() {
                     showConfirmButton: false
                 });
 
+                // Esta lógica de redirección ya es la que quieres, así que se mantiene
                 if (data.reassigned) {
                     setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1600);
                 } else {
@@ -364,9 +383,18 @@ $(document).on('click', '#btnenviar', function () {
     if ($btn.data('processing')) return;
 
     // Si el checkbox está visible, exigir que esté marcado
-    if ($('#checkbox_avanzar_flujo').is(':visible') && !$('#checkbox_avanzar_flujo').is(':checked')) {
-        swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
-        return false;
+    // MODIFICADO: Esta validación es ahora más compleja
+    var panelFlujoVisible = $('#panel_checkbox_flujo').is(':visible');
+    var panelUsuarioVisible = $('#panel_seleccion_usuario').is(':visible');
+    
+    if (panelFlujoVisible && !$('#checkbox_avanzar_flujo').is(':checked')) {
+         swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
+         return false;
+    }
+    
+    if (panelUsuarioVisible && !$('#usuario_seleccionado').val()) {
+         swal("Atención", "Debe seleccionar un usuario para asignar el ticket antes de enviar.", "warning");
+         return false;
     }
 
     // Marcar en procesamiento y deshabilitar el botón
@@ -401,8 +429,8 @@ $(document).on('click', '#btn_registrar_evento', function () {
             if (isConfirm) {
                 $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
                     .done(function() {
-                        updateTicket(tick_id, usu_id);
-                        listarDetalle(tick_id);
+                        // MODIFICADO: updateTicket ahora maneja la redirección
+                        updateTicket(tick_id, usu_id); 
                         $('#fast_answer_id').val('');
                     })
                     .fail(function() {
@@ -423,9 +451,25 @@ $(document).on('click', '#btn_registrar_evento', function () {
         }, function(isConfirm) {
             if (isConfirm) {
                 $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
-                    .done(function() {
-                        swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
-                        listarDetalle(tick_id);
+                    .done(function(response) {
+                        // MODIFICADO: Verificar si la respuesta indica reasignación
+                        var data;
+                        try { data = JSON.parse(response); } catch (e) { data = {}; }
+
+                        if (data.reassigned) {
+                            swal({
+                                title: "¡Registrado!",
+                                text: "El evento se registró y el ticket fue reasignado. Redirigiendo a la lista...",
+                                type: "success",
+                                timer: 1600,
+                                showConfirmButton: false
+                            });
+                            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+                        } else {
+                            // Si no hay reasignación, solo recargar
+                            swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
+                            listarDetalle(tick_id);
+                        }
                         $('#fast_answer_id').val('');
                     })
                     .fail(function() {
@@ -472,8 +516,16 @@ $(document).on('click', '#btn_confirmar_cierre', function() {
             $('#modal_nota_cierre').modal('hide');
             $('#nota_cierre_summernote').summernote('reset');
             $('#cierre_files').val('');
-            swal("¡Cerrado!", "El ticket ha sido cerrado correctamente.", "success");
-            listarDetalle(tick_id);
+            
+            // MODIFICADO: Redirigir después de cerrar
+            swal({
+                title: "¡Cerrado!",
+                text: "El ticket ha sido cerrado correctamente. Redirigiendo a la lista...",
+                type: "success",
+                timer: 1600,
+                showConfirmButton: false
+            });
+            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
         },
         error: function() {
             swal("Error", "No se pudo cerrar el ticket.", "error");
@@ -496,8 +548,17 @@ $(document).on("click", "#btn_aprobar_paso", function () {
     function (isConfirm) {
         if (isConfirm) {
             $.post("../../controller/ticket.php?op=aprobar_paso", { tick_id: tick_id }, function (data) {
-                swal("¡Aprobado!", "El ticket ha sido aprobado y continuará su flujo.", "success");
-                listarDetalle(tick_id);
+                
+                // MODIFICADO: Redirigir después de aprobar
+                swal({
+                    title: "¡Aprobado!",
+                    text: "El ticket ha sido aprobado. Redirigiendo a la lista...",
+                    type: "success",
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+                setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
             }).fail(function (jqXHR) {
                 swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
             });
@@ -520,8 +581,17 @@ $(document).on("click", "#btn_rechazar_paso", function () {
     function (isConfirm) {
         if (isConfirm) {
             $.post("../../controller/ticket.php?op=rechazar_paso", { tick_id: tick_id }, function (data) {
-                swal("¡Rechazado!", "El ticket ha sido rechazado y devuelto al paso anterior.", "success");
-                listarDetalle(tick_id);
+                
+                // MODIFICADO: Redirigir después de rechazar
+                swal({
+                    title: "¡Rechazado!",
+                    text: "El ticket ha sido devuelto. Redirigiendo a la lista...",
+                    type: "success",
+                    timer: 1600,
+                    showConfirmButton: false
+                });
+                setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
             }).fail(function (jqXHR) {
                 swal("Error", "No se pudo completar el rechazo. Detalle: " + jqXHR.responseText, "error");
             });
@@ -531,18 +601,17 @@ $(document).on("click", "#btn_rechazar_paso", function () {
 
 
 function updateTicket(tick_id, usu_id) {
+    // MODIFICADO: Esta función ahora maneja el swal y la redirección
     $.post("../../controller/ticket.php?op=update", { tick_id: tick_id, usu_id: usu_id }, function (data) {
         swal({
-            title: "Cerrado!",
-            text: "El ticket ha sido cerrado correctamente.",
+            title: "¡Cerrado!",
+            text: "El ticket ha sido cerrado correctamente. Redirigiendo a la lista...",
             type: "success",
-            confirmButtonClass: "btn-success"
-        }, function () {
-            listarDetalle(tick_id);
-        }
-        );
+            timer: 1600,
+            showConfirmButton: false
+        });
+        setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
     });
-
 }
 
 function listarDetalle(tick_id) {
@@ -556,7 +625,6 @@ function listarDetalle(tick_id) {
         var ticketData = JSON.parse(data);
         console.log(ticketData);
         
-
         // --- Asignación de datos a la vista (tu código original) ---
         $('#lbltickestado').html(ticketData.tick_estado);
         $('#lblprioridad').html(ticketData.pd_nom);
@@ -571,8 +639,23 @@ function listarDetalle(tick_id) {
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
         
-        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0) {
-            console.log('entre');
+        // Limpiar paneles de acciones antes de re-evaluar
+        $('#panel_seleccion_usuario').hide();
+        $('#usuario_seleccionado').html('');
+        $('#panel_checkbox_flujo').hide().data('acciones', null);
+        $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
+        $('#panel_aprobacion').hide();
+        $('#panel_guia_paso').hide();
+        $('#panel_guia_paso .attachment-section').remove(); // Limpiar adjuntos previos
+        $('#btnenviar').show();
+        $('#btncrearnovedad').show();
+        $('#btncerrarticket').show();
+        $('#panel_respuestas_rapidas').show();
+        $('#btnresolvernovedad').hide();
+
+
+        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0 && ticketData.usuarios_seleccionables && ticketData.usuarios_seleccionables.length > 0) {
+            console.log('Modo: Seleccionar Siguiente Usuario');
             
             $('#panel_seleccion_usuario').show();
             var options = '<option value="">Seleccionar Usuario</option>';
@@ -581,6 +664,8 @@ function listarDetalle(tick_id) {
             });
             $('#usuario_seleccionado').html(options);
             $('#usuario_seleccionado').select2();
+            
+            // Ocultar otras acciones de flujo
             $('#panel_checkbox_flujo').hide().data('acciones', null);
             $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
         }
@@ -592,8 +677,11 @@ function listarDetalle(tick_id) {
             if (pasoInfo.es_aprobacion == 1) {
                 console.log("El paso actual es de aprobación");
                 $('#panel_respuestas_rapidas').hide();
-                $('#btnenviar').prop('disabled', false)
+                $('#btnenviar').prop('disabled', false) // Habilitar 'Enviar' si es aprobación
                 $('#panel_aprobacion').show();
+                // Ocultar otros controles de avance
+                $('#panel_checkbox_flujo').hide();
+                $('#panel_seleccion_usuario').hide();
             } else {
                 $('#panel_guia_paso').show();
                 $('#guia_paso_nombre').text('Paso Actual: ' + (pasoInfo.paso_nombre || ''));
@@ -610,18 +698,16 @@ function listarDetalle(tick_id) {
 
                 if (pasoInfo.paso_nom_adjunto) {
                     var attachmentHtml = '<div class="attachment-section">' +
-                                           '<p><strong>Adjunto del Paso:</strong></p>' +
-                                           '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
-                                         '</div>';
+                                             '<p><strong>Adjunto del Paso:</strong></p>' +
+                                             '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
+                                           '</div>';
                     $('#panel_guia_paso .card-body').append(attachmentHtml);
                 }
             }
         } else {
             // Si no hay info del paso, ocultamos la guía por seguridad
             $('#panel_guia_paso').hide();
-            // no tocar panel_aprobacion aquí (queda según la lógica principal)
         }
-
 
         // Ocultar paneles por defecto y resetear
         $('#panel_checkbox_flujo').hide().data('acciones', null);
@@ -630,13 +716,16 @@ function listarDetalle(tick_id) {
 
         // Evaluar permisos y estado del flujo
         var user_id = $('#user_idx').val();
-        var isAssigned = String(ticketData.usu_asig) === String(user_id); // comparar como strings por seguridad
-        console.log(isAssigned);
+        var isAssigned = String(ticketData.usu_asig) === String(user_id);
+        console.log("Is Assigned: " + isAssigned);
         
         var hasDecisions = ticketData.decisiones_disponibles && ticketData.decisiones_disponibles.length > 0;
         var hasNextLinear = ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0;
-        var aprobacion = ticketData.paso_actual_info ? ticketData.paso_actual_info.es_aprobacion : 0;
-        var isLastStep = !hasDecisions && !hasNextLinear;
+        var isApprovalStep = (pasoInfo.es_aprobacion == 1);
+        var isSelectionStep = $('#panel_seleccion_usuario').is(':visible');
+        
+        // El último paso se redefine: no hay decisiones, no hay sig. paso lineal, Y no es un paso de selección de usuario
+        var isLastStep = !hasDecisions && !hasNextLinear && !isSelectionStep;
 
         // Guardar flags en el contenedor para consultas posteriores (event handlers)
         $('#boxdetalleticket').data('isAssigned', isAssigned);
@@ -647,54 +736,73 @@ function listarDetalle(tick_id) {
             $('#boxdetalleticket').hide();
             return;
         }
+        
+        // Si está Pausado (Novedad)
+        if (ticketData.tick_estado_texto === 'Pausado') {
+            $('#btnenviar').hide();
+            $('#btncrearnovedad').hide();
+            $('#btncerrarticket').hide();
+            $('#panel_checkbox_flujo').hide();
+            $('#panel_respuestas_rapidas').hide();
+            $('#panel_aprobacion').hide();
+            $('#panel_seleccion_usuario').hide();
+            $('#boxdetalleticket').show(); // Asegurarse que el panel de respuesta esté oculto
+
+            // Lógica para mostrar el botón de resolver novedad
+            $.post("../../controller/ticket.php?op=get_novedad_abierta", { tick_id: tick_id }, function (novedadData) {
+                var novedad = JSON.parse(novedadData);
+                // Solo el usuario asignado A LA NOVEDAD puede resolverla
+                if (novedad && String(novedad.usu_asig_novedad) === String(user_id)) {
+                    $('#btnresolvernovedad').show();
+                }
+            });
+            return; // Salir de la función aquí
+        }
 
         // Solo el usuario asignado puede ver/usar controles de avance o cierre
         if (isAssigned) {
-            // Si es el último paso: mostrar botón cerrar activado, ocultar / desactivar avanzar
-            if (isLastStep) {
+            
+            // Si es un paso de aprobación, ya mostramos el panel. Ocultar el resto.
+            if (isApprovalStep) {
+                $('#panel_checkbox_flujo').hide();
+                $('#panel_seleccion_usuario').hide();
+                $('#btncerrarticket').hide();
+            }
+            // Si es un paso de selección de usuario, ya lo mostramos. Ocultar el resto.
+            else if (isSelectionStep) {
+                 $('#panel_checkbox_flujo').hide();
+                 $('#btncerrarticket').hide();
+            }
+            // Si es el último paso: mostrar botón cerrar, ocultar avanzar
+            else if (isLastStep) {
                 $('#btncerrarticket').show().prop('disabled', false);
-                $('#panel_checkbox_flujo').hide().data('acciones', null);
-                $('#checkbox_avanzar_flujo').prop('disabled', true);
+                $('#panel_checkbox_flujo').hide();
+                $('#panel_seleccion_usuario').hide();
             } 
-            // Si NO es el último paso: mostrar opción de avanzar (si aplica) y ocultar botón cerrar
+            // Si NO es el último paso (y no es aprobación/selección): mostrar opción de avanzar
             else {
-                $('#btncerrarticket').hide().prop('disabled', true);
+                $('#btncerrarticket').hide(); // Ocultar cierre si no es el último paso
 
                 if (hasDecisions || hasNextLinear) {
-                    if (!hasNextLinear) {
-                        $('#btncerrarticket').show().prop('disabled', false);
-                    }
-                    // Guardar acciones exactas para que el modal/checkbox las use
-                    if(aprobacion == 1) {
-                        console.log('entre');
-                        $('#checkbox_avanzar_flujo').prop('disabled', true);
-                        return;
-                    }
-                    // Si el panel de selección de usuario está visible, NO mostrar el checkbox de avance
-                    if ($('#panel_seleccion_usuario').is(':visible')) {
-                        // ocultar y deshabilitar checkbox de avance (la asignación se hará con ENVIAR)
-                        $('#panel_checkbox_flujo').hide().data('acciones', null);
-                        $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
-                    } else {
-                        var acciones = {
-                            decisiones: ticketData.decisiones_disponibles || [],
-                            siguiente_paso: hasNextLinear
-                        };
-                        $('#panel_checkbox_flujo').data('acciones', acciones).show();
-                        $('#checkbox_avanzar_flujo').prop('disabled', false).show();
-                    }
-                } else {
-                    $('#panel_checkbox_flujo').hide().data('acciones', null);
-                    $('#checkbox_avanzar_flujo').prop('disabled', true);
+                    var acciones = {
+                        decisiones: ticketData.decisiones_disponibles || [],
+                        siguiente_paso: hasNextLinear
+                    };
+                    $('#panel_checkbox_flujo').data('acciones', acciones).show();
+                    $('#checkbox_avanzar_flujo').prop('disabled', false).show();
                 }
             }
         } else {
-            // No es usuario asignado: ocultar/desactivar todos los controles relacionados
-            $('#panel_checkbox_flujo').hide().data('acciones', null);
-            $('#btncerrarticket').hide().prop('disabled', true);
-            $('#checkbox_avanzar_flujo').prop('disabled', true);
+            // No es usuario asignado: ocultar/desactivar todos los controles de acción
+            $('#boxdetalleticket').hide(); // Ocultar toda la caja de respuesta
+            $('#panel_checkbox_flujo').hide();
+            $('#btncerrarticket').hide();
+            $('#panel_aprobacion').hide();
+            $('#panel_seleccion_usuario').hide();
         }
 
+        // Refrescar el estado del botón de enviar al final
+        updateEnviarButtonState();
 
         // === Manejo seguro y robusto de mermaid ===
         if (ticketData.timeline_graph && ticketData.timeline_graph.length > 0) {
@@ -742,28 +850,6 @@ function listarDetalle(tick_id) {
         } else {
             $('#panel_linea_tiempo').hide();
         }
-        
-        if (ticketData.tick_estado_texto === 'Cerrado') {
-            $('#boxdetalleticket').hide();
-            return; // No procesar más si el ticket está cerrado
-        }
-
-        if (ticketData.tick_estado_texto === 'Pausado') {
-            $('#btnenviar').hide();
-            $('#btncrearnovedad').hide();
-            $('#btncerrarticket').hide();
-            $('#panel_checkbox_flujo').hide();
-            $('#panel_respuestas_rapidas').hide();
-            $('#panel_aprobacion').hide();
-
-            // Lógica para mostrar el botón de resolver novedad
-            $.post("../../controller/ticket.php?op=get_novedad_abierta", { tick_id: tick_id }, function (novedadData) {
-                var novedad = JSON.parse(novedadData);
-                if (novedad && String(novedad.usu_asig_novedad) === String(user_id)) {
-                    $('#btnresolvernovedad').show();
-                }
-            });
-        }
 
     });
 }
@@ -791,8 +877,17 @@ $(document).on('click', '#btn_asignar_usuario', function() {
         if (isConfirm) {
             $.post("../../controller/ticket.php?op=updateasignacion", { tick_id: tick_id, usu_asig: usu_asig, how_asig: usu_id })
                 .done(function() {
-                    swal("¡Asignado!", "El ticket ha sido asignado correctamente.", "success");
-                    listarDetalle(tick_id);
+                    
+                    // MODIFICADO: Redirigir después de asignar
+                    swal({
+                        title: "¡Asignado!",
+                        text: "El ticket ha sido asignado. Redirigiendo a la lista...",
+                        type: "success",
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                    setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
                 })
                 .fail(function() {
                     swal("Error", "No se pudo asignar el ticket.", "error");
@@ -804,26 +899,34 @@ $(document).on('click', '#btn_asignar_usuario', function() {
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
     // Limpiar selección previa al cambiar el checkbox
     decisionSeleccionada = null;
-    $(this).prop('checked', false); // Forzamos a que se desmarque para que el usuario confirme su acción
+    
+    // Guardar estado actual y desmarcar temporalmente
+    var isChecked = $(this).is(':checked');
+    $(this).prop('checked', false); 
 
-    var acciones = $('#panel_checkbox_flujo').data('acciones');
+    if (!isChecked) {
+        // Si el usuario intentó marcarlo (pasó de false a true)
+        var acciones = $('#panel_checkbox_flujo').data('acciones');
 
-    // CASO 1: Hay decisiones (rutas) disponibles -> ABRIR MODAL
-    if (acciones && acciones.decisiones.length > 0) {
-        var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
-        acciones.decisiones.forEach(function(d) {
-            options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
-        });
-        $('#select_siguiente_paso').html(options_html);
-        $('#modal_seleccionar_paso_label').text('Seleccionar Decisión de Avance');
-        $('#modal_seleccionar_paso .modal-body p').text('Este paso tiene múltiples caminos. Por favor, selecciona la decisión que deseas tomar:');
-        $('#modal_seleccionar_paso').modal('show');
-    } 
-    // CASO 2: Hay avance lineal -> MARCAR CHECKBOX
-    else if (acciones && acciones.siguiente_paso) {
-        $(this).prop('checked', true); // Marcar el checkbox directamente
-        swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+        // CASO 1: Hay decisiones (rutas) disponibles -> ABRIR MODAL
+        if (acciones && acciones.decisiones.length > 0) {
+            var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
+            acciones.decisiones.forEach(function(d) {
+                options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
+            });
+            $('#select_siguiente_paso').html(options_html);
+            $('#modal_seleccionar_paso_label').text('Seleccionar Decisión de Avance');
+            $('#modal_seleccionar_paso .modal-body p').text('Este paso tiene múltiples caminos. Por favor, selecciona la decisión que deseas tomar:');
+            $('#modal_seleccionar_paso').modal('show');
+        } 
+        // CASO 2: Hay avance lineal -> MARCAR CHECKBOX
+        else if (acciones && acciones.siguiente_paso) {
+            $(this).prop('checked', true); // Marcar el checkbox directamente
+            swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+        }
     }
+    // Si el usuario lo desmarcó (pasó de true a false), simplemente se queda desmarcado.
+    
     updateEnviarButtonState();
 });
 
@@ -841,6 +944,14 @@ $(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
     }
 });
 
+// Cierre del modal de decisión
+$('#modal_seleccionar_paso').on('hidden.bs.modal', function () {
+    // Si el modal se cierra sin confirmar, y no hay decisión, desmarcar el check
+    if (!decisionSeleccionada) {
+        $('#checkbox_avanzar_flujo').prop('checked', false);
+        updateEnviarButtonState();
+    }
+});
 
 
 init();
