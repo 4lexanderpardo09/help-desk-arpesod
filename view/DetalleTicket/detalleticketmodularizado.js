@@ -875,22 +875,25 @@ var ModalHandlers = {
     },
 
     abrirModalDecision: function() {
-        var acciones = $('#panel_checkbox_flujo').data('acciones');
+        var acciones = $('#panel_checkbox_flujo').data('acciones') || { decisiones: [], siguiente_paso: false };
 
-        if (acciones && acciones.decisiones.length > 0) {
+        if (acciones.decisiones && acciones.decisiones.length > 0) {
             var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
             acciones.decisiones.forEach(function(d) {
                 options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
             });
             $('#select_siguiente_paso').html(options_html);
-            // ... setear textos del modal ...
+            $('#modal_seleccionar_paso_label').text('Seleccionar Decisión de Avance');
+            $('#modal_seleccionar_paso .modal-body p').text('Este paso tiene múltiples caminos. Por favor, selecciona la decisión que deseas tomar:');
             $('#modal_seleccionar_paso').modal('show');
-        } 
-        else if (acciones && acciones.siguiente_paso) {
-            $('#checkbox_avanzar_flujo').prop('checked', true); // Marcar el checkbox directamente
+        } else if (acciones.siguiente_paso) {
+            // Avance lineal -> no hacemos más (el checkbox ya quedó marcado por el usuario)
             swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+        } else {
+            swal("Atención", "No hay acciones de avance disponibles.", "warning");
         }
     },
+
     
     confirmarPasoSeleccionado: function() {
         var seleccion = $('#select_siguiente_paso').val();
@@ -957,17 +960,36 @@ var EventBinder = {
         // --- Asignación (Botón separado) ---
         $(document).on('click', '#btn_asignar_usuario', TicketActions.asignarUsuario);
 
-        // --- Lógica del Checkbox de Flujo y Modal de Decisión ---
+        // Reemplaza el handler antiguo por este
         $(document).on('change', '#checkbox_avanzar_flujo', function() {
+            // Resetar decisión previa
             AppState.decisionSeleccionada = null;
-            var isChecked = $(this).is(':checked');
-            $(this).prop('checked', false); 
-            
-            if (!isChecked) { // Si el usuario intentó marcarlo
-                ModalHandlers.abrirModalDecision();
+
+            var $chk = $(this);
+            var isChecked = $chk.is(':checked'); // estado después del click
+            var acciones = $('#panel_checkbox_flujo').data('acciones') || { decisiones: [], siguiente_paso: false };
+
+            if (isChecked) {
+                // Usuario intentó marcar el checkbox
+                if (acciones.decisiones && acciones.decisiones.length > 0) {
+                    // Hay decisiones -> abrir modal y NO dejar el checkbox marcado hasta confirmar
+                    $chk.prop('checked', false);
+                    ModalHandlers.abrirModalDecision(); // se encargará de rellenar el select y mostrar modal
+                } else if (acciones.siguiente_paso) {
+                    // Avance lineal -> permitir marcarlo directamente
+                    // (queda marcado porque el usuario lo hizo)
+                    swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+                } else {
+                    // No hay acciones -> revertir y avisar
+                    $chk.prop('checked', false);
+                    swal("Atención", "No hay acciones de avance disponibles.", "warning");
+                }
+            } else {
+                // Usuario desmarcó -> no hacemos nada especial (si tenías decisión previa, ya la reseteaste arriba)
             }
             UI.updateEnviarButtonState();
         });
+
         
         $(document).on('click', '#btn_confirmar_paso_seleccionado', ModalHandlers.confirmarPasoSeleccionado);
         
