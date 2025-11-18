@@ -654,7 +654,7 @@ function listarDetalle(tick_id) {
         $('#btnresolvernovedad').hide();
 
 
-        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0 && ticketData.usuarios_seleccionables && ticketData.usuarios_seleccionables.length > 0) {
+        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0 && ticketData.siguientes_pasos_lineales[0].requiere_seleccion_manual) {
             console.log('Modo: Seleccionar Siguiente Usuario');
             
             $('#panel_seleccion_usuario').show();
