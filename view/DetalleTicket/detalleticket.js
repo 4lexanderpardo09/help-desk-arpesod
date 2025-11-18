@@ -897,19 +897,16 @@ $(document).on('click', '#btn_asignar_usuario', function() {
 });
 
 $(document).on('change', '#checkbox_avanzar_flujo', function() {
-    // Limpiar selección previa al cambiar el checkbox
     decisionSeleccionada = null;
-    
-    // Guardar estado actual y desmarcar temporalmente
-    var isChecked = $(this).is(':checked');
-    $(this).prop('checked', false); 
+    var $chk = $(this);
+    var isChecked = $chk.is(':checked');       // nuevo estado después del click
+    var acciones = $('#panel_checkbox_flujo').data('acciones') || {decisiones: [], siguiente_paso: false};
 
-    if (!isChecked) {
-        // Si el usuario intentó marcarlo (pasó de false a true)
-        var acciones = $('#panel_checkbox_flujo').data('acciones');
-
-        // CASO 1: Hay decisiones (rutas) disponibles -> ABRIR MODAL
-        if (acciones && acciones.decisiones.length > 0) {
+    if (isChecked) {
+        // El usuario intentó marcar el checkbox: interceptamos
+        if (acciones.decisiones && acciones.decisiones.length > 0) {
+            // Hay decisiones -> abrir modal para seleccionar (no dejar marcado hasta confirmar)
+            $chk.prop('checked', false); // temporalmente desmarcar visualmente
             var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
             acciones.decisiones.forEach(function(d) {
                 options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
@@ -918,17 +915,22 @@ $(document).on('change', '#checkbox_avanzar_flujo', function() {
             $('#modal_seleccionar_paso_label').text('Seleccionar Decisión de Avance');
             $('#modal_seleccionar_paso .modal-body p').text('Este paso tiene múltiples caminos. Por favor, selecciona la decisión que deseas tomar:');
             $('#modal_seleccionar_paso').modal('show');
-        } 
-        // CASO 2: Hay avance lineal -> MARCAR CHECKBOX
-        else if (acciones && acciones.siguiente_paso) {
-            $(this).prop('checked', true); // Marcar el checkbox directamente
+        } else if (acciones.siguiente_paso) {
+            // Avance lineal -> sí se puede marcar directamente
+            // dejarlo marcado y avisar
             swal("Avance Lineal", "Al enviar su respuesta, el ticket avanzará al siguiente paso.", "info");
+        } else {
+            // No hay acciones -> revertir y avisar
+            $chk.prop('checked', false);
+            swal("Atención", "No hay acciones de avance disponibles.", "warning");
         }
+    } else {
+        // El usuario desmarcó el checkbox (no hacemos nada especial)
     }
-    // Si el usuario lo desmarcó (pasó de true a false), simplemente se queda desmarcado.
-    
+
     updateEnviarButtonState();
 });
+
 
 
 $(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
