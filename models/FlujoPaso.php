@@ -278,4 +278,39 @@ class FlujoPaso extends Conectar
         $sql->execute();
         return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
     }
+
+    public function get_paso_anterior($paso_actual_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        // Primero, obtener el orden y el flujo_id del paso actual
+        $sql_current = "SELECT flujo_id, paso_orden FROM tm_flujo_paso WHERE paso_id = ? AND est = 1";
+        $stmt_current = $conectar->prepare($sql_current);
+        $stmt_current->bindValue(1, $paso_actual_id);
+        $stmt_current->execute();
+        $paso_actual = $stmt_current->fetch(PDO::FETCH_ASSOC);
+
+        if (!$paso_actual) {
+            return null; // El paso actual no existe o está inactivo
+        }
+
+        $orden_actual = (int)$paso_actual['paso_orden'];
+        $flujo_id = $paso_actual['flujo_id'];
+
+        if ($orden_actual <= 1) {
+            return null; // No hay paso anterior si es el primero o el orden es inválido
+        }
+
+        $orden_anterior = $orden_actual - 1;
+
+        // Ahora, buscar el paso con el orden anterior en el mismo flujo
+        $sql_prev = "SELECT * FROM tm_flujo_paso WHERE flujo_id = ? AND paso_orden = ? AND est = 1";
+        $stmt_prev = $conectar->prepare($sql_prev);
+        $stmt_prev->bindValue(1, $flujo_id);
+        $stmt_prev->bindValue(2, $orden_anterior);
+        $stmt_prev->execute();
+
+        return $stmt_prev->fetch(PDO::FETCH_ASSOC);
+    }
 }

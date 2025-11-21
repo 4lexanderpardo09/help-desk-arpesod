@@ -15,16 +15,17 @@ class AssignmentRepository
         $this->pdo->exec("SET NAMES 'utf8'");
     }
 
-    public function insertAssignment($tick_id, $usu_asig, $how_asig, $paso_id)
+    public function insertAssignment($tick_id, $usu_asig, $how_asig, $paso_id, $asig_comentario)
     {
         try {
             $sql = "INSERT INTO th_ticket_asignacion (tick_id, usu_asig, how_asig, paso_id, fech_asig, asig_comentario, est)
-                    VALUES (?, ?, ?, ?, NOW(), 'Ticket abierto', 1);";
+                    VALUES (?, ?, ?, ?, NOW(), ?, 1);";
             $sql = $this->pdo->prepare($sql);
             $sql->bindValue(1, $tick_id);
             $sql->bindValue(2, $usu_asig);
             $sql->bindValue(3, $how_asig);
             $sql->bindValue(4, $paso_id);
+            $sql->bindValue(5, $asig_comentario);
             $sql->execute();
 
             return (int)$this->pdo->lastInsertId();

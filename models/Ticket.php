@@ -894,4 +894,52 @@ class Ticket extends Conectar
         $sql->bindValue(3, $th_id);
         $sql->execute();
     }
+
+    public function get_th_id_by_fecha($tick_id, $fecha_evento)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT th_id FROM th_ticket_asignacion WHERE tick_id = ? AND fech_asig = ? ORDER BY th_id DESC LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $fecha_evento);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['th_id'] : null;
+    }
+
+    public function get_usuario_asignado_a_paso($tick_id, $paso_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT usu_asig 
+                FROM th_ticket_asignacion 
+                WHERE tick_id = ? AND paso_id = ? 
+                ORDER BY fech_asig DESC 
+                LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $paso_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['usu_asig'] : null;
+    }
+
+    public function get_last_forward_assignment_for_paso($tick_id, $paso_id)
+    {
+        $conectar = parent::conexion();
+        parent::set_names();
+        $sql = "SELECT *
+                FROM th_ticket_asignacion
+                WHERE tick_id = ? 
+                  AND paso_id = ?
+                  AND asig_comentario != 'Ticket devuelto por error de proceso.'
+                ORDER BY fech_asig DESC
+                LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $paso_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
 }
