@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -47,6 +47,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(8, $es_tarea_nacional);
         $sql->bindValue(9, $es_aprobacion);
         $sql->bindValue(10, $paso_nom_adjunto);
+        $sql->bindValue(11, $permite_cerrar);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -63,7 +64,7 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -78,7 +79,8 @@ class FlujoPaso extends Conectar
                         requiere_seleccion_manual = ?,
                         es_tarea_nacional = ?,
                         es_aprobacion = ?,
-                        paso_nom_adjunto = ?
+                        paso_nom_adjunto = ?,
+                        permite_cerrar = ?
                     WHERE 
                         paso_id = ?";
         $sql = $conectar->prepare($sql);
@@ -91,7 +93,8 @@ class FlujoPaso extends Conectar
         $sql->bindValue(7, $es_tarea_nacional);
         $sql->bindValue(8, $es_aprobacion);
         $sql->bindValue(9, $paso_nom_adjunto);
-        $sql->bindValue(10, $paso_id);
+        $sql->bindValue(10, $permite_cerrar);
+        $sql->bindValue(11, $paso_id);
         $sql->execute();
     }
 

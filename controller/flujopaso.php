@@ -38,6 +38,7 @@ switch ($_GET["op"]) {
         $requiere_seleccion_manual = isset($_POST['requiere_seleccion_manual']) ? 1 : 0;
         $es_tarea_nacional = isset($_POST['es_tarea_nacional']) ? 1 : 0;
         $es_aprobacion = isset($_POST['es_aprobacion']) ? 1 : 0;
+        $permite_cerrar = isset($_POST['permite_cerrar']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -66,7 +67,8 @@ switch ($_GET["op"]) {
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
                 $es_aprobacion,
-                $paso_nom_adjunto
+                $paso_nom_adjunto,
+                $permite_cerrar
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -80,7 +82,8 @@ switch ($_GET["op"]) {
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
                 $es_aprobacion,
-                $paso_nom_adjunto
+                $paso_nom_adjunto,
+                $permite_cerrar
             );
         }
 
@@ -152,6 +155,7 @@ switch ($_GET["op"]) {
             $output = $datos;
             $output['requiere_seleccion_manual'] = $datos['requiere_seleccion_manual'];
             $output['es_aprobacion'] = $datos['es_aprobacion'];
+            $output['permite_cerrar'] = $datos['permite_cerrar'];
             $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
             echo json_encode($output);
         }

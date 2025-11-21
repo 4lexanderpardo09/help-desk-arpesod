@@ -55,6 +55,10 @@
                         <input type="checkbox" id="es_aprobacion" name="es_aprobacion" value="1">
                         <label for="es_aprobacion">¿Es un paso de aprobación?</label>
                     </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="permite_cerrar" name="permite_cerrar" value="1">
+                        <label for="permite_cerrar">¿Permite cerrar el ticket en este paso?</label>
+                    </div>
                     <div class="form-group" style="margin-top: 1rem;">
                         <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
                         <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">

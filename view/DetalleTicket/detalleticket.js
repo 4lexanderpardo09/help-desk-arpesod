@@ -131,7 +131,7 @@ $(document).ready(function () {
                 if (data.status === 'success') {
                     swal("¡Éxito!", data.message, "success");
                     $('#modal_crear_novedad').modal('hide');
-                    
+
                     // MODIFICADO: Redirigir si la creación de novedad implica reasignación
                     swal({
                         title: "¡Éxito!",
@@ -140,7 +140,7 @@ $(document).ready(function () {
                         timer: 1600,
                         showConfirmButton: false
                     });
-                    setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
 
                 } else {
                     swal("Error", data.message, "error");
@@ -169,7 +169,7 @@ $(document).ready(function () {
                     .done(function (response) {
                         var data = JSON.parse(response);
                         if (data.status === 'success') {
-                            
+
                             // MODIFICADO: Redirigir después de resolver la novedad
                             swal({
                                 title: "¡Éxito!",
@@ -178,7 +178,7 @@ $(document).ready(function () {
                                 timer: 1600,
                                 showConfirmButton: false
                             });
-                            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+                            setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
 
                         } else {
                             swal("Error", data.message, "error");
@@ -226,11 +226,11 @@ function myimagetreat(image) {
         processData: false,
         data: data,
         type: "post",
-        success: function(data) {
+        success: function (data) {
             var image = $('<img>').attr('src', data);
             $('#tickd_descrip').summernote("insertNode", image[0]);
         },
-        error: function(data) {
+        error: function (data) {
             console.log(data);
         }
     });
@@ -317,7 +317,7 @@ function enviarDetalle() {
     if ($('#panel_seleccion_usuario').is(':visible')) {
         var usu_asig = $('#usuario_seleccionado').val();
         console.log(usu_asig);
-        
+
         if (!usu_asig) {
             swal("Atención", "Por favor, selecciona un usuario para asignar antes de enviar.", "warning");
             // liberar botón para que el usuario intente de nuevo
@@ -355,9 +355,9 @@ function enviarDetalle() {
 
                 // Esta lógica de redirección ya es la que quieres, así que se mantiene
                 if (data.reassigned) {
-                    setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1600);
+                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1600);
                 } else {
-                    setTimeout(function() { location.reload(); }, 1600);
+                    setTimeout(function () { location.reload(); }, 1600);
                 }
             } else {
                 swal("Error", data.message || "No se pudo procesar la acción.", "error");
@@ -367,7 +367,7 @@ function enviarDetalle() {
             swal("Error Fatal", "Ocurrió un error con el servidor. Revisa la consola.", "error");
             console.error(jqXHR.responseText);
         },
-        complete: function() {
+        complete: function () {
             // Siempre liberar el bloqueo del botón cuando la petición termine
             $('#btnenviar').data('processing', false);
             updateEnviarButtonState();
@@ -386,15 +386,15 @@ $(document).on('click', '#btnenviar', function () {
     // MODIFICADO: Esta validación es ahora más compleja
     var panelFlujoVisible = $('#panel_checkbox_flujo').is(':visible');
     var panelUsuarioVisible = $('#panel_seleccion_usuario').is(':visible');
-    
+
     if (panelFlujoVisible && !$('#checkbox_avanzar_flujo').is(':checked')) {
-         swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
-         return false;
+        swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
+        return false;
     }
-    
+
     if (panelUsuarioVisible && !$('#usuario_seleccionado').val()) {
-         swal("Atención", "Debe seleccionar un usuario para asignar el ticket antes de enviar.", "warning");
-         return false;
+        swal("Atención", "Debe seleccionar un usuario para asignar el ticket antes de enviar.", "warning");
+        return false;
     }
 
     // Marcar en procesamiento y deshabilitar el botón
@@ -425,15 +425,15 @@ $(document).on('click', '#btn_registrar_evento', function () {
             confirmButtonText: "Sí, cerrar ticket",
             cancelButtonText: "Cancelar",
             closeOnConfirm: false
-        }, function(isConfirm) {
+        }, function (isConfirm) {
             if (isConfirm) {
                 $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
-                    .done(function() {
+                    .done(function () {
                         // MODIFICADO: updateTicket ahora maneja la redirección
-                        updateTicket(tick_id, usu_id); 
+                        updateTicket(tick_id, usu_id);
                         $('#fast_answer_id').val('');
                     })
-                    .fail(function() {
+                    .fail(function () {
                         swal("Error", "No se pudo registrar el evento.", "error");
                     });
             }
@@ -448,10 +448,10 @@ $(document).on('click', '#btn_registrar_evento', function () {
             confirmButtonText: "Sí, registrar ahora",
             cancelButtonText: "Cancelar",
             closeOnConfirm: false
-        }, function(isConfirm) {
+        }, function (isConfirm) {
             if (isConfirm) {
                 $.post("../../controller/ticket.php?op=registrar_error", { tick_id: tick_id, answer_id: answer_id, usu_id: usu_id, error_descrip: $('#error_descrip').val() })
-                    .done(function(response) {
+                    .done(function (response) {
                         // MODIFICADO: Verificar si la respuesta indica reasignación
                         var data;
                         try { data = JSON.parse(response); } catch (e) { data = {}; }
@@ -464,7 +464,7 @@ $(document).on('click', '#btn_registrar_evento', function () {
                                 timer: 1600,
                                 showConfirmButton: false
                             });
-                            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+                            setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
                         } else {
                             // Si no hay reasignación, solo recargar
                             swal("¡Registrado!", "El evento ha sido añadido al historial del ticket.", "success");
@@ -472,7 +472,7 @@ $(document).on('click', '#btn_registrar_evento', function () {
                         }
                         $('#fast_answer_id').val('');
                     })
-                    .fail(function() {
+                    .fail(function () {
                         swal("Error", "No se pudo registrar el evento.", "error");
                     });
             }
@@ -486,7 +486,7 @@ $(document).on('click', '#btncerrarticket', function () {
     $('#modal_nota_cierre').modal('show');
 });
 
-$(document).on('click', '#btn_confirmar_cierre', function() {
+$(document).on('click', '#btn_confirmar_cierre', function () {
     var tick_id = getUrlParameter('ID');
     var usu_id = $('#user_idx').val();
     var nota_cierre = $('#nota_cierre_summernote').summernote('code');
@@ -512,11 +512,11 @@ $(document).on('click', '#btn_confirmar_cierre', function() {
         data: formData,
         contentType: false,
         processData: false,
-        success: function(response) {
+        success: function (response) {
             $('#modal_nota_cierre').modal('hide');
             $('#nota_cierre_summernote').summernote('reset');
             $('#cierre_files').val('');
-            
+
             // MODIFICADO: Redirigir después de cerrar
             swal({
                 title: "¡Cerrado!",
@@ -525,9 +525,9 @@ $(document).on('click', '#btn_confirmar_cierre', function() {
                 timer: 1600,
                 showConfirmButton: false
             });
-            setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+            setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
         },
-        error: function() {
+        error: function () {
             swal("Error", "No se pudo cerrar el ticket.", "error");
         }
     });
@@ -545,25 +545,25 @@ $(document).on("click", "#btn_aprobar_paso", function () {
         cancelButtonText: "No, cancelar",
         closeOnConfirm: false
     },
-    function (isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/ticket.php?op=aprobar_paso", { tick_id: tick_id }, function (data) {
-                
-                // MODIFICADO: Redirigir después de aprobar
-                swal({
-                    title: "¡Aprobado!",
-                    text: "El ticket ha sido aprobado. Redirigiendo a la lista...",
-                    type: "success",
-                    timer: 1600,
-                    showConfirmButton: false
-                });
-                setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=aprobar_paso", { tick_id: tick_id }, function (data) {
 
-            }).fail(function (jqXHR) {
-                swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
-            });
-        }
-    });
+                    // MODIFICADO: Redirigir después de aprobar
+                    swal({
+                        title: "¡Aprobado!",
+                        text: "El ticket ha sido aprobado. Redirigiendo a la lista...",
+                        type: "success",
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
+                }).fail(function (jqXHR) {
+                    swal("Error", "No se pudo completar la aprobación. Detalle: " + jqXHR.responseText, "error");
+                });
+            }
+        });
 });
 
 $(document).on("click", "#btn_rechazar_paso", function () {
@@ -578,25 +578,25 @@ $(document).on("click", "#btn_rechazar_paso", function () {
         cancelButtonText: "No, cancelar",
         closeOnConfirm: false
     },
-    function (isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/ticket.php?op=rechazar_paso", { tick_id: tick_id }, function (data) {
-                
-                // MODIFICADO: Redirigir después de rechazar
-                swal({
-                    title: "¡Rechazado!",
-                    text: "El ticket ha sido devuelto. Redirigiendo a la lista...",
-                    type: "success",
-                    timer: 1600,
-                    showConfirmButton: false
-                });
-                setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=rechazar_paso", { tick_id: tick_id }, function (data) {
 
-            }).fail(function (jqXHR) {
-                swal("Error", "No se pudo completar el rechazo. Detalle: " + jqXHR.responseText, "error");
-            });
-        }
-    });
+                    // MODIFICADO: Redirigir después de rechazar
+                    swal({
+                        title: "¡Rechazado!",
+                        text: "El ticket ha sido devuelto. Redirigiendo a la lista...",
+                        type: "success",
+                        timer: 1600,
+                        showConfirmButton: false
+                    });
+                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+
+                }).fail(function (jqXHR) {
+                    swal("Error", "No se pudo completar el rechazo. Detalle: " + jqXHR.responseText, "error");
+                });
+            }
+        });
 });
 
 
@@ -610,7 +610,7 @@ function updateTicket(tick_id, usu_id) {
             timer: 1600,
             showConfirmButton: false
         });
-        setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+        setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
     });
 }
 
@@ -624,7 +624,7 @@ function listarDetalle(tick_id) {
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         var ticketData = JSON.parse(data);
         console.log(ticketData);
-        
+
         // --- Asignación de datos a la vista (tu código original) ---
         $('#lbltickestado').html(ticketData.tick_estado);
         $('#lblprioridad').html(ticketData.pd_nom);
@@ -638,7 +638,7 @@ function listarDetalle(tick_id) {
         $('#dp_id').val(ticketData.dp_nom);
         $('#tick_titulo').val(ticketData.tick_titulo);
         $('#tickd_descripusu').summernote('code', ticketData.tick_descrip);
-        
+
         // Limpiar paneles de acciones antes de re-evaluar
         $('#panel_seleccion_usuario').hide();
         $('#usuario_seleccionado').html('');
@@ -656,15 +656,15 @@ function listarDetalle(tick_id) {
 
         if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0 && ticketData.siguientes_pasos_lineales[0].requiere_seleccion_manual) {
             console.log('Modo: Seleccionar Siguiente Usuario');
-            
+
             $('#panel_seleccion_usuario').show();
             var options = '<option value="">Seleccionar Usuario</option>';
-            ticketData.usuarios_seleccionables.forEach(function(usuario) {
+            ticketData.usuarios_seleccionables.forEach(function (usuario) {
                 options += '<option value="' + usuario.usu_id + '">' + usuario.usu_nom + ' ' + usuario.usu_ape + ' (' + usuario.usu_correo + ')</option>';
             });
             $('#usuario_seleccionado').html(options);
             $('#usuario_seleccionado').select2();
-            
+
             // Ocultar otras acciones de flujo
             $('#panel_checkbox_flujo').hide().data('acciones', null);
             $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
@@ -686,7 +686,7 @@ function listarDetalle(tick_id) {
                 $('#panel_guia_paso').show();
                 $('#guia_paso_nombre').text('Paso Actual: ' + (pasoInfo.paso_nombre || ''));
                 $('#guia_paso_tiempo').text(pasoInfo.paso_tiempo_habil || '');
-                
+
                 if (pasoInfo.paso_descripcion) {
                     var pasoTemplate = pasoInfo.paso_descripcion;
                     // Setear el contenido en el editor y almacenar la plantilla
@@ -698,9 +698,9 @@ function listarDetalle(tick_id) {
 
                 if (pasoInfo.paso_nom_adjunto) {
                     var attachmentHtml = '<div class="attachment-section">' +
-                                             '<p><strong>Adjunto del Paso:</strong></p>' +
-                                             '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
-                                           '</div>';
+                        '<p><strong>Adjunto del Paso:</strong></p>' +
+                        '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
+                        '</div>';
                     $('#panel_guia_paso .card-body').append(attachmentHtml);
                 }
             }
@@ -718,14 +718,15 @@ function listarDetalle(tick_id) {
         var user_id = $('#user_idx').val();
         var isAssigned = String(ticketData.usu_asig) === String(user_id);
         console.log("Is Assigned: " + isAssigned);
-        
+
         var hasDecisions = ticketData.decisiones_disponibles && ticketData.decisiones_disponibles.length > 0;
         var hasNextLinear = ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length > 0;
         var isApprovalStep = (pasoInfo.es_aprobacion == 1);
         var isSelectionStep = $('#panel_seleccion_usuario').is(':visible');
-        
+
         // El último paso se redefine: no hay decisiones, no hay sig. paso lineal, Y no es un paso de selección de usuario
         var isLastStep = !hasDecisions && !hasNextLinear && !isSelectionStep;
+        var canCloseStep = (pasoInfo && pasoInfo.permite_cerrar == 1);
 
         // Guardar flags en el contenedor para consultas posteriores (event handlers)
         $('#boxdetalleticket').data('isAssigned', isAssigned);
@@ -736,7 +737,7 @@ function listarDetalle(tick_id) {
             $('#boxdetalleticket').hide();
             return;
         }
-        
+
         // Si está Pausado (Novedad)
         if (ticketData.tick_estado_texto === 'Pausado') {
             $('#btnenviar').hide();
@@ -761,7 +762,7 @@ function listarDetalle(tick_id) {
 
         // Solo el usuario asignado puede ver/usar controles de avance o cierre
         if (isAssigned) {
-            
+
             // Si es un paso de aprobación, ya mostramos el panel. Ocultar el resto.
             if (isApprovalStep) {
                 $('#panel_checkbox_flujo').hide();
@@ -770,18 +771,22 @@ function listarDetalle(tick_id) {
             }
             // Si es un paso de selección de usuario, ya lo mostramos. Ocultar el resto.
             else if (isSelectionStep) {
-                 $('#panel_checkbox_flujo').hide();
-                 $('#btncerrarticket').hide();
+                $('#panel_checkbox_flujo').hide();
+                $('#btncerrarticket').hide();
             }
             // Si es el último paso: mostrar botón cerrar, ocultar avanzar
             else if (isLastStep) {
                 $('#btncerrarticket').show().prop('disabled', false);
                 $('#panel_checkbox_flujo').hide();
                 $('#panel_seleccion_usuario').hide();
-            } 
+            }
             // Si NO es el último paso (y no es aprobación/selección): mostrar opción de avanzar
             else {
-                $('#btncerrarticket').hide(); // Ocultar cierre si no es el último paso
+                if (canCloseStep) {
+                    $('#btncerrarticket').show().prop('disabled', false);
+                } else {
+                    $('#btncerrarticket').hide(); // Ocultar cierre si no es el último paso y no permite cerrar
+                }
 
                 if (hasDecisions || hasNextLinear) {
                     var acciones = {
@@ -818,7 +823,7 @@ function listarDetalle(tick_id) {
                 if (window.mermaid) {
                     try {
                         mermaid.initialize({ startOnLoad: false });
-                    } catch (e) {}
+                    } catch (e) { }
 
                     try {
                         const renderResult = mermaid.render ? mermaid.render('mermaid_graph_' + Date.now(), graph) : null;
@@ -828,7 +833,7 @@ function listarDetalle(tick_id) {
                                 mermaidContainer.innerHTML = (res.svg || res);
                             }).catch(err => {
                                 console.error("mermaid.render (promise) falló:", err);
-                                try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                                try { mermaid.init(undefined, mermaidContainer); } catch (e) { console.error(e); }
                             });
                         } else if (renderResult) {
                             mermaidContainer.innerHTML = (renderResult.svg || renderResult);
@@ -841,12 +846,12 @@ function listarDetalle(tick_id) {
                         }
                     } catch (err) {
                         console.error("Error al renderizar con mermaid.render:", err);
-                        try { mermaid.init(undefined, mermaidContainer); } catch(e){ console.error(e); }
+                        try { mermaid.init(undefined, mermaidContainer); } catch (e) { console.error(e); }
                     }
                 } else {
                     console.error("Mermaid no está cargado en window cuando intentamos renderizar.");
                 }
-            }, 50); 
+            }, 50);
         } else {
             $('#panel_linea_tiempo').hide();
         }
@@ -854,7 +859,7 @@ function listarDetalle(tick_id) {
     });
 }
 
-$(document).on('click', '#btn_asignar_usuario', function() {
+$(document).on('click', '#btn_asignar_usuario', function () {
     var tick_id = getUrlParameter('ID');
     var usu_asig = $('#usuario_seleccionado').val();
     var usu_id = $('#user_idx').val();
@@ -873,11 +878,11 @@ $(document).on('click', '#btn_asignar_usuario', function() {
         confirmButtonText: "Sí, asignar ahora",
         cancelButtonText: "Cancelar",
         closeOnConfirm: false
-    }, function(isConfirm) {
+    }, function (isConfirm) {
         if (isConfirm) {
             $.post("../../controller/ticket.php?op=updateasignacion", { tick_id: tick_id, usu_asig: usu_asig, how_asig: usu_id })
-                .done(function() {
-                    
+                .done(function () {
+
                     // MODIFICADO: Redirigir después de asignar
                     swal({
                         title: "¡Asignado!",
@@ -886,21 +891,21 @@ $(document).on('click', '#btn_asignar_usuario', function() {
                         timer: 1600,
                         showConfirmButton: false
                     });
-                    setTimeout(function() { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
+                    setTimeout(function () { window.location.href = "../../view/ConsultarTicket/"; }, 1700);
 
                 })
-                .fail(function() {
+                .fail(function () {
                     swal("Error", "No se pudo asignar el ticket.", "error");
                 });
         }
     });
 });
 
-$(document).on('change', '#checkbox_avanzar_flujo', function() {
+$(document).on('change', '#checkbox_avanzar_flujo', function () {
     decisionSeleccionada = null;
     var $chk = $(this);
     var isChecked = $chk.is(':checked');       // nuevo estado después del click
-    var acciones = $('#panel_checkbox_flujo').data('acciones') || {decisiones: [], siguiente_paso: false};
+    var acciones = $('#panel_checkbox_flujo').data('acciones') || { decisiones: [], siguiente_paso: false };
 
     if (isChecked) {
         // El usuario intentó marcar el checkbox: interceptamos
@@ -908,7 +913,7 @@ $(document).on('change', '#checkbox_avanzar_flujo', function() {
             // Hay decisiones -> abrir modal para seleccionar (no dejar marcado hasta confirmar)
             $chk.prop('checked', false); // temporalmente desmarcar visualmente
             var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
-            acciones.decisiones.forEach(function(d) {
+            acciones.decisiones.forEach(function (d) {
                 options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
             });
             $('#select_siguiente_paso').html(options_html);
@@ -933,7 +938,7 @@ $(document).on('change', '#checkbox_avanzar_flujo', function() {
 
 
 
-$(document).on('click', '#btn_confirmar_paso_seleccionado', function() {
+$(document).on('click', '#btn_confirmar_paso_seleccionado', function () {
     var seleccion = $('#select_siguiente_paso').val();
     if (seleccion && seleccion !== '') {
         decisionSeleccionada = seleccion; // Guardamos la decisión

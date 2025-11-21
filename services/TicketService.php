@@ -504,7 +504,6 @@ class TicketService
             // Es importante devolver el mensaje de error para depurar
             echo json_encode(["status" => "error", "message" => $e->getMessage()]);
         }
-
     }
     
     private function iniciar_ruta_desde_decision($ticket, $decision_tomada)
