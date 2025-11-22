@@ -107,7 +107,7 @@ class Ticket extends Conectar
             $mensaje_notificacion .= "<br><b>Documentos adjuntos:</b><br>";
             foreach ($documentos as $doc) {
                 $url = '../../public/document/cierre/' . $tick_id . '/' . rawurlencode($doc['doc_nom']);
-                $mensaje_notificacion .= "<a href=\"".$url."\" target=\"_blank\">" . htmlspecialchars($doc['doc_nom']) . "</a><br>";
+                $mensaje_notificacion .= "<a href=\"" . $url . "\" target=\"_blank\">" . htmlspecialchars($doc['doc_nom']) . "</a><br>";
             }
         }
 
@@ -287,6 +287,8 @@ class Ticket extends Conectar
         t.usu_asig,
         t.pd_id,
         t.paso_actual_id,
+        t.ruta_id,
+        t.ruta_paso_orden,
         u.usu_nom,
         u.usu_ape,
         u.usu_correo,
