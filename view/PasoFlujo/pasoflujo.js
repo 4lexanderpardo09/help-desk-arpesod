@@ -329,8 +329,9 @@ $(document).ready(function () {
         "ajax": {
             url: '../../controller/flujopaso.php?op=listar',
             type: 'post',
-            data: { flujo_id: getUrlParameter('ID') },
-            dataType: 'json',
+            type: "post",
+            data: { flujo_id: flujo_id },
+            dataType: "json",
             "dataSrc": function (json) {
                 // Añadir el botón de transiciones a cada fila
                 json.aaData.forEach(function (row) {
@@ -349,52 +350,76 @@ $(document).ready(function () {
         "bInfo": true,
         "iDisplayLength": 10,
         "autoWidth": false,
-        "language": {
-            "sProcessing": "Procesando...",
-            "sLengthMenu": "Mostrar _MENU_ registros",
-            "sZeroRecords": "No se encontraron resultados",
-            "sEmptyTable": "Ningún dato disponible en esta tabla",
-            "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-            "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "sInfoPostFix": "",
-            "sSearch": "Buscar:",
-            "sUrl": "",
-            "sInfoThousands": ",",
-            "sLoadingRecords": "Cargando...",
-            "oPaginate": {
-                "sFirst": "Primero",
-                "sLast": "Último",
-                "sNext": "Siguiente",
-                "sPrevious": "Anterior"
-            },
-            "oAria": {
-                "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
-            }
-        }
+        "order": [[0, "asc"]]
     }).DataTable();
 
+    // Listener para el checkbox de aprobación de jefe
+    $('#necesita_aprobacion_jefe').change(function () {
+        if ($(this).is(":checked")) {
+            $('#cargo_id_asignado').prop('disabled', true);
+            $('#cargo_id_asignado').val('').trigger('change'); // Limpiar selección
+        } else {
+            $('#cargo_id_asignado').prop('disabled', false);
+        }
+    });
 
-})
+    $.post("../../controller/cargo.php?op=combo", function (data, status) {
+        $('#cargo_id_asignado').html(data);
+    });
+
+    $('#usuarios_especificos').select2({
+        width: '100%',
+        ajax: {
+            url: "../../controller/usuario.php?op=combo_usuarios_select2",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term // search term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 1
+    });
+
+    $('#requiere_seleccion_manual').change(function () {
+        if ($(this).is(':checked')) {
+            $('#usuarios_especificos_container').show();
+        } else {
+            $('#usuarios_especificos_container').hide();
+            $('#usuarios_especificos').val(null).trigger('change');
+        }
+    });
+
+});
 
 function editar(paso_id) {
-    $("#mdltitulo").html('Editar registro');
-
+    $('#mdltitulo').html('Editar Paso');
     $.post("../../controller/flujopaso.php?op=mostrar", { paso_id: paso_id }, function (data) {
         data = JSON.parse(data);
         $('#paso_id').val(data.paso_id);
+        $('#flujo_id').val(data.flujo_id);
         $('#paso_orden').val(data.paso_orden);
         $('#paso_nombre').val(data.paso_nombre);
-        $('#cargo_id_asignado').val(data.cargo_id_asignado);
+        $('#cargo_id_asignado').val(data.cargo_id_asignado).trigger('change');
         $('#paso_tiempo_habil').val(data.paso_tiempo_habil);
+        $('#paso_descripcion').summernote('code', data.paso_descripcion);
+        $('#current_paso_nom_adjunto').val(data.paso_nom_adjunto);
+
         if (data.requiere_seleccion_manual == 1) {
             $('#requiere_seleccion_manual').prop('checked', true);
             $('#usuarios_especificos_container').show();
-            $('#usuarios_especificos').val(data.usuarios_especificos).trigger('change');
+            cargarUsuariosEspecificos(paso_id);
         } else {
             $('#requiere_seleccion_manual').prop('checked', false);
             $('#usuarios_especificos_container').hide();
+            $('#usuarios_especificos').val(null).trigger('change');
         }
 
         if (data.es_tarea_nacional == 1) {
@@ -415,21 +440,35 @@ function editar(paso_id) {
             $('#permite_cerrar').prop('checked', false);
         }
 
-        $('#paso_descripcion').summernote('code', data.paso_descripcion);
-
-        // Handle attachment display
-        if (data.paso_nom_adjunto) {
-            $('#current_paso_nom_adjunto').val(data.paso_nom_adjunto);
-            var attachmentLink = '<a href="../../public/document/paso/' + data.paso_nom_adjunto + '" target="_blank">Ver Adjunto Actual</a>';
-            $('#paso_attachment_display').html(attachmentLink);
+        if (data.necesita_aprobacion_jefe == 1) {
+            $('#necesita_aprobacion_jefe').prop('checked', true);
+            $('#cargo_id_asignado').prop('disabled', true);
         } else {
-            $('#current_paso_nom_adjunto').val('');
-            $('#paso_attachment_display').html('');
+            $('#necesita_aprobacion_jefe').prop('checked', false);
+            $('#cargo_id_asignado').prop('disabled', false);
         }
 
+        if (data.paso_nom_adjunto) {
+            var fileLink = '<a href="../../public/document/paso/' + data.paso_nom_adjunto + '" target="_blank">Ver archivo actual: ' + data.paso_nom_adjunto + '</a>';
+            $('#paso_attachment_display').html(fileLink);
+        } else {
+            $('#paso_attachment_display').html('');
+        }
     });
+    $('#modalnuevopaso').modal('show');
+}
 
-    $("#modalnuevopaso").modal("show");
+function nuevo() {
+    $('#mdltitulo').html('Nuevo Paso');
+    $('#paso_form')[0].reset();
+    $('#flujo_id').val(flujo_id);
+    $('#paso_descripcion').summernote('code', '');
+    $('#usuarios_especificos_container').hide();
+    $('#usuarios_especificos').val(null).trigger('change');
+    $('#paso_attachment_display').html('');
+    $('#necesita_aprobacion_jefe').prop('checked', false);
+    $('#cargo_id_asignado').prop('disabled', false);
+    $('#modalnuevopaso').modal('show');
 }
 function eliminar(paso_id) {
     swal({
@@ -549,7 +588,7 @@ $(document).on('click', '.btn-group-toggle .btn', function () {
     }
 });
 
-function handleTipoDestinoChange(value) {   
+function handleTipoDestinoChange(value) {
     if (value === 'ruta') {
         $('#container_ruta_destino').show();
         $('#container_paso_destino').hide();

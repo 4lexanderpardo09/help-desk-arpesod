@@ -59,6 +59,10 @@
                         <input type="checkbox" id="permite_cerrar" name="permite_cerrar" value="1">
                         <label for="permite_cerrar">¿Permite cerrar el ticket en este paso?</label>
                     </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="necesita_aprobacion_jefe" name="necesita_aprobacion_jefe" value="1">
+                        <label for="necesita_aprobacion_jefe">¿Necesita Aprobación Jefe Inmediato?</label>
+                    </div>
                     <div class="form-group" style="margin-top: 1rem;">
                         <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
                         <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">

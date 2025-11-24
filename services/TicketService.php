@@ -6,6 +6,7 @@ require_once('../models/Subcategoria.php');
 require_once('../models/Documento.php');
 require_once('../models/Flujo.php');
 require_once('../models/FlujoPaso.php');
+require_once('../models/Organigrama.php');
 require_once('../models/Departamento.php');
 require_once('../models/DateHelper.php');
 require_once('../models/FlujoTransicion.php');
@@ -36,6 +37,7 @@ class TicketService
     private $flujoTransicionModel;
     private $rutaModel;
     private $rutaPasoModel;
+    private $organigramaModel;
 
 
     private TicketRepository $ticketRepository;
@@ -58,6 +60,7 @@ class TicketService
         $this->rutaModel = new Ruta();
         $this->rutaPasoModel = new RutaPaso();
         $this->subcategoriaModel = new Subcategoria();
+        $this->organigramaModel = new Organigrama();
 
 
         $this->pdo = $pdo;
@@ -83,19 +86,40 @@ class TicketService
                 } else {
                     if (empty($usu_asig_final)) {
                         $asignado_car_id = $paso_inicial['cargo_id_asignado'] ?? null;
-                        if (!$asignado_car_id) {
-                            $errors[] = "El paso inicial no tiene cargo asignado.";
-                        } else {
-                            if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
-                                $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($asignado_car_id);
-                            } else {
-                                $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $ticket_reg_id);
-                            }
 
-                            if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
-                                $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                        // Lógica de Jefe Inmediato
+                        if (isset($paso_inicial['necesita_aprobacion_jefe']) && $paso_inicial['necesita_aprobacion_jefe'] == 1) {
+                            if ($datos_creador) {
+                                $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($datos_creador['car_id']);
+                                if ($jefe_cargo_id) {
+                                    $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+                                    if ($jefe_info) {
+                                        $usu_asig_final = $jefe_info['usu_id'];
+                                    } else {
+                                        $errors[] = "Se requiere aprobación del jefe inmediato, pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id).";
+                                    }
+                                } else {
+                                    $errors[] = "Se requiere aprobación del jefe inmediato, pero el creador no tiene jefe definido en el organigrama.";
+                                }
+                            }
+                        }
+
+                        // Si no se asignó por jefe inmediato, intentamos por cargo
+                        if (empty($usu_asig_final)) {
+                            if (!$asignado_car_id) {
+                                $errors[] = "El paso inicial no tiene cargo asignado.";
                             } else {
-                                $errors[] = "No se encontró un usuario automático para cargo_id {$asignado_car_id} (paso inicial).";
+                                if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
+                                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($asignado_car_id);
+                                } else {
+                                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($asignado_car_id, $ticket_reg_id);
+                                }
+
+                                if ($nuevo_asignado_info && !empty($nuevo_asignado_info['usu_id'])) {
+                                    $usu_asig_final = $nuevo_asignado_info['usu_id'];
+                                } else {
+                                    $errors[] = "No se encontró un usuario automático para cargo_id {$asignado_car_id} (paso inicial).";
+                                }
                             }
                         }
                     }
@@ -207,16 +231,131 @@ class TicketService
                 $this->notificationRepository->insertNotification($resolveResult['usu_asig_final'], $mensaje_notificacion, $datos);
             }
 
-            $output = $this->insertDocument($datos);
+            // Insertar documentos si los hay
+            if (isset($_FILES['files'])) {
+                $this->insertDocument($datos);
+            }
 
             $this->pdo->commit();
-
-            return ["success" => true, "ticket" => $datos, "tick_id" => $output['tick_id'] ?? null];
+            return ["success" => true, "tick_id" => $datos];
         } catch (Exception $e) {
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
+            $this->pdo->rollBack();
+            return ["success" => false, "errors" => [$e->getMessage()]];
+        }
+    }
+
+    public function avanzar_ticket_en_ruta($ticket)
+    {
+        $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
+        $siguiente_orden = $ruta_paso_orden_actual + 1;
+        $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
+
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
+        }
+    }
+
+    public function iniciar_ruta_para_ticket($ticket, $ruta_id)
+    {
+        $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
+        if ($primer_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, null);
+        } else {
+            throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
+        }
+    }
+
+    public function avanzar_ticket_con_usuario_asignado($ticket, $usu_asig)
+    {
+        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+        }
+    }
+
+    public function avanzar_ticket_lineal($ticket)
+    {
+        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
+        if ($siguiente_paso_info) {
+            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
+        } else {
+            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+        }
+    }
+
+    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig)
+    {
+
+        $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
+
+        $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
+        if (!$siguiente_paso) {
+            throw new Exception("No se encontró la información del siguiente paso (ID: $nuevo_paso_id).");
+        }
+
+        $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
+        $nuevo_asignado_info = null;
+
+        // Verificar si el paso requiere aprobación del jefe inmediato
+        if (isset($siguiente_paso['necesita_aprobacion_jefe']) && $siguiente_paso['necesita_aprobacion_jefe'] == 1) {
+            // Obtener información del creador del ticket
+            $ticket_info = $this->ticketModel->listar_ticket_x_id($ticket_id);
+            $creador_id = $ticket_info['usu_id'];
+            $creador_info = $this->usuarioModel->get_usuario_x_id($creador_id);
+
+            if ($creador_info) {
+                // Obtener el cargo del jefe inmediato
+                $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($creador_info['car_id']);
+
+                if ($jefe_cargo_id) {
+                    // Buscar usuario con ese cargo
+                    // Priorizamos buscar en la misma regional si es posible, o usamos la búsqueda general
+                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+
+                    if ($nuevo_asignado_info) {
+                        // Si encontramos al jefe, forzamos la asignación y anulamos cualquier selección manual
+                        $usu_asig = null;
+                    }
+                }
             }
-            return ["success" => false, "errors" => ["Exception: " . $e->getMessage()]];
+        }
+
+        if (!$nuevo_asignado_info) {
+            if (!empty($usu_asig) || $usu_asig != null) {
+                $nuevo_asignado_info = $usu_asig;
+            } else {
+                if ($siguiente_paso['es_tarea_nacional'] == 1) {
+                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
+                } else {
+                    $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
+                }
+            }
+        }
+
+        if ($nuevo_asignado_info) {
+            if (!empty($usu_asig) || $usu_asig != null) {
+                $nuevo_usuario_asignado = $usu_asig;
+            } else {
+                // Si $nuevo_asignado_info es un array (viene de DB), usamos usu_id
+                // Si es un valor escalar (viene de $usu_asig que pasamos arriba), lo usamos directo
+                $nuevo_usuario_asignado = is_array($nuevo_asignado_info) ? $nuevo_asignado_info['usu_id'] : $nuevo_asignado_info;
+            }
+            $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
+
+            // Añadir al historial y enviar notificaciones...
+            $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id, 'Ticket trasladado');
+
+            // Actualizar el estado de tiempo para la última asignación
+            $this->computeAndUpdateEstadoPaso($ticket_id);
+            $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
+            $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
+        } else {
+            throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
         }
     }
 
@@ -697,93 +836,7 @@ class TicketService
         }
     }
 
-    public function avanzar_ticket_en_ruta($ticket)
-    {
-        $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
-        $siguiente_orden = $ruta_paso_orden_actual + 1;
-        $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
 
-        if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
-        } else {
-            $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
-        }
-    }
-
-    public function iniciar_ruta_para_ticket($ticket, $ruta_id)
-    {
-        $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
-        if ($primer_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, null);
-        } else {
-            throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
-        }
-    }
-
-    public function avanzar_ticket_con_usuario_asignado($ticket, $usu_asig)
-    {
-        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
-        if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
-        } else {
-            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
-        }
-    }
-
-    public function avanzar_ticket_lineal($ticket)
-    {
-        $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
-        if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
-        } else {
-            $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
-        }
-    }
-
-    public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig)
-    {
-
-        $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
-
-        $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
-        if (!$siguiente_paso) {
-            throw new Exception("No se encontró la información del siguiente paso (ID: $nuevo_paso_id).");
-        }
-
-        $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
-        $nuevo_asignado_info = null;
-
-        if (!empty($usu_asig) || $usu_asig != null) {
-
-            $nuevo_asignado_info = $usu_asig;
-        } else {
-
-            if ($siguiente_paso['es_tarea_nacional'] == 1) {
-                $nuevo_asignado_info = $this->usuarioModel->get_usuario_nacional_por_cargo($siguiente_cargo_id);
-            } else {
-                $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
-                $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($siguiente_cargo_id, $regional_origen_id);
-            }
-        }
-        if ($nuevo_asignado_info) {
-            if (!empty($usu_asig) || $usu_asig != null) {
-                $nuevo_usuario_asignado = $usu_asig;
-            } else {
-                $nuevo_usuario_asignado = $nuevo_asignado_info['usu_id'];
-            }
-            $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
-
-            // Añadir al historial y enviar notificaciones...
-            $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id, 'Ticket trasladado');
-
-            // Actualizar el estado de tiempo para la última asignación
-            $this->computeAndUpdateEstadoPaso($ticket_id);
-            $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
-            $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
-        } else {
-            throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
-        }
-    }
 
     private function cerrar_ticket($ticket_id, $mensaje)
     {

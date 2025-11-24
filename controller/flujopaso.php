@@ -39,6 +39,7 @@ switch ($_GET["op"]) {
         $es_tarea_nacional = isset($_POST['es_tarea_nacional']) ? 1 : 0;
         $es_aprobacion = isset($_POST['es_aprobacion']) ? 1 : 0;
         $permite_cerrar = isset($_POST['permite_cerrar']) ? 1 : 0;
+        $necesita_aprobacion_jefe = isset($_POST['necesita_aprobacion_jefe']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -56,19 +57,22 @@ switch ($_GET["op"]) {
             $paso_nom_adjunto = isset($_POST['current_paso_nom_adjunto']) ? $_POST['current_paso_nom_adjunto'] : '';
         }
 
+        $cargo_id_asignado = isset($_POST['cargo_id_asignado']) ? $_POST['cargo_id_asignado'] : null;
+
         if (empty($_POST['paso_id'])) {
             $paso_id = $flujopaso->insert_paso(
                 $_POST['flujo_id'],
                 $_POST['paso_orden'],
                 $_POST['paso_nombre'],
-                $_POST['cargo_id_asignado'],
+                $cargo_id_asignado,
                 $_POST['paso_tiempo_habil'],
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
                 $es_aprobacion,
                 $paso_nom_adjunto,
-                $permite_cerrar
+                $permite_cerrar,
+                $necesita_aprobacion_jefe
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -76,14 +80,15 @@ switch ($_GET["op"]) {
                 $paso_id,
                 $_POST['paso_orden'],
                 $_POST['paso_nombre'],
-                $_POST['cargo_id_asignado'],
+                $cargo_id_asignado,
                 $_POST['paso_tiempo_habil'],
                 $_POST['paso_descripcion'],
                 $requiere_seleccion_manual,
                 $es_tarea_nacional,
                 $es_aprobacion,
                 $paso_nom_adjunto,
-                $permite_cerrar
+                $permite_cerrar,
+                $necesita_aprobacion_jefe
             );
         }
 
@@ -103,7 +108,7 @@ switch ($_GET["op"]) {
             $sub_array = array();
             $sub_array[] = $row["paso_orden"];
             $sub_array[] = $row["paso_nombre"];
-            $sub_array[] = $row["car_nom"];
+            $sub_array[] = $row["car_nom"] ?? 'JEFE INMEDIATO';
             $sub_array[] = ($row["requiere_seleccion_manual"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
             $sub_array[] = ($row["es_tarea_nacional"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
             $sub_array[] = ($row["es_aprobacion"] == 1) ? '<span class="label label-info">Sí</span>' : '<span class="label label-default">No</span>';
@@ -137,7 +142,7 @@ switch ($_GET["op"]) {
             $cargo_id_necesario = $paso_data['cargo_id_asignado'];
             // Buscamos a TODOS los usuarios con ese cargo
             $usuarios = $usuario->get_usuarios_por_cargo($cargo_id_necesario);
-            
+
             $html = "<option value=''>Seleccione un Agente</option>";
             if (is_array($usuarios) && count($usuarios) > 0) {
                 foreach ($usuarios as $row) {
@@ -156,6 +161,7 @@ switch ($_GET["op"]) {
             $output['requiere_seleccion_manual'] = $datos['requiere_seleccion_manual'];
             $output['es_aprobacion'] = $datos['es_aprobacion'];
             $output['permite_cerrar'] = $datos['permite_cerrar'];
+            $output['necesita_aprobacion_jefe'] = isset($datos['necesita_aprobacion_jefe']) ? $datos['necesita_aprobacion_jefe'] : 0;
             $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
             echo json_encode($output);
         }

@@ -22,7 +22,7 @@ class FlujoPaso extends Conectar
         $sql = "SELECT tm_flujo_paso.*,
             tm_cargo.car_nom
             FROM tm_flujo_paso 
-            INNER JOIN tm_cargo ON tm_flujo_paso.cargo_id_asignado = tm_cargo.car_id   
+            LEFT JOIN tm_cargo ON tm_flujo_paso.cargo_id_asignado = tm_cargo.car_id   
             WHERE flujo_id = ? AND tm_flujo_paso.est = 1 ORDER BY paso_orden ASC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -48,6 +48,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(9, $es_aprobacion);
         $sql->bindValue(10, $paso_nom_adjunto);
         $sql->bindValue(11, $permite_cerrar);
+        $sql->bindValue(12, $necesita_aprobacion_jefe);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -64,7 +65,7 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -80,7 +81,8 @@ class FlujoPaso extends Conectar
                         es_tarea_nacional = ?,
                         es_aprobacion = ?,
                         paso_nom_adjunto = ?,
-                        permite_cerrar = ?
+                        permite_cerrar = ?,
+                        necesita_aprobacion_jefe = ?
                     WHERE 
                         paso_id = ?";
         $sql = $conectar->prepare($sql);
@@ -94,7 +96,8 @@ class FlujoPaso extends Conectar
         $sql->bindValue(8, $es_aprobacion);
         $sql->bindValue(9, $paso_nom_adjunto);
         $sql->bindValue(10, $permite_cerrar);
-        $sql->bindValue(11, $paso_id);
+        $sql->bindValue(11, $necesita_aprobacion_jefe);
+        $sql->bindValue(12, $paso_id);
         $sql->execute();
     }
 
@@ -134,11 +137,11 @@ class FlujoPaso extends Conectar
         $sql->bindValue(1, $paso_id);
         $sql->execute();
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
-    
+
         if ($resultado) {
             $resultado['usuarios_especificos'] = $this->get_usuarios_especificos($paso_id);
         }
-    
+
         return $resultado;
     }
 
@@ -153,7 +156,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(3, $condicion_nombre);
         $sql->execute();
         $resultado = $sql->fetch(PDO::FETCH_ASSOC);
-        
+
         if ($resultado && $resultado['paso_destino_id']) {
             // Devolvemos los detalles completos del paso destino
             return $this->get_paso_por_id($resultado['paso_destino_id']);
