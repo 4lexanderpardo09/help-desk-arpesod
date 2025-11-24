@@ -54,7 +54,7 @@ class RutaPaso extends Conectar
     public function get_pasos_por_ruta($ruta_id)
     {
         $conectar = parent::Conexion();
-        $sql = "SELECT rp.ruta_paso_id, rp.orden, fp.paso_nombre 
+        $sql = "SELECT rp.ruta_paso_id, rp.orden, fp.paso_nombre, rp.paso_id 
                 FROM tm_ruta_paso rp
                 JOIN tm_flujo_paso fp ON rp.paso_id = fp.paso_id
                 WHERE rp.ruta_id = ? AND rp.est = 1 

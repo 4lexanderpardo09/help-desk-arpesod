@@ -532,4 +532,99 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
 
 });
 
+// Lógica para cambiar entre Ruta y Paso Directo en el modal de transiciones
+$(document).on('change', 'input[name="tipo_destino"]', function () {
+    // Este evento se dispara cuando el input cambia de valor
+    handleTipoDestinoChange(this.value);
+});
+
+// También escuchamos el click en los labels para asegurar compatibilidad con Bootstrap
+$(document).on('click', '.btn-group-toggle .btn', function () {
+    var input = $(this).find('input');
+    if (input.length > 0) {
+        // Usamos setTimeout para esperar a que Bootstrap actualice el estado
+        setTimeout(function () {
+            handleTipoDestinoChange(input.val());
+        }, 50);
+    }
+});
+
+function handleTipoDestinoChange(value) {   
+    if (value === 'ruta') {
+        $('#container_ruta_destino').show();
+        $('#container_paso_destino').hide();
+        $('#ruta_id_modal').prop('required', true);
+        $('#paso_destino_id_modal').prop('required', false).val('');
+    } else {
+        $('#container_ruta_destino').hide();
+        $('#container_paso_destino').show();
+        $('#ruta_id_modal').prop('required', false).val('');
+        $('#paso_destino_id_modal').prop('required', true);
+    }
+}
+
+// Cargar pasos para el selector de destino
+function cargarPasosParaDestino() {
+    var flujo_id = getUrlParameter('ID');
+    $.post("../../controller/flujotransicion.php?op=combo_pasos", { flujo_id: flujo_id }, function (data) {
+        $('#paso_destino_id_modal').html(data);
+    });
+}
+
+// Llamar a cargarPasosParaDestino cuando se abre el modal
+$('#modalGestionTransiciones').on('show.bs.modal', function (e) {
+    cargarPasosParaDestino();
+    // Resetear estado si es una nueva transición (no edición)
+    if (!$('#transicion_id').val()) {
+        $('#tipo_destino_ruta').prop('checked', true).trigger('change');
+        $('#tipo_destino_ruta').parent().addClass('active');
+        $('#tipo_destino_paso').parent().removeClass('active');
+        $('#transicion_form')[0].reset();
+        $('#paso_origen_id_modal').val($('#paso_origen_id_modal').val()); // Mantener el ID del paso origen
+    }
+});
+
+function eliminarTransicion(transicion_id, paso_origen_id, paso_origen_nombre_encoded) {
+    swal({
+        title: "Confirmar",
+        text: "¿Está seguro de eliminar esta transición?",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "No",
+        closeOnConfirm: false
+    }, function (isConfirm) {
+        if (isConfirm) {
+            $.post("../../controller/flujotransicion.php?op=eliminar", { transicion_id: transicion_id }, function () {
+                swal("Eliminado!", "La transición ha sido eliminada.", "success");
+                cargarTablaTransiciones(paso_origen_id);
+            });
+        }
+    });
+}
+
+function editarTransicion(transicion_id) {
+    $.post("../../controller/flujotransicion.php?op=mostrar", { transicion_id: transicion_id }, function (data) {
+        data = JSON.parse(data);
+        $('#transicion_id').val(data.transicion_id);
+        $('#paso_origen_id_modal').val(data.paso_origen_id);
+        $('#condicion_clave_modal').val(data.condicion_clave);
+        $('#condicion_nombre_modal').val(data.condicion_nombre);
+
+        if (data.ruta_id) {
+            $('input[name="tipo_destino"][value="ruta"]').prop('checked', true).trigger('change');
+            $('input[name="tipo_destino"][value="ruta"]').parent().addClass('active');
+            $('input[name="tipo_destino"][value="paso"]').parent().removeClass('active');
+
+            $('#ruta_id_modal').val(data.ruta_id);
+        } else if (data.paso_destino_id) {
+            $('input[name="tipo_destino"][value="paso"]').prop('checked', true).trigger('change');
+            $('input[name="tipo_destino"][value="paso"]').parent().addClass('active');
+            $('input[name="tipo_destino"][value="ruta"]').parent().removeClass('active');
+
+            $('#paso_destino_id_modal').val(data.paso_destino_id);
+        }
+    });
+}
+
 init();

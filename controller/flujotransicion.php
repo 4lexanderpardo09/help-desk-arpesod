@@ -13,14 +13,15 @@ switch ($_GET["op"]) {
     case "guardaryeditar":
         // Usamos los nombres de campo del formulario del modal (ej: 'paso_origen_id_modal')
         $paso_origen = $_POST["paso_origen_id_modal"];
-        $ruta_id = $_POST["ruta_id_modal"];
+        $ruta_id = isset($_POST["ruta_id_modal"]) ? $_POST["ruta_id_modal"] : null;
+        $paso_destino_id = isset($_POST["paso_destino_id_modal"]) ? $_POST["paso_destino_id_modal"] : null;
         $condicion_clave = $_POST["condicion_clave_modal"];
         $condicion_nombre = $_POST["condicion_nombre_modal"];
-        
+
         if (empty($_POST["transicion_id"])) {
-            $flujoTransicion->insert_transicion($paso_origen, $ruta_id, $condicion_clave, $condicion_nombre);
+            $flujoTransicion->insert_transicion($paso_origen, $ruta_id, $paso_destino_id, $condicion_clave, $condicion_nombre);
         } else {
-            $flujoTransicion->update_transicion($_POST["transicion_id"], $paso_origen, $ruta_id, $condicion_clave, $condicion_nombre);
+            $flujoTransicion->update_transicion($_POST["transicion_id"], $paso_origen, $ruta_id, $paso_destino_id, $condicion_clave, $condicion_nombre);
         }
         break;
 
@@ -29,7 +30,15 @@ switch ($_GET["op"]) {
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
-            $sub_array[] = $row["ruta_nombre"] ? $row["ruta_nombre"] : 'Ruta no definida';
+            // Mostrar Ruta o Paso Destino
+            if (!empty($row["ruta_nombre"])) {
+                $sub_array[] = 'Ruta: ' . $row["ruta_nombre"];
+            } elseif (!empty($row["paso_destino_nombre"])) {
+                $sub_array[] = 'Paso: ' . $row["paso_destino_nombre"];
+            } else {
+                $sub_array[] = 'No definido';
+            }
+
             $sub_array[] = $row["condicion_nombre"];
             $sub_array[] = $row["condicion_clave"];
             $sub_array[] = '<button type="button" onClick="editarTransicion(' . $row["transicion_id"] . ');" class="btn btn-inline btn-warning btn-sm"><i class="fa fa-edit"></i></button>';
@@ -68,4 +77,3 @@ switch ($_GET["op"]) {
         }
         break;
 }
-?>

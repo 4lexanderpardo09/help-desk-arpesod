@@ -35,16 +35,16 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                 </header>
                 <div class="box-typical box-typical-padding">
-                <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
-                    <i class="fa fa-upload"></i> Cargue Masivo
-                </button>
-                <button type="button" id="btnnuevopaso" class="btn btn-inline btn-primary">Nuevo paso</button>
+                    <button type="button" id="btn_cargue_masivo" class="btn btn-inline btn-success" data-toggle="modal" data-target="#modalCargueMasivo">
+                        <i class="fa fa-upload"></i> Cargue Masivo
+                    </button>
+                    <button type="button" id="btnnuevopaso" class="btn btn-inline btn-primary">Nuevo paso</button>
                     <table id="paso_data" class="table table-bordered table-striped table-vcenter js-dataTable-full">
                         <thead>
                             <tr role="row">
                                 <th style="width: 20%;">Paso</th>
                                 <th style="width: 20%;">Nombre</th>
-                                <th style="width: 20%;">Usuario asigando</th>  
+                                <th style="width: 20%;">Usuario asigando</th>
                                 <th style="width: 10%;">Seleccion manual</th>
                                 <th style="width: 10%;">Es tarea nacional</th>
                                 <th style="width: 10%;">Es Aprobación</th>
@@ -52,12 +52,12 @@ if (isset($_SESSION["usu_id"])) {
                                 <th class="text-center" style="width: 2%;">Editar</th>
                                 <th class="text-center" style="width: 2%;">Eliminar</th>
                             </tr>
-                        </thead>    
+                        </thead>
                     </table>
                 </div>
             </div>
         </div>
-        
+
         <!-- Modal para Gestionar Transiciones -->
         <div class="modal fade" id="modalGestionTransiciones" tabindex="-1" role="dialog" aria-labelledby="modalGestionTransicionesLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
@@ -101,14 +101,31 @@ if (isset($_SESSION["usu_id"])) {
 
                                     <div class="form-row align-items-end">
                                         <div class="form-group col-lg-5 col-md-12">
+                                            <label>Tipo de Destino</label>
+                                            <div class="btn-group btn-group-toggle d-flex" data-toggle="buttons">
+                                                <label class="btn btn-outline-primary active w-50">
+                                                    <input type="radio" name="tipo_destino" id="tipo_destino_ruta" value="ruta" checked> Ruta
+                                                </label>
+                                                <label class="btn btn-outline-primary w-50">
+                                                    <input type="radio" name="tipo_destino" id="tipo_destino_paso" value="paso"> Paso Directo
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group col-lg-5 col-md-12" id="container_ruta_destino">
                                             <label for="ruta_id_modal">1. Seleccione la Ruta de Destino</label>
                                             <div class="input-group">
-                                                <select id="ruta_id_modal" name="ruta_id_modal" class="form-control selectpicker" data-live-search="true" title="Ninguna ruta seleccionada" required></select>
+                                                <select id="ruta_id_modal" name="ruta_id_modal" class="form-control selectpicker" data-live-search="true" title="Ninguna ruta seleccionada"></select>
                                                 <div class="input-group-append">
                                                     <button class="btn btn-outline-primary" type="button" id="btnNuevaRuta" title="Crear Nueva Ruta"><i class="fa fa-plus"></i></button>
                                                     <button class="btn btn-outline-info" type="button" id="btnGestionarPasos" title="Gestionar Pasos de la Ruta"><i class="fa fa-cogs"></i></button>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        <div class="form-group col-lg-5 col-md-12" id="container_paso_destino" style="display: none;">
+                                            <label for="paso_destino_id_modal">1. Seleccione el Paso de Destino</label>
+                                            <select id="paso_destino_id_modal" name="paso_destino_id_modal" class="form-control selectpicker" data-live-search="true" title="Ningún paso seleccionado"></select>
                                         </div>
                                         <div class="form-group col-lg-4 col-md-6">
                                             <label for="condicion_nombre_modal">2. Nombre esta Decisión</label>
@@ -140,7 +157,7 @@ if (isset($_SESSION["usu_id"])) {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        </tbody>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -164,7 +181,7 @@ if (isset($_SESSION["usu_id"])) {
                     </div>
                     <div class="modal-body">
                         <input type="hidden" id="gestion_ruta_id" name="gestion_ruta_id">
-                        
+
                         <div class="alert alert-info" role="alert">
                             Estás añadiendo pasos a la ruta: <strong id="gestion_ruta_nombre"></strong>
                         </div>
@@ -196,7 +213,7 @@ if (isset($_SESSION["usu_id"])) {
                                 </tr>
                             </thead>
                             <tbody>
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                     <div class="modal-footer">
