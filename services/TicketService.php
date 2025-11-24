@@ -339,30 +339,36 @@ class TicketService
                     $declared_nodes = [];
                     $connections = "";
 
-                    // 1. Declarar todos los nodos del flujo principal y de las rutas
+                    // 0. Identificar pasos que pertenecen a rutas para no duplicarlos en el flujo principal
+                    $pasos_en_rutas = [];
+                    $rutas_del_flujo = $this->rutaModel->get_rutas_por_flujo($flujo_id);
+                    // Si no existe get_rutas con flujo_id, podemos iterar las transiciones o buscar otra forma.
+                    // Por seguridad, usaremos las transiciones del flujo para descubrir las rutas activas.
+
+                    foreach ($todos_los_pasos_flujo as $p) {
+                        $transiciones_p = $this->flujoTransicionModel->get_transiciones_por_paso($p["paso_id"]);
+                        foreach ($transiciones_p as $t) {
+                            if (!empty($t['ruta_id'])) {
+                                $pasos_r = $this->rutaPasoModel->get_pasos_por_ruta($t['ruta_id']);
+                                foreach ($pasos_r as $pr) {
+                                    $pasos_en_rutas[] = $pr['paso_id'];
+                                }
+                            }
+                        }
+                    }
+                    $pasos_en_rutas = array_unique($pasos_en_rutas);
+
+                    // 1. Declarar nodos (filtrando los que están en rutas)
                     foreach ($todos_los_pasos_flujo as $paso) {
+                        // Si el paso pertenece a una ruta, NO lo declaramos en el flujo principal
+                        if (in_array($paso['paso_id'], $pasos_en_rutas)) {
+                            continue;
+                        }
+
                         $paso_id_unico = "flujo_{$paso['paso_id']}";
                         if (!in_array($paso_id_unico, $declared_nodes)) {
                             $mermaid_string .= "    {$paso_id_unico}[\"{$paso['paso_nombre']}\"];\n";
                             $declared_nodes[] = $paso_id_unico;
-                        }
-
-                        $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($paso["paso_id"]);
-                        if (count($transiciones) > 0) {
-                            foreach ($transiciones as $transicion) {
-                                if (!empty($transicion['ruta_id'])) {
-                                    $pasos_de_la_ruta = $this->rutaPasoModel->get_pasos_por_ruta($transicion['ruta_id']);
-                                    if ($pasos_de_la_ruta) {
-                                        foreach ($pasos_de_la_ruta as $paso_ruta) {
-                                            $paso_ruta_id_unico = "ruta{$transicion['ruta_id']}_paso{$paso_ruta['paso_id']}";
-                                            if (!in_array($paso_ruta_id_unico, $declared_nodes)) {
-                                                $mermaid_string .= "    {$paso_ruta_id_unico}[\"{$paso_ruta['paso_nombre']}\"];\n";
-                                                $declared_nodes[] = $paso_ruta_id_unico;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -370,11 +376,21 @@ class TicketService
                     $rutas_procesadas = [];
                     for ($i = 0; $i < count($todos_los_pasos_flujo); $i++) {
                         $paso = $todos_los_pasos_flujo[$i];
+
+                        // Si es un paso de ruta, lo saltamos del flujo principal
+                        if (in_array($paso['paso_id'], $pasos_en_rutas)) {
+                            continue;
+                        }
+
                         $paso_id_unico = "flujo_{$paso['paso_id']}";
 
                         // Aplicar estilo al paso del flujo principal
                         $estado = 'pending';
+                        // Lógica de estado para el flujo principal
                         if ($ruta_actual_id) {
+                            // Si estamos en una ruta, los pasos anteriores al inicio de la ruta están completados
+                            // Esto es una aproximación. Lo ideal sería saber en qué paso del flujo principal se disparó la ruta.
+                            // Asumiremos que si el orden es menor, está completado.
                             if ($paso['paso_orden'] <= $orden_actual_flujo) $estado = 'completed';
                         } else {
                             if ($paso['paso_orden'] < $orden_actual_flujo) $estado = 'completed';
@@ -397,7 +413,6 @@ class TicketService
                                         $has_valid_branches = true;
 
                                         // Conectar el flujo principal al inicio de la ruta
-                                        // Validar que el primer paso tenga ID
                                         if (isset($pasos_de_la_ruta[0]['paso_id'])) {
                                             $inicio_ruta = "ruta{$ruta_id}_paso{$pasos_de_la_ruta[0]['paso_id']}";
                                             $connections .= "    {$paso_id_unico} -- \"{$transicion['condicion_nombre']}\" --> {$inicio_ruta};\n";
@@ -408,13 +423,56 @@ class TicketService
                                             foreach ($pasos_de_la_ruta as $paso_ruta) {
                                                 if (isset($paso_ruta['paso_id'])) {
                                                     $paso_ruta_id_unico = "ruta{$ruta_id}_paso{$paso_ruta['paso_id']}";
-                                                    $mermaid_string .= "        {$paso_ruta_id_unico}\n";
+                                                    $mermaid_string .= "        {$paso_ruta_id_unico}[\"{$paso_ruta['paso_nombre']}\"]\n";
 
                                                     $estado_ruta = 'pending';
-                                                    if ($ruta_actual_id == $ruta_id && $paso_ruta['paso_id'] == $row["paso_actual_id"]) {
-                                                        $estado_ruta = 'active';
+
+                                                    // Lógica de estado para pasos DENTRO de la ruta
+                                                    if ($ruta_actual_id == $ruta_id) {
+                                                        // Si estamos en ESTA ruta
+                                                        if ($paso_ruta['paso_id'] == $row["paso_actual_id"]) {
+                                                            $estado_ruta = 'active';
+                                                        } elseif ($paso_ruta['orden'] < $row['ruta_paso_orden']) {
+                                                            // Si el orden es menor al actual, está completado
+                                                            $estado_ruta = 'completed';
+                                                        }
+                                                    } elseif ($estado == 'completed') {
+                                                        // Si el paso padre está completado, la ruta probablemente también
+                                                        // $estado_ruta = 'completed'; // Descomentar si se desea
                                                     }
+
                                                     $mermaid_string .= "        class {$paso_ruta_id_unico} {$estado_ruta};\n";
+
+                                                    // Generar transiciones explícitas desde este paso de la ruta
+                                                    $transiciones_ruta = $this->flujoTransicionModel->get_transiciones_por_paso($paso_ruta['paso_id']);
+                                                    if (count($transiciones_ruta) > 0) {
+                                                        foreach ($transiciones_ruta as $tr_ruta) {
+                                                            if (!empty($tr_ruta['paso_destino_id'])) {
+                                                                // Conexión a otro paso (puede ser fuera de la ruta)
+                                                                $destino_id_unico = "flujo_{$tr_ruta['paso_destino_id']}";
+                                                                // Si el destino está en una ruta, deberíamos usar el ID de nodo de ruta, 
+                                                                // pero es difícil saber en QUÉ ruta está sin buscarlo.
+                                                                // Por ahora asumimos que sale al flujo principal o a un paso directo.
+                                                                // Si el destino es parte de ESTA misma ruta, deberíamos usar el ID de ruta.
+
+                                                                // Verificar si el destino es parte de la misma ruta
+                                                                $es_interno = false;
+                                                                foreach ($pasos_de_la_ruta as $pr_check) {
+                                                                    if ($pr_check['paso_id'] == $tr_ruta['paso_destino_id']) {
+                                                                        $destino_id_unico = "ruta{$ruta_id}_paso{$tr_ruta['paso_destino_id']}";
+                                                                        $es_interno = true;
+                                                                        break;
+                                                                    }
+                                                                }
+
+                                                                $connections .= "        {$paso_ruta_id_unico} -- \"{$tr_ruta['condicion_nombre']}\" --> {$destino_id_unico};\n";
+                                                            } elseif (!empty($tr_ruta['ruta_id'])) {
+                                                                // Transición a OTRA ruta desde dentro de una ruta (anidamiento o salto)
+                                                                // Esto requeriría lógica recursiva o más compleja.
+                                                                // Por ahora lo omitimos o lo conectamos al inicio de esa ruta si ya está declarada.
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                             $mermaid_string .= "    end\n";
@@ -439,10 +497,18 @@ class TicketService
                         }
 
                         // Si no tiene ramas válidas, es una conexión lineal
-                        if (!$has_valid_branches && isset($todos_los_pasos_flujo[$i + 1])) {
-                            $siguiente_paso_id = $todos_los_pasos_flujo[$i + 1]['paso_id'];
-                            $destino_id = "flujo_{$siguiente_paso_id}";
-                            $connections .= "    {$paso_id_unico} --> {$destino_id};\n";
+                        if (!$has_valid_branches) {
+                            // Buscar el siguiente paso que NO sea de ruta
+                            $siguiente_paso_index = $i + 1;
+                            while (isset($todos_los_pasos_flujo[$siguiente_paso_index]) && in_array($todos_los_pasos_flujo[$siguiente_paso_index]['paso_id'], $pasos_en_rutas)) {
+                                $siguiente_paso_index++;
+                            }
+
+                            if (isset($todos_los_pasos_flujo[$siguiente_paso_index])) {
+                                $siguiente_paso_id = $todos_los_pasos_flujo[$siguiente_paso_index]['paso_id'];
+                                $destino_id = "flujo_{$siguiente_paso_id}";
+                                $connections .= "    {$paso_id_unico} --> {$destino_id};\n";
+                            }
                         }
                     }
 
