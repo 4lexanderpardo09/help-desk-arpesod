@@ -204,7 +204,7 @@ class Ticket extends Conectar
 
                 WHERE 
                 tm_ticket.est = 1
-                AND tm_ticket.usu_asig=?";
+                AND FIND_IN_SET(?, tm_ticket.usu_asig)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
         $sql->execute();

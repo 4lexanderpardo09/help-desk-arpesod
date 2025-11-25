@@ -334,12 +334,9 @@ class TicketService
             }
 
             if (count($usuarios_destino) > 0) {
-                // Actualizamos el ticket al nuevo paso, pero SIN usuario asignado específico (o uno dummy)
-                // O mejor, lo dejamos asignado al primero para que no quede huérfano en vistas viejas,
-                // pero la lógica real estará en tm_ticket_paralelo.
-                $primer_usuario = $usuarios_destino[0];
-
-                $this->ticketRepository->updateTicketFlowState($ticket_id, $primer_usuario, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
+                // Guardar la lista de IDs separados por coma en usu_asig
+                $usuarios_ids_string = implode(',', $usuarios_destino);
+                $this->ticketRepository->updateTicketFlowState($ticket_id, $usuarios_ids_string, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
 
                 foreach ($usuarios_destino as $uid) {
                     // Crear registro en tm_ticket_paralelo

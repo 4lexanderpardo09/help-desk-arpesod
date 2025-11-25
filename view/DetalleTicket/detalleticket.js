@@ -725,7 +725,11 @@ function listarDetalle(tick_id) {
 
         // Evaluar permisos y estado del flujo
         var user_id = $('#user_idx').val();
-        var isAssigned = String(ticketData.usu_asig) === String(user_id);
+        var isAssigned = false;
+        if (ticketData.usu_asig) {
+            var assignedUsers = String(ticketData.usu_asig).split(',');
+            isAssigned = assignedUsers.includes(String(user_id));
+        }
         console.log("Is Assigned: " + isAssigned);
 
         var hasDecisions = ticketData.decisiones_disponibles && ticketData.decisiones_disponibles.length > 0;
