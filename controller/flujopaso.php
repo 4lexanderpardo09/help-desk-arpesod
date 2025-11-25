@@ -40,6 +40,7 @@ switch ($_GET["op"]) {
         $es_aprobacion = isset($_POST['es_aprobacion']) ? 1 : 0;
         $permite_cerrar = isset($_POST['permite_cerrar']) ? 1 : 0;
         $necesita_aprobacion_jefe = isset($_POST['necesita_aprobacion_jefe']) ? 1 : 0;
+        $es_paralelo = isset($_POST['es_paralelo']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -72,7 +73,8 @@ switch ($_GET["op"]) {
                 $es_aprobacion,
                 $paso_nom_adjunto,
                 $permite_cerrar,
-                $necesita_aprobacion_jefe
+                $necesita_aprobacion_jefe,
+                $es_paralelo
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -88,11 +90,12 @@ switch ($_GET["op"]) {
                 $es_aprobacion,
                 $paso_nom_adjunto,
                 $permite_cerrar,
-                $necesita_aprobacion_jefe
+                $necesita_aprobacion_jefe,
+                $es_paralelo
             );
         }
 
-        if ($requiere_seleccion_manual && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
+        if (($requiere_seleccion_manual || $es_paralelo) && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
             $flujopaso->set_usuarios_especificos($paso_id, $_POST['usuarios_especificos']);
         } else {
             // Si no se requiere selección manual o no se envían usuarios, se limpia la tabla
@@ -162,6 +165,7 @@ switch ($_GET["op"]) {
             $output['es_aprobacion'] = $datos['es_aprobacion'];
             $output['permite_cerrar'] = $datos['permite_cerrar'];
             $output['necesita_aprobacion_jefe'] = isset($datos['necesita_aprobacion_jefe']) ? $datos['necesita_aprobacion_jefe'] : 0;
+            $output['es_paralelo'] = isset($datos['es_paralelo']) ? $datos['es_paralelo'] : 0;
             $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
             echo json_encode($output);
         }

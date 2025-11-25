@@ -199,7 +199,11 @@ function updateEnviarButtonState() {
 
     var enabledCheckbox = $('#checkbox_avanzar_flujo').is(':checked');
     var enabledSelectUserAssign = panelVisible && !!$('#usuario_seleccionado').val();
-    var enabled = enabledCheckbox == true || enabledSelectUserAssign == true;
+
+    // Check if it's a parallel task (button text changed)
+    var isParallelAction = $('#btnenviar').html() === 'Terminar mi parte';
+
+    var enabled = enabledCheckbox == true || enabledSelectUserAssign == true || isParallelAction;
     $('#btnenviar').prop('disabled', !enabled);
 }
 
@@ -386,8 +390,9 @@ $(document).on('click', '#btnenviar', function () {
     // MODIFICADO: Esta validación es ahora más compleja
     var panelFlujoVisible = $('#panel_checkbox_flujo').is(':visible');
     var panelUsuarioVisible = $('#panel_seleccion_usuario').is(':visible');
+    var isParallelAction = $btn.html() === 'Terminar mi parte';
 
-    if (panelFlujoVisible && !$('#checkbox_avanzar_flujo').is(':checked')) {
+    if (!isParallelAction && panelFlujoVisible && !$('#checkbox_avanzar_flujo').is(':checked')) {
         swal("Atención", "Debe marcar la opción para avanzar el flujo antes de enviar.", "warning");
         return false;
     }
@@ -624,6 +629,10 @@ function listarDetalle(tick_id) {
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         var ticketData = JSON.parse(data);
         console.log(ticketData);
+
+        if (ticketData.paso_actual_id) {
+            checkParallelStatus(tick_id, ticketData.paso_actual_id);
+        }
 
         // --- Asignación de datos a la vista (tu código original) ---
         $('#lbltickestado').html(ticketData.tick_estado);
@@ -962,3 +971,50 @@ $('#modal_seleccionar_paso').on('hidden.bs.modal', function () {
 
 
 init();
+
+function checkParallelStatus(tick_id, paso_id) {
+    $.post("../../controller/ticket.php?op=listar_paralelo", { tick_id: tick_id, paso_id: paso_id }, function (data) {
+        data = JSON.parse(data);
+        if (data.length > 0) {
+            $('#panel_paralelo').show();
+            var html = '';
+            var currentUserPending = false;
+            var currentUserId = $('#user_idx').val();
+
+            data.forEach(function (row) {
+                var statusClass = row.estado == 'Pendiente' ? 'label-warning' : 'label-success';
+                html += '<tr>';
+                html += '<td>' + row.usu_nom + ' ' + row.usu_ape + '</td>';
+                html += '<td><span class="label ' + statusClass + '">' + row.estado + '</span></td>';
+                html += '<td>' + (row.fech_cierre ? row.fech_cierre : '-') + '</td>';
+                html += '<td>' + (row.comentario ? row.comentario : '-') + '</td>';
+                html += '</tr>';
+
+                if (row.usu_id == currentUserId && row.estado == 'Pendiente') {
+                    currentUserPending = true;
+                }
+            });
+            $('#tabla_paralelo_body').html(html);
+
+            if (currentUserPending) {
+                $('#btnenviar').html('Terminar mi parte');
+                $('#btnenviar').show();
+                $('#panel_aprobacion').hide(); // Hide standard approval if parallel
+                $('#panel_checkbox_flujo').hide(); // Hide standard flow advance
+                updateEnviarButtonState(); // Re-evaluate button state
+            } else {
+                // If I am not pending (either done or not assigned), hide the main action button
+                $('#btnenviar').hide();
+                $('#panel_aprobacion').hide(); // Ensure these are hidden
+                $('#panel_checkbox_flujo').hide(); // Ensure these are hidden
+
+                if (data.some(r => r.usu_id == currentUserId)) {
+                    // I was part of it and finished
+                    // Maybe show a message "Esperando a otros..."
+                }
+            }
+        } else {
+            $('#panel_paralelo').hide();
+        }
+    });
+}

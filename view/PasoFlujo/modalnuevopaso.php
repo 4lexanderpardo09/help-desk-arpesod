@@ -63,6 +63,10 @@
                         <input type="checkbox" id="necesita_aprobacion_jefe" name="necesita_aprobacion_jefe" value="1">
                         <label for="necesita_aprobacion_jefe">¿Necesita Aprobación Jefe Inmediato?</label>
                     </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="es_paralelo" name="es_paralelo" value="1">
+                        <label for="es_paralelo">¿Es un paso paralelo?</label>
+                    </div>
                     <div class="form-group" style="margin-top: 1rem;">
                         <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
                         <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">

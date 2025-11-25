@@ -389,7 +389,26 @@ $(document).ready(function () {
     });
 
     $('#requiere_seleccion_manual').change(function () {
+        if ($(this).is(':checked') || $('#es_paralelo').is(':checked')) {
+            $('#usuarios_especificos_container').show();
+        } else {
+            $('#usuarios_especificos_container').hide();
+            $('#usuarios_especificos').val(null).trigger('change');
+        }
+    });
+
+    $('#es_paralelo').change(function () {
         if ($(this).is(':checked')) {
+            $('#cargo_id_asignado').prop('disabled', true);
+            $('#cargo_id_asignado').val('').trigger('change'); // Limpiar selección
+        } else {
+            // Solo habilitar si no está marcado "necesita aprobación jefe"
+            if (!$('#necesita_aprobacion_jefe').is(':checked')) {
+                $('#cargo_id_asignado').prop('disabled', false);
+            }
+        }
+
+        if ($(this).is(':checked') || $('#requiere_seleccion_manual').is(':checked')) {
             $('#usuarios_especificos_container').show();
         } else {
             $('#usuarios_especificos_container').hide();
@@ -415,7 +434,7 @@ function editar(paso_id) {
         if (data.requiere_seleccion_manual == 1) {
             $('#requiere_seleccion_manual').prop('checked', true);
             $('#usuarios_especificos_container').show();
-            cargarUsuariosEspecificos(paso_id);
+            cargarUsuariosEspecificos(data.usuarios_especificos_data);
         } else {
             $('#requiere_seleccion_manual').prop('checked', false);
             $('#usuarios_especificos_container').hide();
@@ -446,6 +465,24 @@ function editar(paso_id) {
         } else {
             $('#necesita_aprobacion_jefe').prop('checked', false);
             $('#cargo_id_asignado').prop('disabled', false);
+        }
+
+        if (data.es_paralelo == 1) {
+            $('#es_paralelo').prop('checked', true);
+            $('#usuarios_especificos_container').show();
+            cargarUsuariosEspecificos(data.usuarios_especificos_data);
+            $('#cargo_id_asignado').prop('disabled', true);
+        } else {
+            $('#es_paralelo').prop('checked', false);
+            // Only hide if requires_manual is also false
+            if (data.requiere_seleccion_manual != 1) {
+                $('#usuarios_especificos_container').hide();
+                $('#usuarios_especificos').val(null).trigger('change');
+            }
+            // Solo habilitar si no está marcado "necesita aprobación jefe"
+            if (data.necesita_aprobacion_jefe != 1) {
+                $('#cargo_id_asignado').prop('disabled', false);
+            }
         }
 
         if (data.paso_nom_adjunto) {
@@ -513,6 +550,8 @@ $(document).on("click", "#btnnuevopaso", function () {
     $('#es_tarea_nacional').prop('checked', false);
     $('#es_aprobacion').prop('checked', false);
     $('#permite_cerrar').prop('checked', false);
+    $('#necesita_aprobacion_jefe').prop('checked', false);
+    $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');
     $('#paso_nom_adjunto').val('');
@@ -562,6 +601,8 @@ $('#modalnuevopaso').on('hidden.bs.modal', function () {
     $('#es_tarea_nacional').prop('checked', false);
     $('#es_aprobacion').prop('checked', false);
     $('#permite_cerrar').prop('checked', false);
+    $('#necesita_aprobacion_jefe').prop('checked', false);
+    $('#es_paralelo').prop('checked', false);
     $('#usuarios_especificos_container').hide();
     $('#usuarios_especificos').val(null).trigger('change');
     $('#paso_tiempo_habil').val('');
@@ -641,7 +682,18 @@ function eliminarTransicion(transicion_id, paso_origen_id, paso_origen_nombre_en
         }
     });
 }
+function cargarUsuariosEspecificos(usuariosData) {
+    var select = $('#usuarios_especificos');
+    select.empty(); // Clear existing options
 
+    if (usuariosData && usuariosData.length > 0) {
+        usuariosData.forEach(function (user) {
+            var option = new Option(user.usu_nom + ' ' + user.usu_ape, user.usu_id, true, true);
+            select.append(option);
+        });
+        select.trigger('change');
+    }
+}
 function editarTransicion(transicion_id) {
     $.post("../../controller/flujotransicion.php?op=mostrar", { transicion_id: transicion_id }, function (data) {
         data = JSON.parse(data);

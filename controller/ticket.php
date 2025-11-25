@@ -23,55 +23,55 @@ switch ($_GET["op"]) {
     case "insert":
         $result = $ticketService->createTicket($_POST);
         echo json_encode($result);
-    break;
-    
+        break;
+
     case "listar_x_usu":
         $result = $lister->listTicketsByUser($_POST['usu_id']);
         echo json_encode($result);
-    break;
-    
+        break;
+
     case "listar_x_agente":
         $result = $lister->listTicketsByAgent($_POST['usu_asig']);
         echo json_encode($result);
-    break;
+        break;
 
     case "listar":
         $result = $lister->listAllTickets();
         echo json_encode($result);
-    break;
-    
+        break;
+
     case "listar_historial_tabla_x_agente":
         $result = $lister->listTicketsRecordByAgent($_POST['usu_id']);
         echo json_encode($result);
-    break;
+        break;
 
     case "listardetalle":
         $detailLister->listTicketDetails($_POST['tick_id']);
-    break;
-     
+        break;
+
     case "listarhistorial":
         $detailLister->listTicketDetailRecord($_POST['tick_id']);
-    break;
+        break;
 
     case "listar_historial_tabla":
         $result = $lister->listAllTicketsRecord();
         echo json_encode($result);
-    break;
+        break;
 
     case "mostrar":
         $result = $ticketService->showTicket($_POST['tick_id']);
-    break;
+        break;
 
     case "get_transiciones":
         require_once('../models/FlujoPaso.php');
         $flujoPaso = new FlujoPaso();
         $transiciones = $flujoPaso->get_transiciones_por_paso($_POST["paso_id"]);
         echo json_encode($transiciones);
-    break;
-    
+        break;
+
     case "insertdetalle":
         $result = $ticketService->createDetailTicket($_POST);
-    break;
+        break;
 
     case "update":
         $ticket->update_ticket($_POST["tick_id"]);
@@ -88,33 +88,33 @@ switch ($_GET["op"]) {
         $ticket->reabrir_ticket($_POST['tick_id']);
         // $correo->ticket_cerrado($_POST['tick_id']);
         $ticket->insert_ticket_detalle_reabrir($_POST['tick_id'], $_POST['usu_id']);
-    break;
+        break;
 
     case "updateasignacion":
         $ticket->update_ticket_asignacion($_POST['tick_id'], $_POST['usu_asig'], $_POST['how_asig']);
-    break;
-    
-    case"calendario_x_usu_asig":
-        $datos=$ticket->get_calendar_x_asig($_POST['usu_asig']);
-        echo json_encode($datos);
-    break;
+        break;
 
-    case"calendario_x_usu":
-        $datos=$ticket->get_calendar_x_usu($_POST['usu_id']);
+    case "calendario_x_usu_asig":
+        $datos = $ticket->get_calendar_x_asig($_POST['usu_asig']);
         echo json_encode($datos);
-    break;    
+        break;
+
+    case "calendario_x_usu":
+        $datos = $ticket->get_calendar_x_usu($_POST['usu_id']);
+        echo json_encode($datos);
+        break;
 
     case "aprobar_flujo":
         $result = $workflowService->ApproveFlow($_POST, $_SESSION);
-    break;    
+        break;
 
     case "registrar_error":
         $result = $ticketService->LogErrorTicket($_POST);
-    break;
+        break;
 
     case "verificar_inicio_flujo":
         $result = $workflowService->CheckStartFlow($_POST);
-    break;
+        break;
 
     case "aprobar_paso":
         $resultado = $ticketService->approveStep($_POST['tick_id']);
@@ -125,7 +125,7 @@ switch ($_GET["op"]) {
         $resultado = $ticketService->rejectStep($_POST['tick_id']);
         echo json_encode($resultado);
         break;
-    
+
     case "crear_novedad":
         $result = $ticketService->crearNovedad($_POST);
         echo json_encode($result);
@@ -135,7 +135,7 @@ switch ($_GET["op"]) {
         $result = $ticketService->resolverNovedad($_POST);
         echo json_encode($result);
         break;
-    
+
     case "get_novedad_abierta":
         $novedadRepository = new \models\repository\NovedadRepository($pdo);
         $novedad = $novedadRepository->getNovedadAbiertaPorTicket($_POST['tick_id']);
@@ -163,5 +163,12 @@ switch ($_GET["op"]) {
             "aaData" => $data
         );
         echo json_encode($results);
+        break;
+
+    case "listar_paralelo":
+        require_once('../models/TicketParalelo.php');
+        $ticketParalelo = new TicketParalelo();
+        $datos = $ticketParalelo->get_ticket_paralelo_por_ticket_y_paso($_POST['tick_id'], $_POST['paso_id']);
+        echo json_encode($datos);
         break;
 }

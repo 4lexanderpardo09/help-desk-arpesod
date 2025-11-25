@@ -11,15 +11,15 @@ $empresa = new Empresa();
 switch ($_GET["op"]) {
 
     case "guardaryeditar":
-        if(empty($_POST["usu_id"])){
-            $usu_id = $usuario->insert_usuario( $_POST["usu_nom"],$_POST["usu_ape"],$_POST["usu_correo"],$_POST["usu_pass"],$_POST["rol_id"], $_POST['dp_id'], $_POST['es_nacional'], $_POST['reg_id'], $_POST['car_id']);
+        if (empty($_POST["usu_id"])) {
+            $usu_id = $usuario->insert_usuario($_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id'], $_POST['es_nacional'], $_POST['reg_id'], $_POST['car_id']);
             $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
-        }else{
+        } else {
             var_dump($_POST);
             $usu_id = $usuario->update_usuario($_POST["usu_id"], $_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id'], $_POST['es_nacional'], $_POST['reg_id'], $_POST['car_id']);
             $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
         }
-    break;
+        break;
 
     case "listar":
 
@@ -31,10 +31,10 @@ switch ($_GET["op"]) {
             $sub_array[] = $row['usu_ape'];
             $sub_array[] = isset($row['dp_nom']) ? $row['dp_nom'] : 'Sin departamento';
             $sub_array[] = $row['usu_correo'];
-          
-            if($row['rol_id']==1){
+
+            if ($row['rol_id'] == 1) {
                 $sub_array[] = '<span class="label label-primary">Usuario</span>';
-            }else {
+            } else {
                 $sub_array[] = '<span class="label label-info">Soporte</span>';
             }
 
@@ -51,100 +51,118 @@ switch ($_GET["op"]) {
             "aaData" => $data
         );
         echo json_encode($result);
-    break;
+        break;
 
     case "eliminar":
         $usuario->delete_usuario($_POST["usu_id"]);
-    break;
+        break;
 
     case "mostrar":
 
         $datos = $usuario->get_usuario_x_id($_POST['usu_id']);
-        if(is_array($datos)==true and count($datos)>0){
-                $row = $datos;  
-                $output['usu_id'] = $row['usu_id'];
-                $output['emp_ids'] = $row['emp_ids'];
-                $output['usu_nom'] = $row['usu_nom'];
-                $output['usu_ape'] = $row['usu_ape'];
-                $output['usu_correo'] = $row['usu_correo'];
-                $output['usu_pass'] = $row['usu_pass'];
-                $output['rol_id'] = $row['rol_id'];
-                $output['dp_id'] = $row['dp_id'];
-                $output['reg_id'] = $row['reg_id'];
-                $output['car_id'] = $row['car_id'];
-                $output['es_nacional'] = $row['es_nacional'];
-            }
-            echo json_encode($output);
-    
-        
-    break;  
-    
+        if (is_array($datos) == true and count($datos) > 0) {
+            $row = $datos;
+            $output['usu_id'] = $row['usu_id'];
+            $output['emp_ids'] = $row['emp_ids'];
+            $output['usu_nom'] = $row['usu_nom'];
+            $output['usu_ape'] = $row['usu_ape'];
+            $output['usu_correo'] = $row['usu_correo'];
+            $output['usu_pass'] = $row['usu_pass'];
+            $output['rol_id'] = $row['rol_id'];
+            $output['dp_id'] = $row['dp_id'];
+            $output['reg_id'] = $row['reg_id'];
+            $output['car_id'] = $row['car_id'];
+            $output['es_nacional'] = $row['es_nacional'];
+        }
+        echo json_encode($output);
+
+
+        break;
+
     case "total":
         $datos = $usuario->get_usuario_total_id($_POST['usu_id']);
-        if(is_array($datos)==true and count($datos)>0){
-            foreach($datos as $row){
+        if (is_array($datos) == true and count($datos) > 0) {
+            foreach ($datos as $row) {
                 $output['TOTAL'] = $row['TOTAL'];
             }
             echo json_encode($output);
         }
-    break;  
+        break;
 
     case "totalabierto":
         $datos = $usuario->get_usuario_totalabierto_id($_POST['usu_id']);
-        if(is_array($datos)==true and count($datos)>0){
-            foreach($datos as $row){
+        if (is_array($datos) == true and count($datos) > 0) {
+            foreach ($datos as $row) {
                 $output['TOTAL'] = $row['TOTAL'];
             }
             echo json_encode($output);
         }
-    break;
+        break;
 
     case "totalcerrado":
         $datos = $usuario->get_usuario_totalcerrado_id($_POST['usu_id']);
-        if(is_array($datos)==true and count($datos)>0){
-            foreach($datos as $row){
+        if (is_array($datos) == true and count($datos) > 0) {
+            foreach ($datos as $row) {
                 $output['TOTAL'] = $row['TOTAL'];
             }
             echo json_encode($output);
         }
-    break;
+        break;
 
     case "graficousuario":
         $datos = $usuario->get_total_categoria_usuario($_POST["usu_id"]);
-            echo json_encode($datos);
-    break; 
-    
+        echo json_encode($datos);
+        break;
+
     case "usuariosxrol":
         $datos = $usuario->get_usuario_x_rol();
-        if(is_array($datos) == true and count($datos) > 0){
-            $html.="";
-            foreach($datos as $row){
-                $html.="<option value='".$row['usu_id']."'>".$row['usu_nom']." ".$row['usu_ape']."</option>";
+        if (is_array($datos) == true and count($datos) > 0) {
+            $html .= "";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
             }
             echo $html;
         }
-    break;   
-    
+        break;
+
     case "usuariosxdepartamento":
         $datos = $usuario->get_usuario_x_departamento($_POST['dp_id']);
-        if(is_array($datos) == true and count($datos) > 0){
+        if (is_array($datos) == true and count($datos) > 0) {
             $html = "";
-            $html.="<option label='Seleccionar'></option>";
-            foreach($datos as $row){
-                $html.="<option value='".$row['usu_id']."'>".$row['usu_nom']." ".$row['usu_ape']."</option>";
+            $html .= "<option label='Seleccionar'></option>";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
             }
             echo $html;
         }
-    break; 
+        break;
 
     case "combo":
         $datos = $usuario->get_usuario();
-        if(is_array($datos) and count($datos)>0){
-            $html= "";
-            foreach($datos as $row){
-                $html.= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
+        if (is_array($datos) and count($datos) > 0) {
+            $html = "";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
             }
             echo $html;
         }
-    break;
+        break;
+
+    case "combo_usuarios_select2":
+        $datos = $usuario->get_usuario();
+        $data = array();
+        if (is_array($datos) and count($datos) > 0) {
+            foreach ($datos as $row) {
+                $text = $row['usu_nom'] . " " . $row['usu_ape'];
+                // Filtrar por término de búsqueda si existe
+                if (isset($_GET['q']) && !empty($_GET['q'])) {
+                    if (stripos($text, $_GET['q']) === false) {
+                        continue;
+                    }
+                }
+                $data[] = array("id" => $row['usu_id'], "text" => $text);
+            }
+        }
+        echo json_encode($data);
+        break;
 }

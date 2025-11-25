@@ -25,7 +25,7 @@ if (isset($_SESSION["usu_id"])) {
                             <div class="tbl-cell">
                                 <h3 id="lblticketid"></h3>
                                 <span id="lbltickestado"></span>
-                                <span id="lblestado_tiempo"></span> 
+                                <span id="lblestado_tiempo"></span>
                                 <span class="label label-primary" id="lblnomusuario"></span>
                                 <span class="label label-default" id="lblfechacrea"></span>
                                 <span id="lblprioridad"></span>
@@ -42,19 +42,19 @@ if (isset($_SESSION["usu_id"])) {
                 <div id="panel_linea_tiempo" class="box-typical box-typical-padding" style="display:none;">
                     <h5 class="m-t-lg with-border">Progreso del Flujo de Trabajo</h5>
                     <div class="mermaid">
-                        
+
                     </div>
                 </div>
 
                 <div id="panel_guia_paso" class="alert alert-info" role="alert" style="display: none;">
-                      <div class="card-body">
+                    <div class="card-body">
                         <h4 class="alert-heading" id="guia_paso_nombre"></h4>
                         <p>
-                        <strong>Descripción de la Tarea:</strong> Tienes <strong id="guia_paso_tiempo"></strong> día(s) hábiles para completar este paso.
+                            <strong>Descripción de la Tarea:</strong> Tienes <strong id="guia_paso_tiempo"></strong> día(s) hábiles para completar este paso.
                         </p>
                         <hr>
                         <p class="mb-0">
-                        A continuación, en el editor de texto, encontrarás una plantilla o guía con las instrucciones para esta tarea.
+                            A continuación, en el editor de texto, encontrarás una plantilla o guía con las instrucciones para esta tarea.
                         </p>
                         <!-- Aquí se insertará el adjunto -->
                     </div>
@@ -135,17 +135,17 @@ if (isset($_SESSION["usu_id"])) {
                     <div class="row">
                         <form method="post" id="detalle_form">
                             <div class="col-lg-12">
-                                
-                                    <input type="hidden" id="selected_siguiente_paso_id" name="selected_siguiente_paso_id">
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <fieldset class="form-group">
-                                                <label class="form-label semibold" for="cat_id">Documento adicional</label>
-                                                <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
-                                            </fieldset>
-                                        </div>
+
+                                <input type="hidden" id="selected_siguiente_paso_id" name="selected_siguiente_paso_id">
+                                <div class="row">
+                                    <div class="col-lg-4">
+                                        <fieldset class="form-group">
+                                            <label class="form-label semibold" for="cat_id">Documento adicional</label>
+                                            <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                        </fieldset>
                                     </div>
-                                
+                                </div>
+
                                 <div class="box-typical box-typical-padding" id="panel_respuestas_rapidas">
                                     <h5 class="m-t-lg with-border">Registrar Evento</h5>
                                     <div class="row">
@@ -195,7 +195,7 @@ if (isset($_SESSION["usu_id"])) {
                                             </div>
                                         </div>
                                     </div>
-                                </div> 
+                                </div>
                             </div>
                         </form>
                         <div style="display: inline-flex;">
@@ -212,7 +212,24 @@ if (isset($_SESSION["usu_id"])) {
                                 <button type="button" id="btnresolvernovedad" class="btn btn-inline btn-success" style="display: none;">Resolver Novedad</button>
                             </div>
                         </div>
-                         <div class="box-typical box-typical-padding" id="panel_aprobacion" style="display: none;">
+                        <div class="box-typical box-typical-padding" id="panel_paralelo" style="display: none;">
+                            <h5 class="m-t-lg with-border">Estado de Tareas Paralelas</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Agente</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                            <th>Comentario</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla_paralelo_body">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="box-typical box-typical-padding" id="panel_aprobacion" style="display: none;">
                             <h5 class="m-t-lg with-border">Acción Requerida: Aprobar o Rechazar</h5>
                             <p>
                                 Este paso del flujo requiere su aprobación para continuar. Puede aprobar para avanzar al siguiente paso o rechazar para devolverlo al paso anterior.
@@ -225,96 +242,96 @@ if (isset($_SESSION["usu_id"])) {
                             </button>
                         </div>
                     </div><!--.row-->
-                    
+
                 </div>
-                
+
 
             </div>
         </div>
         <!-- Modal para seleccionar el siguiente paso -->
-<div class="modal fade" id="modal_seleccionar_paso" tabindex="-1" role="dialog" aria-labelledby="modal_seleccionar_paso_label" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modal_seleccionar_paso_label">Seleccionar Siguiente Paso</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Hay múltiples opciones para el siguiente paso. Por favor, selecciona uno:</p>
-                <div class="form-group">
-                    <label for="select_siguiente_paso">Paso:</label>
-                    <select class="form-control" id="select_siguiente_paso" name="select_siguiente_paso">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn_confirmar_paso_seleccionado">Seleccionar</button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Modal para la nota de cierre -->
-<div class="modal fade" id="modal_nota_cierre" tabindex="-1" role="dialog" aria-labelledby="modal_nota_cierre_label" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modal_nota_cierre_label">Añadir Nota de Cierre</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p>Por favor, escribe una nota para el cierre de este ticket. Esta nota será visible para el usuario creador y otros usuarios relevantes.</p>
-                <div class="summernote-theme-1">
-                    <textarea id="nota_cierre_summernote" name="nota_cierre_summernote" class="summernote"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label semibold" for="cierre_files">Documentos adjuntos</label>
-                    <input type="file" name="cierre_files[]" id="cierre_files" class="form-control" multiple>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btn_confirmar_cierre">Confirmar Cierre</button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Modal para crear novedad -->
-<div class="modal fade" id="modal_crear_novedad" tabindex="-1" role="dialog" aria-labelledby="modal_crear_novedad_label" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modal_crear_novedad_label">Crear Novedad</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <form id="novedad_form">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="descripcion_novedad">Descripción de la Novedad</label>
-                        <textarea class="form-control" id="descripcion_novedad" name="descripcion_novedad" rows="4" required></textarea>
+        <div class="modal fade" id="modal_seleccionar_paso" tabindex="-1" role="dialog" aria-labelledby="modal_seleccionar_paso_label" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal_seleccionar_paso_label">Seleccionar Siguiente Paso</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label for="usu_asig_novedad">Asignar a</label>
-                        <select class="select2" id="usu_asig_novedad" name="usu_asig_novedad" data-placeholder="Seleccione un usuario" required>
-                            <!-- Opciones de usuario se cargarán dinámicamente -->
-                        </select>
+                    <div class="modal-body">
+                        <p>Hay múltiples opciones para el siguiente paso. Por favor, selecciona uno:</p>
+                        <div class="form-group">
+                            <label for="select_siguiente_paso">Paso:</label>
+                            <select class="form-control" id="select_siguiente_paso" name="select_siguiente_paso">
+                                <!-- Options will be populated by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn_confirmar_paso_seleccionado">Seleccionar</button>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Novedad</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
-</div>
+        <!-- Modal para la nota de cierre -->
+        <div class="modal fade" id="modal_nota_cierre" tabindex="-1" role="dialog" aria-labelledby="modal_nota_cierre_label" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal_nota_cierre_label">Añadir Nota de Cierre</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Por favor, escribe una nota para el cierre de este ticket. Esta nota será visible para el usuario creador y otros usuarios relevantes.</p>
+                        <div class="summernote-theme-1">
+                            <textarea id="nota_cierre_summernote" name="nota_cierre_summernote" class="summernote"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label semibold" for="cierre_files">Documentos adjuntos</label>
+                            <input type="file" name="cierre_files[]" id="cierre_files" class="form-control" multiple>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btn_confirmar_cierre">Confirmar Cierre</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal para crear novedad -->
+        <div class="modal fade" id="modal_crear_novedad" tabindex="-1" role="dialog" aria-labelledby="modal_crear_novedad_label" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal_crear_novedad_label">Crear Novedad</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="novedad_form">
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="descripcion_novedad">Descripción de la Novedad</label>
+                                <textarea class="form-control" id="descripcion_novedad" name="descripcion_novedad" rows="4" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="usu_asig_novedad">Asignar a</label>
+                                <select class="select2" id="usu_asig_novedad" name="usu_asig_novedad" data-placeholder="Seleccione un usuario" required>
+                                    <!-- Opciones de usuario se cargarán dinámicamente -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar Novedad</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <?php require_once('../MainJs/js.php') ?>
         <script type="text/javascript" src="../DetalleTicket/detalleticket.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>

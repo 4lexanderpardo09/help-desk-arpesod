@@ -7,6 +7,7 @@ require_once('../models/Documento.php');
 require_once('../models/Flujo.php');
 require_once('../models/FlujoPaso.php');
 require_once('../models/Organigrama.php');
+require_once('../models/TicketParalelo.php');
 require_once('../models/Departamento.php');
 require_once('../models/DateHelper.php');
 require_once('../models/FlujoTransicion.php');
@@ -38,6 +39,7 @@ class TicketService
     private $rutaModel;
     private $rutaPasoModel;
     private $organigramaModel;
+    private $ticketParaleloModel;
 
 
     private TicketRepository $ticketRepository;
@@ -61,6 +63,7 @@ class TicketService
         $this->rutaPasoModel = new RutaPaso();
         $this->subcategoriaModel = new Subcategoria();
         $this->organigramaModel = new Organigrama();
+        $this->ticketParaleloModel = new TicketParalelo();
 
 
         $this->pdo = $pdo;
@@ -300,6 +303,63 @@ class TicketService
         $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
         $nuevo_asignado_info = null;
 
+        // --- LÓGICA DE PASO PARALELO (FORK) ---
+        if (isset($siguiente_paso['es_paralelo']) && $siguiente_paso['es_paralelo'] == 1) {
+
+            // 1. Determinar usuarios destino
+            $usuarios_destino = [];
+
+            // A. Verificar si hay usuarios específicos configurados en el paso
+            $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguiente_paso['paso_id']);
+
+            if (!empty($usuarios_especificos)) {
+                $usuarios_destino = $usuarios_especificos;
+            } elseif (is_array($usu_asig)) {
+                // B. Se seleccionaron manualmente en el paso anterior (si aplica)
+                $usuarios_destino = $usu_asig;
+            } else {
+                // C. Todos los usuarios del cargo asignado
+                if ($siguiente_paso['es_tarea_nacional'] == 1) {
+                    $usuarios_db = $this->usuarioModel->get_usuarios_por_cargo($siguiente_cargo_id);
+                } else {
+                    $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+                    $usuarios_db = $this->usuarioModel->get_usuarios_por_cargo_y_regional_all($siguiente_cargo_id, $regional_origen_id);
+                }
+
+                if ($usuarios_db) {
+                    foreach ($usuarios_db as $u) {
+                        $usuarios_destino[] = $u['usu_id'];
+                    }
+                }
+            }
+
+            if (count($usuarios_destino) > 0) {
+                // Actualizamos el ticket al nuevo paso, pero SIN usuario asignado específico (o uno dummy)
+                // O mejor, lo dejamos asignado al primero para que no quede huérfano en vistas viejas,
+                // pero la lógica real estará en tm_ticket_paralelo.
+                $primer_usuario = $usuarios_destino[0];
+
+                $this->ticketRepository->updateTicketFlowState($ticket_id, $primer_usuario, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
+
+                foreach ($usuarios_destino as $uid) {
+                    // Crear registro en tm_ticket_paralelo
+                    $this->ticketParaleloModel->insert_ticket_paralelo($ticket_id, $nuevo_paso_id, $uid);
+
+                    // Notificar a cada uno
+                    $mensaje_notificacion = "Se le ha asignado una tarea paralela en el ticket #{$ticket_id} - {$cats_nom}.";
+                    $this->notificationRepository->insertNotification($uid, $mensaje_notificacion, $ticket_id);
+                }
+
+                $this->computeAndUpdateEstadoPaso($ticket_id);
+                return; // Terminamos aquí, no seguimos la lógica normal
+            } else {
+                throw new Exception("El paso es paralelo pero no se encontraron usuarios para asignar.");
+            }
+        }
+
+
+
+        // --- LÓGICA DE JEFE INMEDIATO ---
         // Verificar si el paso requiere aprobación del jefe inmediato
         if (isset($siguiente_paso['necesita_aprobacion_jefe']) && $siguiente_paso['necesita_aprobacion_jefe'] == 1) {
             // Obtener información del creador del ticket
@@ -718,6 +778,36 @@ class TicketService
         $this->pdo->beginTransaction();
         try {
             $ticket = $this->ticketModel->listar_ticket_x_id($tickId);
+
+            // --- LÓGICA DE PASO PARALELO (JOIN) ---
+            $paso_actual_info = $this->flujoPasoModel->get_paso_por_id($ticket['paso_actual_id']);
+            if (isset($paso_actual_info['es_paralelo']) && $paso_actual_info['es_paralelo'] == 1) {
+                // 1. Verificar si el usuario actual tiene una asignación paralela pendiente
+                $usuId = $_SESSION['usu_id']; // Aseguramos que usuId esté definido
+                $mi_paralelo = $this->ticketParaleloModel->get_ticket_paralelo_por_usuario($tickId, $ticket['paso_actual_id'], $usuId);
+
+                if ($mi_paralelo && $mi_paralelo['estado'] == 'Pendiente') {
+                    // 2. Marcar mi parte como completada
+                    $comentario_paralelo = isset($_POST['tick_descrip']) ? $_POST['tick_descrip'] : 'Aprobado';
+                    $this->ticketParaleloModel->update_estado($mi_paralelo['paralelo_id'], 'Aprobado', $comentario_paralelo);
+
+                    // 3. Verificar si TODOS han terminado
+                    $todos_terminaron = $this->ticketParaleloModel->check_todos_aprobados($tickId, $ticket['paso_actual_id']);
+
+                    if (!$todos_terminaron) {
+                        // Si faltan otros, NO avanzamos el ticket. Solo guardamos el comentario y notificamos.
+                        $this->pdo->commit();
+                        echo json_encode(["status" => "success", "message" => "Tu parte ha sido completada. Esperando a otros usuarios.", "reassigned" => false]);
+                        return;
+                    }
+                    // Si todos terminaron, dejamos que el flujo continúe hacia abajo (avanzar_ticket_...)
+                    // El ticket avanzará al siguiente paso.
+                } else {
+                    // Si no tengo asignación o ya terminé, y trato de avanzar...
+                    // Podría ser un error o una re-aprobación. Asumimos que si llega aquí es para avanzar.
+                }
+            }
+            // ---------------------------------------
 
             // Recogemos la decisión que el usuario tomó en el frontend
             $decision_tomada = $_POST['decision_nombre'] ?? null;

@@ -33,13 +33,13 @@ class Usuario extends Conectar
                     $acceso_permitido = ($rol_real_del_usuario == $rol_de_administrador) || ($rol_real_del_usuario == $rol_solicitado);
 
                     if ($acceso_permitido) {
-                        require_once(dirname(__FILE__).'/../models/Organigrama.php');
+                        require_once(dirname(__FILE__) . '/../models/Organigrama.php');
                         $organigrama = new Organigrama();
 
                         // Verificar si el usuario es jefe usando el organigrama
                         $es_jefe = $organigrama->es_jefe($resultado['car_id']);
                         $_SESSION["is_jefe"] = $es_jefe;
-                        
+
                         // Guardar datos en la sesión
                         $_SESSION["usu_id"] = $resultado["usu_id"];
                         $_SESSION["usu_nom"] = $resultado["usu_nom"];
@@ -87,7 +87,7 @@ class Usuario extends Conectar
             $sql->bindValue(8, $dp_id, PDO::PARAM_INT);
         }
 
-        $sql->bindValue(9,$es_nacional);
+        $sql->bindValue(9, $es_nacional);
 
         $sql->execute();
 
@@ -369,5 +369,17 @@ class Usuario extends Conectar
         }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_usuarios_por_cargo_y_regional_all($car_id, $reg_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_usuario WHERE car_id = ? AND reg_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->bindValue(2, $reg_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 }
