@@ -19,14 +19,14 @@ $(document).ready(function () {
             }
         },
         buttons: {
-            image: function() {
+            image: function () {
                 var fileInput = document.createElement('input');
                 fileInput.setAttribute('type', 'file');
                 fileInput.setAttribute('accept', 'image/*');
-                fileInput.addEventListener('change', function() {
+                fileInput.addEventListener('change', function () {
                     var file = this.files[0];
                     var reader = new FileReader();
-                    reader.onload = function(e) {
+                    reader.onload = function (e) {
                         var dataURL = e.target.result;
                         $('#tick_descrip').summernote('insertImage', dataURL);
                     };
@@ -37,7 +37,7 @@ $(document).ready(function () {
         }
     });
 
-    
+
     function myimagetreat(image) {
         var data = new FormData();
         data.append("file", image);
@@ -48,11 +48,11 @@ $(document).ready(function () {
             processData: false,
             data: data,
             type: "post",
-            success: function(data) {
+            success: function (data) {
                 var image = $('<img>').attr('src', data);
                 $('#tick_descrip').summernote("insertNode", image[0]);
             },
-            error: function(data) {
+            error: function (data) {
                 console.log(data);
             }
         });
@@ -77,7 +77,7 @@ $(document).ready(function () {
 
 });
 
-categoriasAnidadas = function() {
+categoriasAnidadas = function () {
     var user_cargo_id = 0;
     // Inicializamos los combos con Select2
     $('#emp_id, #cats_id, #usu_asig, #pd_id, #reg_id').select2();
@@ -89,7 +89,7 @@ categoriasAnidadas = function() {
         $('#emp_id').html('<option value="Select">Seleccione Empresa</option>' + data);
     });
 
-    $.post("../../controller/subcategoria.php?op=combo_filtrado", {creador_car_id: user_cargo_id }, function (data) {
+    $.post("../../controller/subcategoria.php?op=combo_filtrado", { creador_car_id: user_cargo_id }, function (data) {
         data = JSON.parse(data);
         $('#cats_id').html('<option value="Select">Seleccione Subcategoría</option>' + data.html);
     });
@@ -108,7 +108,7 @@ categoriasAnidadas = function() {
             // a. Llenar la descripción por defecto y obtener datos de la subcategoría
             $.post("../../controller/subcategoria.php?op=mostrar", { cats_id: cats_id }, function (data) {
                 data = JSON.parse(data);
-                
+
                 if (data.subcategoria) {
                     var template_content = data.subcategoria.cats_descrip;
                     $('#tick_descrip').summernote('code', template_content);
@@ -128,7 +128,7 @@ categoriasAnidadas = function() {
             $.post("../../controller/ticket.php?op=verificar_inicio_flujo", { cats_id: cats_id }, function (data) {
                 if (data.requiere_seleccion) {
                     console.log('entre seleccion');
-                    
+
                     var options = '<option value="Select">Seleccione un agente...</option>';
                     data.usuarios.forEach(function (user) {
                         options += `<option value="${user.usu_id}">${user.usu_nom} ${user.usu_ape} (${user.reg_nom})</option>`;

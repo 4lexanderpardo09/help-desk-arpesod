@@ -107,7 +107,40 @@ class TicketService
                             }
                         }
 
-                        // Si no se asignó por jefe inmediato, intentamos por cargo
+                        // Si no se asignó por jefe inmediato, verificamos si es PARALELO
+                        if (empty($usu_asig_final) && isset($paso_inicial['es_paralelo']) && $paso_inicial['es_paralelo'] == 1) {
+                            $usuarios_destino = [];
+                            // 1. Usuarios específicos
+                            $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($paso_inicial['paso_id']);
+                            if (!empty($usuarios_especificos)) {
+                                $usuarios_destino = $usuarios_especificos;
+                            } else {
+                                // 2. Todos los usuarios del cargo
+                                if (!$asignado_car_id) {
+                                    $errors[] = "El paso inicial paralelo no tiene cargo asignado.";
+                                } else {
+                                    if (!empty($paso_inicial['es_tarea_nacional']) && $paso_inicial['es_tarea_nacional'] == 1) {
+                                        $usuarios_db = $this->usuarioModel->get_usuarios_por_cargo($asignado_car_id);
+                                    } else {
+                                        $usuarios_db = $this->usuarioModel->get_usuarios_por_cargo_y_regional_all($asignado_car_id, $ticket_reg_id);
+                                    }
+
+                                    if ($usuarios_db) {
+                                        foreach ($usuarios_db as $u) {
+                                            $usuarios_destino[] = $u['usu_id'];
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (count($usuarios_destino) > 0) {
+                                $usu_asig_final = implode(',', $usuarios_destino);
+                            } else {
+                                $errors[] = "El paso es paralelo pero no se encontraron usuarios para asignar.";
+                            }
+                        }
+
+                        // Si no se asignó por jefe inmediato NI es paralelo, intentamos por cargo (asignación simple)
                         if (empty($usu_asig_final)) {
                             if (!$asignado_car_id) {
                                 $errors[] = "El paso inicial no tiene cargo asignado.";
@@ -200,7 +233,11 @@ class TicketService
             $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id);
 
             if (!empty($usu_asig)) {
-                $usu_asig_final = $usu_asig;
+                if (is_array($usu_asig)) {
+                    $usu_asig_final = implode(',', $usu_asig);
+                } else {
+                    $usu_asig_final = $usu_asig;
+                }
             } else {
                 $usu_asig_final = $resolveResult['usu_asig_final'];
             }
@@ -227,11 +264,27 @@ class TicketService
                 $ticket_reg_id
             );
 
-            $this->assignmentRepository->insertAssignment($datos, $resolveResult['usu_asig_final'], $session_usu, $resolveResult['paso_actual_id_final'], ' Ticket creado');
+            // Manejar asignaciones múltiples (paralelo) o simple
+            $usuarios_asignados = explode(',', $usu_asig_final);
 
-            if ($resolveResult['usu_asig_final'] && $resolveResult['usu_asig_final'] != $usu_id_creador) {
-                $mensaje_notificacion = "Se le ha asignado el ticket # {$datos} - {$cats_nom}.";
-                $this->notificationRepository->insertNotification($resolveResult['usu_asig_final'], $mensaje_notificacion, $datos);
+            // Obtener info del paso para saber si es paralelo
+            $paso_info = $this->flujoPasoModel->get_paso_por_id($resolveResult['paso_actual_id_final']);
+            $es_paralelo = ($paso_info && isset($paso_info['es_paralelo']) && $paso_info['es_paralelo'] == 1);
+
+            foreach ($usuarios_asignados as $uid) {
+                if (!empty($uid)) {
+                    $this->assignmentRepository->insertAssignment($datos, $uid, $session_usu, $resolveResult['paso_actual_id_final'], ' Ticket creado');
+
+                    // Si es paralelo, crear registro en tm_ticket_paralelo
+                    if ($es_paralelo) {
+                        $this->ticketParaleloModel->insert_ticket_paralelo($datos, $resolveResult['paso_actual_id_final'], $uid);
+                    }
+
+                    if ($uid != $usu_id_creador) {
+                        $mensaje_notificacion = "Se le ha asignado el ticket # {$datos} - {$cats_nom}.";
+                        $this->notificationRepository->insertNotification($uid, $mensaje_notificacion, $datos);
+                    }
+                }
             }
 
             // Insertar documentos si los hay

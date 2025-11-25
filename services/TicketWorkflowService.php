@@ -156,7 +156,7 @@ class TicketWorkflowService
 
                 if ($primer_agente_info) {
                     $primer_agente_id = $primer_agente_info['usu_id'];
-                    
+
                     // Actualizamos el ticket: se lo asignamos al primer agente y le ponemos el primer paso
                     $this->ticketModel->update_asignacion_y_paso($tick_id, $primer_agente_id, $primer_paso_id, $jefe_id);
                 }
@@ -173,22 +173,20 @@ class TicketWorkflowService
         $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
         if ($flujo) {
             // Si hay flujo, buscamos su primer paso
+            // Si hay flujo, buscamos su primer paso
             $primer_paso = $this->flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
             if ($primer_paso && $primer_paso['requiere_seleccion_manual'] == 1) {
                 // Si el primer paso requiere selección manual, preparamos la respuesta
                 $output['requiere_seleccion'] = true;
                 $cargo_id_necesario = $primer_paso['cargo_id_asignado'];
-                
+
                 // Buscamos a TODOS los usuarios con ese cargo
                 $usuarios = $this->usuarioModel->get_usuarios_por_cargo($cargo_id_necesario);
                 $output['usuarios'] = $usuarios;
             }
         }
-        
+
         header('Content-Type: application/json');
         echo json_encode($output);
     }
-
-
 }
-?>
