@@ -53,8 +53,7 @@ class TicketLister
             if ($row['usu_asig'] == null) {
                 $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
             } else {
-                $datos_usuario = $this->usuarioModel->get_usuario_x_id($row['usu_asig']);
-                $sub_array[] = '<span class="label label-success">' . $datos_usuario['usu_nom'] . ' ' . $datos_usuario['usu_ape'] . '</span>';
+                $sub_array[] = $this->getFormattedUserNames($row['usu_asig'], 'label-success');
             }
 
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
@@ -106,8 +105,7 @@ class TicketLister
             if ($row['usu_id'] == null) {
                 $sub_array[] = '<span class="label label-danger">Sin asignar</span>';
             } else {
-                $datos_usuario = $this->usuarioModel->get_usuario_x_id($row['usu_id']);
-                $sub_array[] = '<span class="label label-primary">' . $datos_usuario['usu_nom'] . ' ' . $datos_usuario['usu_ape'] . '</span>';
+                $sub_array[] = $this->getFormattedUserNames($row['usu_id'], 'label-primary');
             }
 
 
@@ -163,14 +161,12 @@ class TicketLister
             if ($row['usu_asig'] == null) {
                 $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
-                $datos_usuario = $this->usuarioModel->get_usuario_x_id($row['usu_asig']);
-                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $datos_usuario['usu_nom'] . ' ' . $datos_usuario['usu_ape'] . '</span></a> ';
+                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" >' . $this->getFormattedUserNames($row['usu_asig'], 'label-success') . '</a> ';
             }
             if ($row['usu_id'] == null) {
                 $sub_array[] = '<a><span class="label label-danger">Sin asignar</span></a>';
             } else {
-                $datos_usuario = $this->usuarioModel->get_usuario_x_id($row['usu_id']);
-                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" ><span class="label label-success">' . $datos_usuario['usu_nom'] . ' ' . $datos_usuario['usu_ape'] . '</span></a> ';
+                $sub_array[] = '<a onClick="asignar(' . $row['tick_id'] . ')" >' . $this->getFormattedUserNames($row['usu_id'], 'label-success') . '</a> ';
             }
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
@@ -207,13 +203,13 @@ class TicketLister
             } else {
                 $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
             }
-            
+
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
-            
+
             $data[] = $sub_array;
         }
 
-        return[
+        return [
             "sEcho" => 1,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
@@ -244,17 +240,40 @@ class TicketLister
             } else {
                 $sub_array[] = $row['usu_nom'] . ' ' . $row['usu_ape'];
             }
-            
+
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" class="btn btn-inline btn-primary btn-sm ladda-button" title="Ver Historial Detallado"><i class="fa fa-eye"></i></button>';
-            
+
             $data[] = $sub_array;
         }
 
-        return[
+        return [
             "sEcho" => 1,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data
         ];
+    }
+
+    private function getFormattedUserNames($ids, $labelClass = 'label-success')
+    {
+        if (empty($ids)) return '';
+
+        if (strpos($ids, ',') !== false) {
+            $idArray = explode(',', $ids);
+            $names = [];
+            foreach ($idArray as $id) {
+                $u = $this->usuarioModel->get_usuario_x_id(trim($id));
+                if ($u) {
+                    $names[] = $u['usu_nom'] . ' ' . $u['usu_ape'];
+                }
+            }
+            return '<span class="label ' . $labelClass . '">' . implode(', ', $names) . '</span>';
+        } else {
+            $u = $this->usuarioModel->get_usuario_x_id($ids);
+            if ($u) {
+                return '<span class="label ' . $labelClass . '">' . $u['usu_nom'] . ' ' . $u['usu_ape'] . '</span>';
+            }
+        }
+        return '';
     }
 }
