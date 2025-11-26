@@ -292,6 +292,9 @@ class TicketService
                 $this->insertDocument($datos);
             }
 
+            // Handle Dynamic Fields for PDF Template
+            $this->handleDynamicFields($datos, $postData, $resolveResult['paso_actual_id_final'], $usu_id_creador);
+
             $this->pdo->commit();
             return ["success" => true, "tick_id" => $datos];
         } catch (Exception $e) {
@@ -300,6 +303,76 @@ class TicketService
         }
     }
 
+    private function handleDynamicFields($tick_id, $postData, $paso_id, $usu_id)
+    {
+        require_once('../models/CampoPlantilla.php');
+        require_once('../services/PdfService.php');
+        require_once('../models/DocumentoFlujo.php');
+
+        $campoModel = new CampoPlantilla();
+        $pdfService = new PdfService();
+        $docFlujoModel = new DocumentoFlujo();
+
+        // Check if we have fields for this step
+        $campos = $campoModel->get_campos_por_paso($paso_id);
+        if (empty($campos)) return;
+
+        $textDataArray = [];
+        foreach ($campos as $campo) {
+            $key = 'campo_' . $campo['campo_id'];
+            if (isset($postData[$key])) {
+                $valor = $postData[$key];
+                $campoModel->insert_ticket_valor($tick_id, $campo['campo_id'], $valor);
+
+                $textDataArray[] = [
+                    'text' => $valor,
+                    'x' => $campo['coord_x'],
+                    'y' => $campo['coord_y'],
+                    'page' => $campo['pagina']
+                ];
+            }
+        }
+
+        if (empty($textDataArray)) return;
+
+        // Prepare PDF
+        $paso_info = $this->flujoPasoModel->get_paso_por_id($paso_id);
+        $flujo_id = $paso_info['flujo_id'];
+
+        // Determine source template
+        $source_path = '';
+        $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
+        if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+            $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+        } elseif (!empty($paso_info['paso_nom_adjunto'])) {
+            $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+        }
+
+        if (empty($source_path) || !file_exists($source_path)) {
+            error_log("TicketService::handleDynamicFields - No template found.");
+            return;
+        }
+
+        // Define storage path
+        $storage_dir = "../public/document/flujo/{$flujo_id}/{$paso_id}/{$usu_id}/";
+        if (!file_exists($storage_dir)) {
+            mkdir($storage_dir, 0777, true);
+        }
+
+        $new_filename = uniqid('initial_', true) . '.pdf';
+        $pdf_path = $storage_dir . $new_filename;
+
+        if (copy($source_path, $pdf_path)) {
+            // Stamp text
+            if ($pdfService->estamparTexto($pdf_path, $textDataArray)) {
+                // Save to tm_documento_flujo
+                $docFlujoModel->insert_documento_flujo($tick_id, $flujo_id, $paso_id, $usu_id, $new_filename);
+                error_log("TicketService::handleDynamicFields - Stamped PDF saved: $new_filename");
+            }
+        } else {
+            error_log("TicketService::handleDynamicFields - Failed to copy template.");
+        }
+    }
     public function avanzar_ticket_en_ruta($ticket)
     {
         $ruta_paso_orden_actual = $ticket["ruta_paso_orden"];
@@ -521,7 +594,7 @@ class TicketService
                     require_once('../models/DocumentoFlujo.php');
                     $documentoFlujoModel = new DocumentoFlujo();
                     $signed_doc = $documentoFlujoModel->get_ultimo_documento_flujo($tickId);
-                    
+
                     if ($signed_doc) {
                         $paso_actual_info['documento_firmado_actual'] = [
                             'flujo_id' => $signed_doc['flujo_id'],
@@ -534,60 +607,60 @@ class TicketService
                 }
             }
 
-                // --- NUEVA LÓGICA PARA RUTAS ---
-                if (!empty($row['ruta_id'])) {
-                    // Si el ticket está en una ruta, el siguiente paso es el siguiente en el orden de la ruta
-                    $siguiente_orden = $row['ruta_paso_orden'] + 1;
-                    $siguiente_paso_ruta = $this->rutaPasoModel->get_paso_por_orden($row['ruta_id'], $siguiente_orden);
+            // --- NUEVA LÓGICA PARA RUTAS ---
+            if (!empty($row['ruta_id'])) {
+                // Si el ticket está en una ruta, el siguiente paso es el siguiente en el orden de la ruta
+                $siguiente_orden = $row['ruta_paso_orden'] + 1;
+                $siguiente_paso_ruta = $this->rutaPasoModel->get_paso_por_orden($row['ruta_id'], $siguiente_orden);
 
-                    if ($siguiente_paso_ruta) {
-                        // Lo formateamos como un "paso lineal" para que el frontend lo entienda
-                        $output["siguientes_pasos_lineales"] = [$siguiente_paso_ruta];
+                if ($siguiente_paso_ruta) {
+                    // Lo formateamos como un "paso lineal" para que el frontend lo entienda
+                    $output["siguientes_pasos_lineales"] = [$siguiente_paso_ruta];
 
-                        // Verificamos si requiere selección manual (igual que en el flujo principal)
-                        if ($siguiente_paso_ruta['requiere_seleccion_manual'] == 1) {
-                            $output['requiere_seleccion_manual'] = true;
-                            $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguiente_paso_ruta['paso_id']);
-                            if (count($usuarios_especificos) > 0) {
-                                $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos);
-                            } else {
-                                $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_cargo($siguiente_paso_ruta['cargo_id_asignado']);
-                            }
+                    // Verificamos si requiere selección manual (igual que en el flujo principal)
+                    if ($siguiente_paso_ruta['requiere_seleccion_manual'] == 1) {
+                        $output['requiere_seleccion_manual'] = true;
+                        $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguiente_paso_ruta['paso_id']);
+                        if (count($usuarios_especificos) > 0) {
+                            $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos);
+                        } else {
+                            $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_cargo($siguiente_paso_ruta['cargo_id_asignado']);
                         }
                     }
+                }
 
-                    // ADEMÁS, buscamos si hay transiciones explícitas configuradas para este paso de la ruta
-                    // Esto permite "salirse" de la ruta o tomar decisiones alternativas
-                    $transiciones_ruta = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
-                    if (count($transiciones_ruta) > 0) {
-                        $output["decisiones_disponibles"] = $transiciones_ruta;
-                    }
+                // ADEMÁS, buscamos si hay transiciones explícitas configuradas para este paso de la ruta
+                // Esto permite "salirse" de la ruta o tomar decisiones alternativas
+                $transiciones_ruta = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
+                if (count($transiciones_ruta) > 0) {
+                    $output["decisiones_disponibles"] = $transiciones_ruta;
+                }
+            } else {
+                // --- LÓGICA ORIGINAL PARA FLUJO PRINCIPAL ---
+                // 1. ¿Existen transiciones (decisiones) para este paso?
+                $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
+
+                if (count($transiciones) > 0) {
+                    // Si hay decisiones, estas son las acciones principales para el usuario.
+                    $output["decisiones_disponibles"] = $transiciones;
                 } else {
-                    // --- LÓGICA ORIGINAL PARA FLUJO PRINCIPAL ---
-                    // 1. ¿Existen transiciones (decisiones) para este paso?
-                    $transiciones = $this->flujoTransicionModel->get_transiciones_por_paso($datos["paso_actual_id"]);
-
-                    if (count($transiciones) > 0) {
-                        // Si hay decisiones, estas son las acciones principales para el usuario.
-                        $output["decisiones_disponibles"] = $transiciones;
-                    } else {
-                        // Si NO hay decisiones, buscamos el siguiente paso lineal.
-                        $siguientes_pasos = $this->flujoPasoModel->get_siguientes_pasos($datos["paso_actual_id"]);
-                        if ($siguientes_pasos) {
-                            $output["siguientes_pasos_lineales"] = $siguientes_pasos;
-                        }
-                        if ($siguientes_pasos && $siguientes_pasos[0]['requiere_seleccion_manual'] == 1) {
-                            $output['requiere_seleccion_manual'] = true;
-                            $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguientes_pasos[0]['paso_id']);
-                            if (count($usuarios_especificos) > 0) {
-                                $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos);
-                            } else {
-                                $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_cargo($paso_actual_info['cargo_id_asignado']);
-                            }
+                    // Si NO hay decisiones, buscamos el siguiente paso lineal.
+                    $siguientes_pasos = $this->flujoPasoModel->get_siguientes_pasos($datos["paso_actual_id"]);
+                    if ($siguientes_pasos) {
+                        $output["siguientes_pasos_lineales"] = $siguientes_pasos;
+                    }
+                    if ($siguientes_pasos && $siguientes_pasos[0]['requiere_seleccion_manual'] == 1) {
+                        $output['requiere_seleccion_manual'] = true;
+                        $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguientes_pasos[0]['paso_id']);
+                        if (count($usuarios_especificos) > 0) {
+                            $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_ids($usuarios_especificos);
+                        } else {
+                            $output['usuarios_seleccionables'] = $this->usuarioModel->get_usuarios_por_cargo($paso_actual_info['cargo_id_asignado']);
                         }
                     }
                 }
             }
+        }
 
         $output["timeline_graph"] = "";
         if (!empty($row["paso_actual_id"])) {
@@ -809,7 +882,7 @@ class TicketService
         $output['estado_tiempo'] = $estado_tiempo;
         echo json_encode($output);
     }
-    
+
 
     public function createDetailTicket($postData)
     {

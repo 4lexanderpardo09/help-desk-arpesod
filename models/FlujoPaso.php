@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, requiere_campos_plantilla, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -51,6 +51,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(12, $necesita_aprobacion_jefe);
         $sql->bindValue(13, $es_paralelo);
         $sql->bindValue(14, $requiere_firma);
+        $sql->bindValue(15, $requiere_campos_plantilla);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -67,7 +68,7 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -86,7 +87,8 @@ class FlujoPaso extends Conectar
                         permite_cerrar = ?,
                         necesita_aprobacion_jefe = ?,
                         es_paralelo = ?,
-                        requiere_firma = ?
+                        requiere_firma = ?,
+                        requiere_campos_plantilla = ?
                     WHERE 
                         paso_id = ?";
         $sql = $conectar->prepare($sql);
@@ -103,7 +105,8 @@ class FlujoPaso extends Conectar
         $sql->bindValue(11, $necesita_aprobacion_jefe);
         $sql->bindValue(12, $es_paralelo);
         $sql->bindValue(13, $requiere_firma);
-        $sql->bindValue(14, $paso_id);
+        $sql->bindValue(14, $requiere_campos_plantilla);
+        $sql->bindValue(15, $paso_id);
         $sql->execute();
     }
 
@@ -148,9 +151,34 @@ class FlujoPaso extends Conectar
             $resultado['usuarios_especificos'] = $this->get_usuarios_especificos($paso_id);
             $resultado['usuarios_especificos_data'] = $this->get_usuarios_especificos_data($paso_id);
             $resultado['firma_config'] = $this->get_firma_config($paso_id);
+
+            require_once("CampoPlantilla.php");
+            $campoModel = new CampoPlantilla();
+            $resultado['campos_plantilla_config'] = $campoModel->get_campos_por_paso($paso_id);
         }
 
         return $resultado;
+    }
+
+    public function set_campos_plantilla($paso_id, $campos)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        // Desactivar campos existentes
+        $sql = "UPDATE tm_campo_plantilla SET est=0 WHERE paso_id=?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+
+        require_once("CampoPlantilla.php");
+        $campoModel = new CampoPlantilla();
+
+        if (is_array($campos)) {
+            foreach ($campos as $campo) {
+                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina']);
+            }
+        }
     }
 
     public function get_siguiente_paso_transicion($paso_actual_id, $condicion_clave, $condicion_nombre)

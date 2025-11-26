@@ -80,6 +80,14 @@ if (isset($_SESSION["usu_id"])) {
                                 </select>
                             </fieldset>
                         </div>
+                        <div class="col-lg-12" id="campos_plantilla_container" style="display: none;">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold">Campos de Plantilla</label>
+                                <div class="row" id="campos_plantilla_inputs">
+                                    <!-- Inputs added dynamically -->
+                                </div>
+                            </fieldset>
+                        </div>
                         <div class="col-lg-3">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="cat_id">Documento adicional</label>

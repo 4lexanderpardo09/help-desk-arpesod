@@ -42,6 +42,7 @@ switch ($_GET["op"]) {
         $necesita_aprobacion_jefe = isset($_POST['necesita_aprobacion_jefe']) ? 1 : 0;
         $es_paralelo = isset($_POST['es_paralelo']) ? 1 : 0;
         $requiere_firma = isset($_POST['requiere_firma']) ? 1 : 0;
+        $requiere_campos_plantilla = isset($_POST['requiere_campos_plantilla']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -52,7 +53,6 @@ switch ($_GET["op"]) {
             if (move_uploaded_file($_FILES['paso_nom_adjunto']['tmp_name'], $destination_path)) {
                 $paso_nom_adjunto = $new_file_name;
             } else {
-                // Handle file upload error if necessary
                 $paso_nom_adjunto = '';
             }
         } else {
@@ -76,7 +76,8 @@ switch ($_GET["op"]) {
                 $permite_cerrar,
                 $necesita_aprobacion_jefe,
                 $es_paralelo,
-                $requiere_firma
+                $requiere_firma,
+                $requiere_campos_plantilla
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -94,14 +95,14 @@ switch ($_GET["op"]) {
                 $permite_cerrar,
                 $necesita_aprobacion_jefe,
                 $es_paralelo,
-                $requiere_firma
+                $requiere_firma,
+                $requiere_campos_plantilla
             );
         }
 
         if (($requiere_seleccion_manual || $es_paralelo) && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
             $flujopaso->set_usuarios_especificos($paso_id, $_POST['usuarios_especificos']);
         } else {
-            // Si ya no requiere selección manual ni es paralelo, limpiamos los usuarios específicos
             $flujopaso->set_usuarios_especificos($paso_id, []);
         }
 
@@ -110,6 +111,13 @@ switch ($_GET["op"]) {
             $flujopaso->set_firma_config($paso_id, $firma_config);
         } else if (!$requiere_firma) {
             $flujopaso->set_firma_config($paso_id, []);
+        }
+
+        if ($requiere_campos_plantilla && isset($_POST['campos_plantilla_config'])) {
+            $campos_config = json_decode($_POST['campos_plantilla_config'], true);
+            $flujopaso->set_campos_plantilla($paso_id, $campos_config);
+        } else if (!$requiere_campos_plantilla) {
+            $flujopaso->set_campos_plantilla($paso_id, []);
         }
 
         break;
@@ -149,17 +157,14 @@ switch ($_GET["op"]) {
 
     case "get_usuarios_por_paso":
         $paso_id = $_POST['paso_id'];
-        // Obtenemos los datos del paso para saber qué cargo se necesita
         $paso_data = $flujopaso->get_paso_por_id($paso_id);
         if ($paso_data) {
             $cargo_id_necesario = $paso_data['cargo_id_asignado'];
-            // Buscamos a TODOS los usuarios con ese cargo
             $usuarios = $usuario->get_usuarios_por_cargo($cargo_id_necesario);
 
             $html = "<option value=''>Seleccione un Agente</option>";
             if (is_array($usuarios) && count($usuarios) > 0) {
                 foreach ($usuarios as $row) {
-                    // Mostramos el nombre y su regional para poder diferenciarlos
                     $html .= "<option value='" . $row["usu_id"] . "'>" . $row["usu_nom"] . " " . $row["usu_ape"] . "</option>";
                 }
             }
@@ -177,6 +182,31 @@ switch ($_GET["op"]) {
             $output['necesita_aprobacion_jefe'] = isset($datos['necesita_aprobacion_jefe']) ? $datos['necesita_aprobacion_jefe'] : 0;
             $output['es_paralelo'] = isset($datos['es_paralelo']) ? $datos['es_paralelo'] : 0;
             $output['paso_nom_adjunto'] = isset($datos['paso_nom_adjunto']) ? $datos['paso_nom_adjunto'] : null;
+            $output['requiere_campos_plantilla'] = isset($datos['requiere_campos_plantilla']) ? $datos['requiere_campos_plantilla'] : 0;
             echo json_encode($output);
         }
+        break;
+
+    case "get_campos_primer_paso":
+        require_once('../models/Flujo.php');
+        require_once('../models/CampoPlantilla.php');
+        $flujoModel = new Flujo();
+        $campoModel = new CampoPlantilla();
+
+        $cats_id = $_POST['cats_id'];
+        $flujo = $flujoModel->get_flujo_por_subcategoria($cats_id);
+
+        if ($flujo && isset($flujo['flujo_id'])) {
+            $pasos = $flujopaso->get_pasos_por_flujo($flujo['flujo_id']);
+            if (count($pasos) > 0) {
+                $primer_paso = $pasos[0]; // Ordered by paso_orden ASC
+                if ($primer_paso['requiere_campos_plantilla'] == 1) {
+                    $campos = $campoModel->get_campos_por_paso($primer_paso['paso_id']);
+                    echo json_encode(['requiere' => true, 'campos' => $campos]);
+                    return;
+                }
+            }
+        }
+        echo json_encode(['requiere' => false]);
+        break;
 }

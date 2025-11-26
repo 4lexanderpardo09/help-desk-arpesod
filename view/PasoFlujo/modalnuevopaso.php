@@ -92,6 +92,33 @@
                         <button type="button" class="btn btn-sm btn-success" id="btn_add_firma"><i class="fa fa-plus"></i> Agregar Zona de Firma</button>
                         <input type="hidden" name="firma_config" id="firma_config">
                     </div>
+
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="requiere_campos_plantilla" name="requiere_campos_plantilla" value="1">
+                        <label for="requiere_campos_plantilla">¿Requiere llenar campos de plantilla?</label>
+                    </div>
+
+                    <div id="campos_plantilla_container" style="display: none; margin-top: 1rem; border: 1px solid #ddd; padding: 10px;">
+                        <h5>Configuración de Campos Dinámicos</h5>
+                        <p class="text-muted small">Defina los campos que se deben llenar al iniciar el flujo.</p>
+                        <table class="table table-bordered table-sm" id="tabla_campos_plantilla">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">Etiqueta</th>
+                                    <th style="width: 20%;">Código (Variable)</th>
+                                    <th style="width: 10%;">Página</th>
+                                    <th style="width: 15%;">Coord X</th>
+                                    <th style="width: 15%;">Coord Y</th>
+                                    <th style="width: 10%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows added dynamically -->
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm btn-success" id="btn_add_campo_plantilla"><i class="fa fa-plus"></i> Agregar Campo</button>
+                        <input type="hidden" name="campos_plantilla_config" id="campos_plantilla_config">
+                    </div>
                     <div class="form-group" style="margin-top: 1rem;">
                         <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
                         <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">

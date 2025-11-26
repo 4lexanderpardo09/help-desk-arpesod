@@ -137,6 +137,32 @@ categoriasAnidadas = function () {
                     $('#panel_asignacion_manual').show();
                 }
             });
+
+            // c. Verificar campos dinámicos de plantilla
+            $.post("../../controller/flujopaso.php?op=get_campos_primer_paso", { cats_id: cats_id }, function (data) {
+                data = JSON.parse(data);
+                if (data.requiere) {
+                    $('#campos_plantilla_inputs').empty();
+                    data.campos.forEach(function (campo) {
+                        var inputHtml = `
+                            <div class="col-md-4">
+                                <fieldset class="form-group">
+                                    <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                    <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" required>
+                                </fieldset>
+                            </div>
+                        `;
+                        $('#campos_plantilla_inputs').append(inputHtml);
+                    });
+                    $('#campos_plantilla_container').show();
+                } else {
+                    $('#campos_plantilla_container').hide();
+                    $('#campos_plantilla_inputs').empty();
+                }
+            });
+        } else {
+            $('#campos_plantilla_container').hide();
+            $('#campos_plantilla_inputs').empty();
         }
     });
 }

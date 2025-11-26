@@ -55,4 +55,47 @@ class PdfService
             return false;
         }
     }
+
+    public function estamparTexto($rutaPdfOriginal, $textDataArray)
+    {
+        error_log("PdfService::estamparTexto - Start. PDF: $rutaPdfOriginal");
+        try {
+            if (!file_exists($rutaPdfOriginal)) {
+                error_log("PdfService::estamparTexto - PDF original no existe: " . $rutaPdfOriginal);
+                throw new Exception("El archivo PDF original no existe: " . $rutaPdfOriginal);
+            }
+
+            $pdf = new Fpdi();
+
+            // Obtener número de páginas
+            $pageCount = $pdf->setSourceFile($rutaPdfOriginal);
+
+            // Iterar sobre todas las páginas
+            for ($pageNo = 1; $pageNo <= $pageCount; $pageNo++) {
+                $templateId = $pdf->importPage($pageNo);
+                $size = $pdf->getTemplateSize($templateId);
+
+                // Añadir página con el mismo tamaño y orientación
+                $pdf->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                $pdf->useTemplate($templateId);
+
+                // Estampar textos correspondientes a esta página
+                foreach ($textDataArray as $data) {
+                    // $data = ['text' => '...', 'x' => 10, 'y' => 20, 'page' => 1]
+                    if (isset($data['page']) && $data['page'] == $pageNo) {
+                        $pdf->SetFont('Arial', '', 10); // Fuente por defecto
+                        $pdf->SetXY($data['x'], $data['y']);
+                        $pdf->Write(0, iconv('UTF-8', 'ISO-8859-1', $data['text']));
+                    }
+                }
+            }
+
+            $pdf->Output('F', $rutaPdfOriginal);
+            error_log("PdfService::estamparTexto - PDF saved.");
+            return true;
+        } catch (Exception $e) {
+            error_log("Error estampando texto en PDF: " . $e->getMessage());
+            return false;
+        }
+    }
 }

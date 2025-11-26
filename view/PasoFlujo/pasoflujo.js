@@ -58,6 +58,27 @@ function guardaryeditar(e) {
     });
     formData.append('firma_config', JSON.stringify(firmas));
 
+    // Serializar configuración de campos plantilla
+    var camposPlantilla = [];
+    $('#tabla_campos_plantilla tbody tr').each(function () {
+        var row = $(this);
+        var campo_nombre = row.find('td:eq(0) input').val();
+        var campo_codigo = row.find('td:eq(1) input').val();
+        var pagina = row.find('td:eq(2) input').val();
+        var coord_x = row.find('td:eq(3) input').val();
+        var coord_y = row.find('td:eq(4) input').val();
+        if (campo_nombre && campo_codigo) {
+            camposPlantilla.push({
+                campo_nombre: campo_nombre,
+                campo_codigo: campo_codigo,
+                pagina: pagina,
+                coord_x: coord_x,
+                coord_y: coord_y
+            });
+        }
+    });
+    formData.append('campos_plantilla_config', JSON.stringify(camposPlantilla));
+
     $.ajax({
         url: "../../controller/flujopaso.php?op=guardaryeditar",
         type: "POST",
@@ -526,6 +547,22 @@ function editar(paso_id) {
             $('#firma_config_container').hide();
             $('#tabla_firmas tbody').empty();
         }
+
+        if (data.requiere_campos_plantilla == 1) {
+            $('#requiere_campos_plantilla').prop('checked', true);
+            $('#campos_plantilla_container').show();
+            $('#tabla_campos_plantilla tbody').empty();
+            if (data.campos_plantilla_config) {
+                data.campos_plantilla_config.forEach(function (conf) {
+                    addCampoPlantillaRow(conf);
+                });
+            }
+        } else {
+            $('#requiere_campos_plantilla').prop('checked', false);
+            $('#campos_plantilla_container').hide();
+            $('#tabla_campos_plantilla tbody').empty();
+        }
+
         // Solo habilitar si no está marcado "necesita aprobación jefe"
         if (data.necesita_aprobacion_jefe != 1) {
             $('#cargo_id_asignado').prop('disabled', false);
@@ -804,12 +841,46 @@ function addFirmaRow(data = null) {
             cache: true
         }
     });
+}
 
-    if (usu_id) {
-        $.post("../../controller/usuario.php?op=mostrar", { usu_id: usu_id }, function (userData) {
-            userData = JSON.parse(userData);
-            var option = new Option(userData.usu_nom + ' ' + userData.usu_ape, userData.usu_id, true, true);
-            $select.append(option).trigger('change');
-        });
+// Logic for Dynamic PDF Fields
+$('#requiere_campos_plantilla').change(function () {
+    if ($(this).is(":checked")) {
+        $('#campos_plantilla_container').show();
+    } else {
+        $('#campos_plantilla_container').hide();
     }
+});
+
+$('#btn_add_campo_plantilla').click(function () {
+    addCampoPlantillaRow();
+});
+
+$(document).on('click', '.btn-remove-campo', function () {
+    $(this).closest('tr').remove();
+});
+
+function addCampoPlantillaRow(data = null) {
+    var campo_nombre = data ? data.campo_nombre : '';
+    var campo_codigo = data ? data.campo_codigo : '';
+    var pagina = data ? data.pagina : 1;
+    var coord_x = data ? data.coord_x : '';
+    var coord_y = data ? data.coord_y : '';
+
+    var row = `<tr>
+        <td><input type="text" class="form-control input-sm" placeholder="Ej: Fecha" value="${campo_nombre}"></td>
+        <td><input type="text" class="form-control input-sm" placeholder="Ej: fecha_solicitud" value="${campo_codigo}"></td>
+        <td><input type="number" class="form-control input-sm" value="${pagina}"></td>
+        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_x}"></td>
+        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_y}"></td>
+        <td><button type="button" class="btn btn-danger btn-sm btn-remove-campo"><i class="fa fa-trash"></i></button></td>
+    </tr>`;
+    $('#tabla_campos_plantilla tbody').append(row);
+}
+if (usu_id) {
+    $.post("../../controller/usuario.php?op=mostrar", { usu_id: usu_id }, function (userData) {
+        userData = JSON.parse(userData);
+        var option = new Option(userData.usu_nom + ' ' + userData.usu_ape, userData.usu_id, true, true);
+        $select.append(option).trigger('change');
+    });
 }
