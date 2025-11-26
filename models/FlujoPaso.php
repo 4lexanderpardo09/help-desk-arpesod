@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -50,6 +50,7 @@ class FlujoPaso extends Conectar
         $sql->bindValue(11, $permite_cerrar);
         $sql->bindValue(12, $necesita_aprobacion_jefe);
         $sql->bindValue(13, $es_paralelo);
+        $sql->bindValue(14, $requiere_firma);
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -66,7 +67,7 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -84,7 +85,8 @@ class FlujoPaso extends Conectar
                         paso_nom_adjunto = ?,
                         permite_cerrar = ?,
                         necesita_aprobacion_jefe = ?,
-                        es_paralelo = ?
+                        es_paralelo = ?,
+                        requiere_firma = ?
                     WHERE 
                         paso_id = ?";
         $sql = $conectar->prepare($sql);
@@ -100,7 +102,8 @@ class FlujoPaso extends Conectar
         $sql->bindValue(10, $permite_cerrar);
         $sql->bindValue(11, $necesita_aprobacion_jefe);
         $sql->bindValue(12, $es_paralelo);
-        $sql->bindValue(13, $paso_id);
+        $sql->bindValue(13, $requiere_firma);
+        $sql->bindValue(14, $paso_id);
         $sql->execute();
     }
 
@@ -144,6 +147,7 @@ class FlujoPaso extends Conectar
         if ($resultado) {
             $resultado['usuarios_especificos'] = $this->get_usuarios_especificos($paso_id);
             $resultado['usuarios_especificos_data'] = $this->get_usuarios_especificos_data($paso_id);
+            $resultado['firma_config'] = $this->get_firma_config($paso_id);
         }
 
         return $resultado;
@@ -336,5 +340,41 @@ class FlujoPaso extends Conectar
         $stmt_prev->execute();
 
         return $stmt_prev->fetch(PDO::FETCH_ASSOC);
+    }
+    public function set_firma_config($paso_id, $configuraciones)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        // Primero eliminamos configuraciones existentes para este paso
+        $sql = "DELETE FROM tm_flujo_paso_firma WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+
+        // Insertamos las nuevas
+        if (is_array($configuraciones)) {
+            foreach ($configuraciones as $config) {
+                $sql = "INSERT INTO tm_flujo_paso_firma (paso_id, usu_id, coord_x, coord_y, pagina, est) VALUES (?, ?, ?, ?, ?, 1)";
+                $sql = $conectar->prepare($sql);
+                $sql->bindValue(1, $paso_id);
+                $sql->bindValue(2, !empty($config['usu_id']) ? $config['usu_id'] : null);
+                $sql->bindValue(3, $config['coord_x']);
+                $sql->bindValue(4, $config['coord_y']);
+                $sql->bindValue(5, !empty($config['pagina']) ? $config['pagina'] : 1);
+                $sql->execute();
+            }
+        }
+    }
+
+    public function get_firma_config($paso_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_flujo_paso_firma WHERE paso_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 }

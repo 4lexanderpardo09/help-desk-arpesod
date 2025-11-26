@@ -1,6 +1,8 @@
 var selected_condicion_clave = null;
 var selected_condicion_nombre = null;
 var decisionSeleccionada = null; // Asegúrate de que esta variable esté definida globalmente
+var signaturePad;
+var currentStepInfo = null;
 
 function init() {
 
@@ -47,6 +49,75 @@ $(document).ready(function () {
             ['height', ['height']]
         ]
     });
+
+    // Inicializar SignaturePad
+    var canvas = document.getElementById('signature-pad');
+    if (canvas) {
+        signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+
+        function resizeCanvas() {
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear();
+        }
+        window.addEventListener("resize", resizeCanvas);
+        $('#modalFirma').on('shown.bs.modal', resizeCanvas);
+
+        $('#btnLimpiarFirma').click(function () {
+            signaturePad.clear();
+            $('#upload_signature').val(''); // Clear file input
+        });
+
+        $('#upload_signature').change(function (e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function (evt) {
+                    var img = new Image();
+                    img.onload = function () {
+                        // Draw image on canvas
+                        var ctx = canvas.getContext('2d');
+                        // Clear canvas first
+                        signaturePad.clear();
+
+                        // Calculate aspect ratio to fit
+                        var hRatio = canvas.width / img.width;
+                        var vRatio = canvas.height / img.height;
+                        var ratio = Math.min(hRatio, vRatio);
+                        var centerShift_x = (canvas.width - img.width * ratio) / 2;
+                        var centerShift_y = (canvas.height - img.height * ratio) / 2;
+
+                        ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+
+                        // Mark signaturePad as not empty (it doesn't track external draws automatically)
+                        // Actually signaturePad.fromDataURL might be better but it's async and sometimes tricky with ratios.
+                        // Since we drew on the canvas, toDataURL will work, but isEmpty() might return true if we don't use signaturePad methods.
+                        // Let's force a "dot" or just rely on the canvas content.
+                        // However, signaturePad.isEmpty() checks its internal data structure.
+                        // We can bypass isEmpty check if file input has value.
+                    }
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        $('#btnGuardarFirma').click(function () {
+            if (signaturePad.isEmpty() && !$('#upload_signature').val()) {
+                swal("Atención", "Por favor, proporcione su firma.", "warning");
+                return;
+            }
+            // If we drew an image, toDataURL will capture it.
+            var signatureData = document.getElementById('signature-pad').toDataURL();
+            $('#modalFirma').modal('hide');
+            enviarDetalle(signatureData);
+        });
+    }
 
     tabla = $('#documentos_data').dataTable({
         "aProcessing": true,
@@ -272,7 +343,7 @@ function htmlToPlainText(html) {
     return stripHtml(html || '');
 }
 
-function enviarDetalle() {
+function enviarDetalle(signatureData = null) {
     if ($('#tickd_descrip').summernote('isEmpty')) {
         swal("Atención", "Debe ingresar una respuesta o comentario.", "warning");
         $('#btnenviar').data('processing', false);
@@ -329,9 +400,12 @@ function enviarDetalle() {
             updateEnviarButtonState();
             return false;
         }
-        // Añadir la asignación al formData para que el backend la procese
         formData.append('usu_asig', usu_asig);
         formData.append('assign_on_send', 'true'); // flag opcional para proceso server-side
+    }
+
+    if (signatureData) {
+        formData.append('signature_data', signatureData);
     }
 
     $.ajax({
@@ -406,6 +480,14 @@ $(document).on('click', '#btnenviar', function () {
     $btn.data('processing', true).prop('disabled', true);
 
     selected_condicion_clave = null; // No hay clave de condición si se usa el botón de enviar normal
+
+    // Verificar si requiere firma
+    if (currentStepInfo && currentStepInfo.requiere_firma == 1) {
+        $('#modalFirma').modal('show');
+        $btn.data('processing', false).prop('disabled', false); // Re-enable button
+        return;
+    }
+
     enviarDetalle(); // enviarDetalle ahora liberará el botón en el complete del ajax
 });
 
@@ -628,6 +710,7 @@ function listarDetalle(tick_id) {
     // Carga los datos principales del ticket y define las acciones
     $.post("../../controller/ticket.php?op=mostrar", { tick_id: tick_id }, function (data) {
         var ticketData = JSON.parse(data);
+        currentStepInfo = ticketData.paso_actual_info;
         console.log(ticketData);
 
         if (ticketData.paso_actual_id) {
@@ -704,13 +787,36 @@ function listarDetalle(tick_id) {
                 } else {
                     $('#tickd_descrip').data('template', '');
                 }
+                if (pasoInfo) {
+                    var attachmentHtml = '';
 
-                if (pasoInfo.paso_nom_adjunto) {
-                    var attachmentHtml = '<div class="attachment-section">' +
-                        '<p><strong>Adjunto del Paso:</strong></p>' +
-                        '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
-                        '</div>';
-                    $('#panel_guia_paso .card-body').append(attachmentHtml);
+                    if (pasoInfo.documento_firmado_actual) {
+                        var doc = pasoInfo.documento_firmado_actual;
+                        var docUrl = '';
+                        var displayName = doc.det_nom;
+
+                        // Construct URL based on new structure: public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/{doc_nom}
+                        if (doc.flujo_id && doc.paso_id && doc.usu_id) {
+                            docUrl = '../../public/document/flujo/' + doc.flujo_id + '/' + doc.paso_id + '/' + doc.usu_id + '/' + doc.det_nom;
+                        } else {
+                            // Fallback if some ID is missing (shouldn't happen with new logic)
+                            docUrl = '../../public/document/flujo/' + doc.det_nom;
+                        }
+
+                        attachmentHtml =
+                            '<div class="alert alert-success" role="alert">' +
+                            '<strong>Documento Firmado Actual:</strong> ' +
+                            '<a href="' + docUrl + '" target="_blank">' + displayName + '</a>' +
+                            '</div>';
+                    } else if (pasoInfo.paso_nom_adjunto) {
+                        attachmentHtml =
+                            '<div class="alert alert-info" role="alert">' +
+                            '<strong>Documento del Paso:</strong> ' +
+                            '<a href="../../public/document/paso/' + pasoInfo.paso_nom_adjunto + '" target="_blank">' + pasoInfo.paso_nom_adjunto + '</a>' +
+                            '</div>';
+                    }
+
+                    $('#paso_attachment_display').html(attachmentHtml);
                 }
             }
         } else {

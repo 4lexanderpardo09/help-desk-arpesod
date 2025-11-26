@@ -1,12 +1,12 @@
 var tabla;
 
 function init() {
-    $("#flujo_form").on("submit", function(e){
+    $("#flujo_form").on("submit", function (e) {
         guardaryeditar(e);
     })
 }
 
-function guardaryeditar(e){
+function guardaryeditar(e) {
     e.preventDefault();
     var formData = new FormData($("#flujo_form")[0])
     $.ajax({
@@ -15,12 +15,13 @@ function guardaryeditar(e){
         data: formData,
         contentType: false,
         processData: false,
-        success: function(datos){
+        success: function (datos) {
             $("#flujo_form")[0].reset();
             $("#flujo_nom").html('');
             $("#flujo_id").val('');
             $("#cats_id").val('');
             $('#cat_id').val('');
+            $('#flujo_attachment_display').html('');
             $("#modalnuevoflujo").modal('hide');
             $("#flujo_data").DataTable().ajax.reload();
             swal({
@@ -28,26 +29,26 @@ function guardaryeditar(e){
                 text: "Se ha guardado correctamente el nuevo registro.",
                 type: "success",
                 confirmButtonClass: "btn-success"
-            });          
+            });
         }
     })
 }
 
 function ver(flujo_id) {
-    window.location.href = '/view/PasoFlujo/?ID='+ flujo_id
+    window.location.href = '/view/PasoFlujo/?ID=' + flujo_id
 }
 
 
 $(document).ready(function () {
 
     $.post("../../controller/categoria.php?op=combocat", function (data) {
-            $('#cat_id').html('<option value="">Seleccionar</option>' + data);
-            $("#cat_id").val(data.cat_id);
+        $('#cat_id').html('<option value="">Seleccionar</option>' + data);
+        $("#cat_id").val(data.cat_id);
     });
 
     $("#cat_id").off('change').on('change', function () {
         var cat_id = $(this).val();
-        $.post("../../controller/subcategoria.php?op=combo", { cat_id:cat_id}, function(data){
+        $.post("../../controller/subcategoria.php?op=combo", { cat_id: cat_id }, function (data) {
             $('#cats_id').html('<option value="">Seleccionar</option>' + data);
         })
     });
@@ -112,7 +113,7 @@ $(document).ready(function () {
 function editar(flujo_id) {
     $("#mdltitulo").html('Editar registro');
 
-    $.post("../../controller/flujo.php?op=mostrar", {flujo_id:flujo_id}, function(data) {
+    $.post("../../controller/flujo.php?op=mostrar", { flujo_id: flujo_id }, function (data) {
         data = JSON.parse(data);
         $('#flujo_id').val(data.flujo.flujo_id);
         $('#flujo_nom').val(data.flujo.flujo_nom);
@@ -123,7 +124,14 @@ function editar(flujo_id) {
         });
 
 
-    });    
+        if (data.flujo.flujo_nom_adjunto) {
+            var fileLink = '<a href="../../public/document/flujo/' + data.flujo.flujo_nom_adjunto + '" target="_blank">Ver archivo actual: ' + data.flujo.flujo_nom_adjunto + '</a>';
+            $('#flujo_attachment_display').html(fileLink);
+        } else {
+            $('#flujo_attachment_display').html('');
+        }
+
+    });
 
     $("#modalnuevoflujo").modal("show");
 }
@@ -139,30 +147,30 @@ function eliminar(flujo_id) {
         closeOnConfirm: false,
         closeOnCancel: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/flujo.php?op=eliminar", {flujo_id:flujo_id}, function(data) {
-                $('#flujo_data').DataTable().ajax.reload(); 
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/flujo.php?op=eliminar", { flujo_id: flujo_id }, function (data) {
+                    $('#flujo_data').DataTable().ajax.reload();
+                    swal({
+                        title: "Eliminado!",
+                        text: "flujo eliminada correctamente",
+                        type: "success",
+                        confirmButtonClass: "btn-success"
+                    });
+                });
+            } else {
                 swal({
-                    title: "Eliminado!",
-                    text: "flujo eliminada correctamente",
-                    type: "success",
-                    confirmButtonClass: "btn-success"
-                }); 
-            });
-        } else {
-            swal({
-                title: "Cancelado",
-                text: "La flujo no fue eliminada",
-                type: "error",
-                confirmButtonClass: "btn-danger"
-                
-            });
-        }
-    });
+                    title: "Cancelado",
+                    text: "La flujo no fue eliminada",
+                    type: "error",
+                    confirmButtonClass: "btn-danger"
+
+                });
+            }
+        });
 }
 
-$(document).on("click", "#btnnuevoflujo", function(){
+$(document).on("click", "#btnnuevoflujo", function () {
     $("#mdltitulo").html('Nuevo registro');
     $("#flujo_form")[0].reset();
     $("#modalnuevoflujo").modal("show");

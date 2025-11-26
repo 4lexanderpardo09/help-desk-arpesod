@@ -42,7 +42,22 @@ var getUrlParameter = function getUrlParameter(sParam) {
 
 function guardaryeditar(e) {
     e.preventDefault();
-    var formData = new FormData($("#paso_form")[0])
+    var formData = new FormData($("#paso_form")[0]);
+
+    // Serializar configuración de firmas
+    var firmas = [];
+    $('#tabla_firmas tbody tr').each(function () {
+        var row = $(this);
+        var usu_id = row.find('select').val();
+        var pagina = row.find('td:eq(1) input').val();
+        var coord_x = row.find('td:eq(2) input').val();
+        var coord_y = row.find('td:eq(3) input').val();
+        if (coord_x && coord_y) {
+            firmas.push({ usu_id: usu_id, pagina: pagina, coord_x: coord_x, coord_y: coord_y });
+        }
+    });
+    formData.append('firma_config', JSON.stringify(firmas));
+
     $.ajax({
         url: "../../controller/flujopaso.php?op=guardaryeditar",
         type: "POST",
@@ -418,6 +433,23 @@ $(document).ready(function () {
 
 });
 
+// Lógica para Firma Digital
+$('#requiere_firma').change(function () {
+    if ($(this).is(":checked")) {
+        $('#firma_config_container').show();
+    } else {
+        $('#firma_config_container').hide();
+    }
+});
+
+$('#btn_add_firma').click(function () {
+    addFirmaRow();
+});
+
+$(document).on('click', '.btn-remove-firma', function () {
+    $(this).closest('tr').remove();
+});
+
 function editar(paso_id) {
     $('#mdltitulo').html('Editar Paso');
     $.post("../../controller/flujopaso.php?op=mostrar", { paso_id: paso_id }, function (data) {
@@ -474,15 +506,29 @@ function editar(paso_id) {
             $('#cargo_id_asignado').prop('disabled', true);
         } else {
             $('#es_paralelo').prop('checked', false);
-            // Only hide if requires_manual is also false
             if (data.requiere_seleccion_manual != 1) {
                 $('#usuarios_especificos_container').hide();
                 $('#usuarios_especificos').val(null).trigger('change');
             }
-            // Solo habilitar si no está marcado "necesita aprobación jefe"
-            if (data.necesita_aprobacion_jefe != 1) {
-                $('#cargo_id_asignado').prop('disabled', false);
+        }
+
+        if (data.requiere_firma == 1) {
+            $('#requiere_firma').prop('checked', true);
+            $('#firma_config_container').show();
+            $('#tabla_firmas tbody').empty();
+            if (data.firma_config) {
+                data.firma_config.forEach(function (conf) {
+                    addFirmaRow(conf);
+                });
             }
+        } else {
+            $('#requiere_firma').prop('checked', false);
+            $('#firma_config_container').hide();
+            $('#tabla_firmas tbody').empty();
+        }
+        // Solo habilitar si no está marcado "necesita aprobación jefe"
+        if (data.necesita_aprobacion_jefe != 1) {
+            $('#cargo_id_asignado').prop('disabled', false);
         }
 
         if (data.paso_nom_adjunto) {
@@ -719,3 +765,51 @@ function editarTransicion(transicion_id) {
 }
 
 init();
+
+function addFirmaRow(data = null) {
+    var usu_id = data ? data.usu_id : '';
+    var pagina = data ? data.pagina : 1;
+    var coord_x = data ? data.coord_x : '';
+    var coord_y = data ? data.coord_y : '';
+
+    var row = `<tr>
+        <td><select class="form-control select2-firma-user" style="width:100%"></select></td>
+        <td><input type="number" class="form-control input-sm" value="${pagina}"></td>
+        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_x}"></td>
+        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_y}"></td>
+        <td><button type="button" class="btn btn-danger btn-sm btn-remove-firma"><i class="fa fa-trash"></i></button></td>
+    </tr>`;
+    var $row = $(row);
+    $('#tabla_firmas tbody').append($row);
+
+    var $select = $row.find('.select2-firma-user');
+
+    $select.select2({
+        placeholder: "Seleccione un usuario (Opcional)",
+        allowClear: true,
+        ajax: {
+            url: '../../controller/usuario.php?op=combo_usuarios_select2',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    search: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        }
+    });
+
+    if (usu_id) {
+        $.post("../../controller/usuario.php?op=mostrar", { usu_id: usu_id }, function (userData) {
+            userData = JSON.parse(userData);
+            var option = new Option(userData.usu_nom + ' ' + userData.usu_ape, userData.usu_id, true, true);
+            $select.append(option).trigger('change');
+        });
+    }
+}

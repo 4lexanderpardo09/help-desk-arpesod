@@ -67,6 +67,31 @@
                         <input type="checkbox" id="es_paralelo" name="es_paralelo" value="1">
                         <label for="es_paralelo">¿Es un paso paralelo?</label>
                     </div>
+                    <div class="checkbox" style="margin-top: 1rem;">
+                        <input type="checkbox" id="requiere_firma" name="requiere_firma" value="1">
+                        <label for="requiere_firma">¿Requiere Firma Digital?</label>
+                    </div>
+
+                    <div id="firma_config_container" style="display: none; margin-top: 1rem; border: 1px solid #ddd; padding: 10px;">
+                        <h5>Configuración de Firmas</h5>
+                        <p class="text-muted small">Si deja el usuario vacío, la firma aplicará para cualquiera que complete el paso (o el primero que lo haga).</p>
+                        <table class="table table-bordered table-sm" id="tabla_firmas">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">Usuario (Opcional)</th>
+                                    <th style="width: 15%;">Página</th>
+                                    <th style="width: 20%;">Coord X</th>
+                                    <th style="width: 20%;">Coord Y</th>
+                                    <th style="width: 5%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rows added dynamically -->
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm btn-success" id="btn_add_firma"><i class="fa fa-plus"></i> Agregar Zona de Firma</button>
+                        <input type="hidden" name="firma_config" id="firma_config">
+                    </div>
                     <div class="form-group" style="margin-top: 1rem;">
                         <label class="form-label" for="paso_nom_adjunto">Archivo Adjunto</label>
                         <input type="file" class="form-control" id="paso_nom_adjunto" name="paso_nom_adjunto">

@@ -12,9 +12,9 @@
                 </button>
                 <h4 class="modal-title" id="mdltitulo"></h4>
             </div>
-            <form method="post" id="flujo_form">
+            <form method="post" id="flujo_form" enctype="multipart/form-data">
                 <div class="modal-body">
-                    
+
                     <input type="hidden" id="flujo_id" name="flujo_id">
                     <fieldset class="form-group">
                         <label class="form-label semibold" for="cat_id">Categoria</label>
@@ -26,8 +26,13 @@
                         <select class="form-control" id="cats_id" name="cats_id" placeholder="Seleccione una categoria" required>
                         </select>
                     </fieldset>
-                    </div>
-                    <div class="form-group">
+                    <fieldset class="form-group">
+                        <label class="form-label semibold" for="flujo_nom_adjunto">Documento Plantilla (PDF)</label>
+                        <input type="file" class="form-control" id="flujo_nom_adjunto" name="flujo_nom_adjunto" accept=".pdf">
+                        <div id="flujo_attachment_display"></div>
+                    </fieldset>
+                </div>
+                <div class="form-group">
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>

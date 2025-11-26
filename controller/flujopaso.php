@@ -41,6 +41,7 @@ switch ($_GET["op"]) {
         $permite_cerrar = isset($_POST['permite_cerrar']) ? 1 : 0;
         $necesita_aprobacion_jefe = isset($_POST['necesita_aprobacion_jefe']) ? 1 : 0;
         $es_paralelo = isset($_POST['es_paralelo']) ? 1 : 0;
+        $requiere_firma = isset($_POST['requiere_firma']) ? 1 : 0;
 
         $paso_nom_adjunto = '';
         if (isset($_FILES['paso_nom_adjunto']) && $_FILES['paso_nom_adjunto']['name'] != '') {
@@ -74,7 +75,8 @@ switch ($_GET["op"]) {
                 $paso_nom_adjunto,
                 $permite_cerrar,
                 $necesita_aprobacion_jefe,
-                $es_paralelo
+                $es_paralelo,
+                $requiere_firma
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -91,15 +93,23 @@ switch ($_GET["op"]) {
                 $paso_nom_adjunto,
                 $permite_cerrar,
                 $necesita_aprobacion_jefe,
-                $es_paralelo
+                $es_paralelo,
+                $requiere_firma
             );
         }
 
         if (($requiere_seleccion_manual || $es_paralelo) && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
             $flujopaso->set_usuarios_especificos($paso_id, $_POST['usuarios_especificos']);
         } else {
-            // Si no se requiere selección manual o no se envían usuarios, se limpia la tabla
+            // Si ya no requiere selección manual ni es paralelo, limpiamos los usuarios específicos
             $flujopaso->set_usuarios_especificos($paso_id, []);
+        }
+
+        if ($requiere_firma && isset($_POST['firma_config'])) {
+            $firma_config = json_decode($_POST['firma_config'], true);
+            $flujopaso->set_firma_config($paso_id, $firma_config);
+        } else if (!$requiere_firma) {
+            $flujopaso->set_firma_config($paso_id, []);
         }
 
         break;

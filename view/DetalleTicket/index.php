@@ -56,7 +56,7 @@ if (isset($_SESSION["usu_id"])) {
                         <p class="mb-0">
                             A continuación, en el editor de texto, encontrarás una plantilla o guía con las instrucciones para esta tarea.
                         </p>
-                        <!-- Aquí se insertará el adjunto -->
+                        <div id="paso_attachment_display"></div>
                     </div>
                 </div>
 
@@ -332,6 +332,36 @@ if (isset($_SESSION["usu_id"])) {
                 </div>
             </div>
         </div>
+        <!-- Modal Firma -->
+        <div class="modal fade" id="modalFirma" tabindex="-1" role="dialog" aria-labelledby="modalFirmaLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalFirmaLabel">Firma Digital</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Por favor, firme en el recuadro de abajo para completar la tarea.</p>
+                        <div class="wrapper" style="border: 1px solid #ccc; position: relative; height: 200px; width: 100%;">
+                            <canvas id="signature-pad" class="signature-pad" style="width: 100%; height: 100%;"></canvas>
+                        </div>
+                        <div class="form-group mt-3">
+                            <label for="upload_signature">O subir imagen de firma (PNG):</label>
+                            <input type="file" class="form-control-file" id="upload_signature" accept="image/png">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="btnLimpiarFirma">Limpiar</button>
+                        <button type="button" class="btn btn-primary" id="btnGuardarFirma">Guardar y Terminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+
         <?php require_once('../MainJs/js.php') ?>
         <script type="text/javascript" src="../DetalleTicket/detalleticket.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
