@@ -54,7 +54,7 @@ class Flujo extends Conectar
         $sql->bindValue(2, $cats_id);
         $sql->bindValue(3, $flujo_nom_adjunto);
         $sql->execute();
-        return $resultado = $sql->fetchAll();
+        return $conectar->lastInsertId();
     }
 
     public function delete_flujo($flujo_id)
@@ -189,5 +189,61 @@ class Flujo extends Conectar
         $sql->bindValue(1, $cats_id);
         $sql->execute();
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function get_plantilla_por_empresa($flujo_id, $emp_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT plantilla_nom FROM tm_flujo_plantilla WHERE flujo_id = ? AND emp_id = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->bindValue(2, $emp_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['plantilla_nom'] : null;
+    }
+
+    public function insert_plantilla_empresa($flujo_id, $emp_id, $plantilla_nom)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        // Primero desactivamos cualquier anterior para esa empresa/flujo
+        $sql_update = "UPDATE tm_flujo_plantilla SET est = 0 WHERE flujo_id = ? AND emp_id = ?";
+        $stmt = $conectar->prepare($sql_update);
+        $stmt->bindValue(1, $flujo_id);
+        $stmt->bindValue(2, $emp_id);
+        $stmt->execute();
+
+        $sql = "INSERT INTO tm_flujo_plantilla (flujo_id, emp_id, plantilla_nom, est) VALUES (?, ?, ?, 1)";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->bindValue(2, $emp_id);
+        $sql->bindValue(3, $plantilla_nom);
+        $sql->execute();
+    }
+
+    public function get_plantillas_empresa_por_flujo($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT fp.*, e.emp_nom 
+                FROM tm_flujo_plantilla fp
+                INNER JOIN td_empresa e ON fp.emp_id = e.emp_id
+                WHERE fp.flujo_id = ? AND fp.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function delete_all_plantillas_empresa($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_flujo_plantilla SET est = 0 WHERE flujo_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
     }
 }

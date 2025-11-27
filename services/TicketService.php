@@ -418,11 +418,24 @@ class TicketService
 
         // Determine source template
         $source_path = '';
-        $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
-        if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
-            $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
-        } elseif (!empty($paso_info['paso_nom_adjunto'])) {
-            $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+
+        // 1. Check for Company-Specific Template
+        $emp_id = isset($postData['emp_id']) ? $postData['emp_id'] : null;
+        if ($emp_id) {
+            $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
+            if (!empty($plantilla_empresa)) {
+                $source_path = '../public/document/flujo/' . $plantilla_empresa;
+            }
+        }
+
+        // 2. Fallback to Default Flow Template
+        if (empty($source_path)) {
+            $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
+            if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+                $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+            } elseif (!empty($paso_info['paso_nom_adjunto'])) {
+                $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+            }
         }
 
         if (empty($source_path) || !file_exists($source_path)) {
@@ -1654,11 +1667,24 @@ class TicketService
 
         if (empty($source_path)) {
             // Fallback to template
-            $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
-            if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
-                $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
-            } elseif (!empty($paso_info['paso_nom_adjunto'])) {
-                $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+
+            // 1. Check for Company-Specific Template
+            $emp_id = isset($ticket['emp_id']) ? $ticket['emp_id'] : null;
+            if ($emp_id) {
+                $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
+                if (!empty($plantilla_empresa)) {
+                    $source_path = '../public/document/flujo/' . $plantilla_empresa;
+                }
+            }
+
+            // 2. Fallback to Default Flow Template
+            if (empty($source_path)) {
+                $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
+                if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+                    $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+                } elseif (!empty($paso_info['paso_nom_adjunto'])) {
+                    $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+                }
             }
         }
 

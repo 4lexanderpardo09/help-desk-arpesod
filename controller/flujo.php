@@ -54,10 +54,50 @@ switch ($_GET["op"]) {
         }
 
         if (empty($flujo_id)) {
-            $flujo->insert_flujo($flujo_nom, $cats_id, 0, $flujo_nom_adjunto);
+            $flujo_id = $flujo->insert_flujo($flujo_nom, $cats_id, 0, $flujo_nom_adjunto);
         } else {
             $flujo->update_flujo($flujo_id, $flujo_nom, $cats_id, 0, $flujo_nom_adjunto);
         }
+
+        // Manejo de Plantillas por Empresa
+        if ($flujo_id) {
+            $flujo->delete_all_plantillas_empresa($flujo_id);
+
+            if (isset($_POST['plantilla_empresa_emp_id'])) {
+                $emp_ids = $_POST['plantilla_empresa_emp_id'];
+                $actuals = isset($_POST['plantilla_empresa_actual']) ? $_POST['plantilla_empresa_actual'] : [];
+
+                $target_dir = "../public/document/flujo/";
+                if (!file_exists($target_dir)) {
+                    mkdir($target_dir, 0777, true);
+                }
+
+                foreach ($emp_ids as $index => $emp_id) {
+                    if (empty($emp_id)) continue;
+
+                    $plantilla_nom = isset($actuals[$index]) ? $actuals[$index] : '';
+
+                    if (!empty($_FILES['plantilla_empresa_file']['name'][$index])) {
+                        $temp = explode(".", $_FILES["plantilla_empresa_file"]["name"][$index]);
+                        $newfilename = round(microtime(true)) . '_' . $index . '.' . end($temp);
+                        $target_file = $target_dir . $newfilename;
+
+                        if (move_uploaded_file($_FILES["plantilla_empresa_file"]["tmp_name"][$index], $target_file)) {
+                            $plantilla_nom = $newfilename;
+                        }
+                    }
+
+                    if (!empty($plantilla_nom)) {
+                        $flujo->insert_plantilla_empresa($flujo_id, $emp_id, $plantilla_nom);
+                    }
+                }
+            }
+        }
+        break;
+
+    case "listar_plantillas_empresa":
+        $datos = $flujo->get_plantillas_empresa_por_flujo($_POST['flujo_id']);
+        echo json_encode($datos);
         break;
 
     case "listar":

@@ -27,10 +27,32 @@
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
-                        <label class="form-label semibold" for="flujo_nom_adjunto">Documento Plantilla (PDF)</label>
+                        <label class="form-label semibold" for="flujo_nom_adjunto">Documento Plantilla (PDF) - Por Defecto</label>
                         <input type="file" class="form-control" id="flujo_nom_adjunto" name="flujo_nom_adjunto" accept=".pdf">
                         <div id="flujo_attachment_display"></div>
                     </fieldset>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 class="semibold">Plantillas por Empresa (Opcional)</h5>
+                            <p class="text-muted">Si se define una plantilla para una empresa, esta tendrá prioridad sobre la plantilla por defecto.</p>
+                            <table class="table table-bordered table-hover" id="tabla_plantillas_empresa">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%;">Empresa</th>
+                                        <th style="width: 40%;">Plantilla (PDF)</th>
+                                        <th style="width: 20%;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Filas dinámicas -->
+                                </tbody>
+                            </table>
+                            <button type="button" class="btn btn-sm btn-success" id="btn_agregar_plantilla_empresa">
+                                <i class="fa fa-plus"></i> Agregar Plantilla por Empresa
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
                 </div>

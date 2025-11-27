@@ -133,6 +133,17 @@ function editar(flujo_id) {
 
     });
 
+    // Cargar plantillas por empresa
+    $.post("../../controller/flujo.php?op=listar_plantillas_empresa", { flujo_id: flujo_id }, function (data) {
+        var plantillas = JSON.parse(data);
+        $('#tabla_plantillas_empresa tbody').empty();
+        if (plantillas && plantillas.length > 0) {
+            plantillas.forEach(function (p) {
+                agregarFilaPlantillaEmpresa(p.emp_id, p.plantilla_nom);
+            });
+        }
+    });
+
     $("#modalnuevoflujo").modal("show");
 }
 function eliminar(flujo_id) {
@@ -183,6 +194,50 @@ $('#modalnuevoflujo').on('hidden.bs.modal', function () {
     $("#flujo_id").val('');
     $("#cats_id").val('');
     $('#cat_id').val('');
+    $('#tabla_plantillas_empresa tbody').empty();
+});
+
+var empresasOptions = "";
+
+$(document).ready(function () {
+    // Cargar opciones de empresa una sola vez
+    $.post("../../controller/empresa.php?op=combo", function (data) {
+        empresasOptions = data;
+    });
+
+    // ... (resto del código existente) ...
+});
+
+$('#btn_agregar_plantilla_empresa').on('click', function () {
+    agregarFilaPlantillaEmpresa();
+});
+
+function agregarFilaPlantillaEmpresa(emp_id = '', plantilla_nom = '') {
+    var html = '<tr>';
+    html += '<td><select class="form-control" name="plantilla_empresa_emp_id[]">';
+    html += '<option value="">Seleccionar Empresa</option>' + empresasOptions;
+    html += '</select></td>';
+
+    html += '<td>';
+    if (plantilla_nom) {
+        html += '<p class="text-muted mb-1">Actual: <a href="../../public/document/flujo/' + plantilla_nom + '" target="_blank">' + plantilla_nom + '</a></p>';
+    }
+    html += '<input type="hidden" name="plantilla_empresa_actual[]" value="' + (plantilla_nom || '') + '">';
+    html += '<input type="file" class="form-control" name="plantilla_empresa_file[]" accept=".pdf"></td>';
+
+    html += '<td><button type="button" class="btn btn-danger btn-sm btn-delete-row"><i class="fa fa-trash"></i></button></td>';
+    html += '</tr>';
+
+    var row = $(html);
+    if (emp_id) {
+        row.find('select').val(emp_id);
+    }
+
+    $('#tabla_plantillas_empresa tbody').append(row);
+}
+
+$(document).on('click', '.btn-delete-row', function () {
+    $(this).closest('tr').remove();
 });
 
 init();
