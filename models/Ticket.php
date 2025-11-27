@@ -377,12 +377,52 @@ class Ticket extends Conectar
             LEFT JOIN tm_usuario u_cierre ON t.usu_asig = u_cierre.usu_id
             WHERE t.tick_id = ? AND t.fech_cierre IS NOT NULL)
 
+            UNION ALL
+
+            (SELECT
+                tp.fech_crea AS fecha_evento,
+                'asignacion' AS tipo,
+                'Sistema' AS usu_nom,
+                '(Automático)' AS usu_ape,
+                0 AS rol_id,
+                'Asignación Paralela' AS descripcion,
+                u.usu_nom AS nom_receptor,
+                u.usu_ape AS ape_receptor,
+                NULL AS det_nom,
+                NULL AS tickd_id,
+                tp.estado_tiempo_paso AS estado_tiempo_paso,
+                NULL AS error_descrip
+            FROM tm_ticket_paralelo tp
+            INNER JOIN tm_usuario u ON tp.usu_id = u.usu_id
+            WHERE tp.tick_id = ?)
+
+            UNION ALL
+
+            (SELECT
+                tp.fech_cierre AS fecha_evento,
+                'comentario' AS tipo,
+                u.usu_nom,
+                u.usu_ape,
+                u.rol_id,
+                CONCAT('Respuesta Paralela: ', tp.estado, ' - ', IFNULL(tp.comentario, '')) AS descripcion,
+                NULL AS nom_receptor,
+                NULL AS ape_receptor,
+                NULL AS det_nom,
+                NULL AS tickd_id,
+                tp.estado_tiempo_paso AS estado_tiempo_paso,
+                NULL AS error_descrip
+            FROM tm_ticket_paralelo tp
+            INNER JOIN tm_usuario u ON tp.usu_id = u.usu_id
+            WHERE tp.tick_id = ? AND tp.fech_cierre IS NOT NULL)
+
             ORDER BY fecha_evento ASC
         ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
         $sql->bindValue(2, $tick_id);
         $sql->bindValue(3, $tick_id);
+        $sql->bindValue(4, $tick_id);
+        $sql->bindValue(5, $tick_id);
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -430,11 +470,13 @@ class Ticket extends Conectar
                 WHERE
                     t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = ?)
                     OR t.how_asig = ?
+                    OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = ?)
                 ORDER BY
                     t.tick_id DESC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $usu_id);
+        $sql->bindValue(3, $usu_id);
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }

@@ -552,6 +552,10 @@ class TicketService
             if (count($usuarios_destino) > 0) {
                 // Guardar la lista de IDs separados por coma en usu_asig
                 $usuarios_ids_string = implode(',', $usuarios_destino);
+
+                // Calcular SLA del paso anterior ANTES de cambiar el estado
+                $this->computeAndUpdateEstadoPaso($ticket_id);
+
                 $this->ticketRepository->updateTicketFlowState($ticket_id, $usuarios_ids_string, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
 
                 foreach ($usuarios_destino as $uid) {
@@ -563,7 +567,6 @@ class TicketService
                     $this->notificationRepository->insertNotification($uid, $mensaje_notificacion, $ticket_id);
                 }
 
-                $this->computeAndUpdateEstadoPaso($ticket_id);
                 return; // Terminamos aquí, no seguimos la lógica normal
             } else {
                 throw new Exception("El paso es paralelo pero no se encontraron usuarios para asignar.");
@@ -618,13 +621,15 @@ class TicketService
                 // Si es un valor escalar (viene de $usu_asig que pasamos arriba), lo usamos directo
                 $nuevo_usuario_asignado = is_array($nuevo_asignado_info) ? $nuevo_asignado_info['usu_id'] : $nuevo_asignado_info;
             }
+            
+            // Calcular SLA del paso anterior ANTES de cambiar el estado y asignar al nuevo
+            $this->computeAndUpdateEstadoPaso($ticket_id);
+
             $this->ticketRepository->updateTicketFlowState($ticket_id, $nuevo_usuario_asignado, $nuevo_paso_id, $ruta_id, $ruta_paso_orden);
 
             // Añadir al historial y enviar notificaciones...
             $th_id = $this->assignmentRepository->insertAssignment($ticket_id, $nuevo_usuario_asignado, $_SESSION['usu_id'], $nuevo_paso_id, 'Ticket trasladado');
 
-            // Actualizar el estado de tiempo para la última asignación
-            $this->computeAndUpdateEstadoPaso($ticket_id);
             $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
         } else {
@@ -1025,7 +1030,19 @@ class TicketService
                 if ($mi_paralelo && $mi_paralelo['estado'] == 'Pendiente') {
                     // 2. Marcar mi parte como completada
                     $comentario_paralelo = isset($_POST['tick_descrip']) ? $_POST['tick_descrip'] : 'Aprobado';
-                    $this->ticketParaleloModel->update_estado($mi_paralelo['paralelo_id'], 'Aprobado', $comentario_paralelo);
+                    
+                    // Calcular SLA
+                    $estado_tiempo_paso = 'N/A';
+                    $dias_habiles = isset($paso_actual_info['paso_tiempo_habil']) ? $paso_actual_info['paso_tiempo_habil'] : 0;
+                    
+                    if ($dias_habiles > 0) {
+                        $fecha_asignacion = $mi_paralelo['fech_crea'];
+                        $fecha_limite = $this->dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
+                        $fecha_hoy = new DateTime();
+                        $estado_tiempo_paso = ($fecha_hoy > $fecha_limite) ? 'Atrasado' : 'A Tiempo';
+                    }
+
+                    $this->ticketParaleloModel->update_estado($mi_paralelo['paralelo_id'], 'Aprobado', $comentario_paralelo, $estado_tiempo_paso);
 
                     // 3. Verificar si TODOS han terminado
                     $todos_terminaron = $this->ticketParaleloModel->check_todos_aprobados($tickId, $ticket['paso_actual_id']);
@@ -1503,6 +1520,15 @@ class TicketService
             // error_log("computeAndUpdateEstadoPaso error: " . $e->getMessage());
         }
         return $estado;
+    }
+
+    public function cerrarTicketConNota($tick_id, $usu_id, $nota_cierre, $files)
+    {
+        // Calcular SLA antes de cerrar
+        $this->computeAndUpdateEstadoPaso($tick_id);
+        
+        // Llamar al modelo para cerrar
+        $this->ticketModel->cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre, $files);
     }
 
     public function crearNovedad(array $data): array

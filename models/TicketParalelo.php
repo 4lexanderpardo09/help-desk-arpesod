@@ -43,15 +43,16 @@ class TicketParalelo extends Conectar
         return $sql->fetch(PDO::FETCH_ASSOC);
     }
 
-    public function update_estado($paralelo_id, $estado, $comentario)
+    public function update_estado($paralelo_id, $estado, $comentario, $estado_tiempo_paso = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
-        $sql = "UPDATE tm_ticket_paralelo SET estado = ?, comentario = ?, fech_cierre = NOW() WHERE paralelo_id = ?";
+        $sql = "UPDATE tm_ticket_paralelo SET estado = ?, comentario = ?, estado_tiempo_paso = ?, fech_cierre = NOW() WHERE paralelo_id = ?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $estado);
         $sql->bindValue(2, $comentario);
-        $sql->bindValue(3, $paralelo_id);
+        $sql->bindValue(3, $estado_tiempo_paso);
+        $sql->bindValue(4, $paralelo_id);
         $sql->execute();
     }
 
