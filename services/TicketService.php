@@ -4,6 +4,7 @@ require_once('../models/Ticket.php');
 require_once('../models/Usuario.php');
 require_once('../models/Subcategoria.php');
 require_once('../models/Documento.php');
+require_once('../models/CampoPlantilla.php');
 require_once('../models/Flujo.php');
 require_once('../models/FlujoPaso.php');
 require_once('../models/Organigrama.php');
@@ -15,6 +16,7 @@ require_once('../models/Ruta.php');
 require_once('../models/RutaPaso.php');
 require_once('../services/TicketWorkflowService.php');
 require_once('../models/repository/NovedadRepository.php');
+require_once('../models/CampoPlantilla.php');
 
 use models\repository\TicketRepository;
 use models\repository\NotificationRepository;
@@ -40,6 +42,7 @@ class TicketService
     private $rutaPasoModel;
     private $organigramaModel;
     private $ticketParaleloModel;
+    private $campoPlantillaModel;
 
 
     private TicketRepository $ticketRepository;
@@ -63,7 +66,9 @@ class TicketService
         $this->rutaPasoModel = new RutaPaso();
         $this->subcategoriaModel = new Subcategoria();
         $this->organigramaModel = new Organigrama();
+        $this->organigramaModel = new Organigrama();
         $this->ticketParaleloModel = new TicketParalelo();
+        $this->campoPlantillaModel = new CampoPlantilla();
 
 
         $this->pdo = $pdo;
@@ -73,7 +78,7 @@ class TicketService
         $this->novedadRepository = new NovedadRepository($pdo);
     }
 
-    public function resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id)
+    public function resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id, $postData = [])
     {
         $datos_creador = $this->usuarioModel->get_usuario_x_id($usu_id_creador);
         $creador_car_id = $datos_creador['car_id'] ?? null;
@@ -92,17 +97,68 @@ class TicketService
 
                         // Lógica de Jefe Inmediato
                         if (isset($paso_inicial['necesita_aprobacion_jefe']) && $paso_inicial['necesita_aprobacion_jefe'] == 1) {
-                            if ($datos_creador) {
-                                $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($datos_creador['car_id']);
-                                if ($jefe_cargo_id) {
-                                    $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
-                                    if ($jefe_info) {
-                                        $usu_asig_final = $jefe_info['usu_id'];
-                                    } else {
-                                        $errors[] = "Se requiere aprobación del jefe inmediato, pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id).";
+
+                            $dynamic_supervisor_found = false;
+
+                            // Verificar si hay campos dinámicos de tipo 'regional' y 'cargo'
+                            $campos_plantilla = $this->campoPlantillaModel->get_campos_por_paso($paso_inicial['paso_id']);
+
+                            if ($campos_plantilla) {
+                                $selected_regional_id = null;
+                                $selected_cargo_id = null;
+
+                                foreach ($campos_plantilla as $campo) {
+                                    if (isset($campo['campo_tipo'])) {
+                                        if ($campo['campo_tipo'] == 'regional' && isset($postData['campo_' . $campo['campo_id']])) {
+                                            $selected_regional_id = $postData['campo_' . $campo['campo_id']];
+                                        }
+                                        if ($campo['campo_tipo'] == 'cargo' && isset($postData['campo_' . $campo['campo_id']])) {
+                                            $selected_cargo_id = $postData['campo_' . $campo['campo_id']];
+                                        }
                                     }
-                                } else {
-                                    $errors[] = "Se requiere aprobación del jefe inmediato, pero el creador no tiene jefe definido en el organigrama.";
+                                }
+
+                                if ($selected_regional_id && $selected_cargo_id) {
+                                    // Lógica dinámica: Usar Cargo seleccionado para buscar Jefe, y luego buscar Usuario por Cargo Jefe y Regional seleccionada
+                                    $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($selected_cargo_id);
+                                    if ($jefe_cargo_id) {
+                                        // 1. PRIORIDAD: Buscar usuario en la regional seleccionada
+                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $selected_regional_id);
+
+                                        if ($jefe_info) {
+                                            $usu_asig_final = $jefe_info['usu_id'];
+                                            $dynamic_supervisor_found = true;
+                                        } else {
+                                            // 2. Si no encuentra en la regional, buscar usuario NACIONAL con ese cargo
+                                            $jefe_nacional = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
+
+                                            if ($jefe_nacional) {
+                                                $usu_asig_final = $jefe_nacional['usu_id'];
+                                                $dynamic_supervisor_found = true;
+                                            } else {
+                                                $errors[] = "Se requiere aprobación del jefe inmediato (dinámico), pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id) en la regional seleccionada (ID: $selected_regional_id) ni a nivel nacional.";
+                                            }
+                                        }
+                                    } else {
+                                        $errors[] = "Se requiere aprobación del jefe inmediato (dinámico), pero el cargo seleccionado (ID: $selected_cargo_id) no tiene jefe definido en el organigrama.";
+                                    }
+                                }
+                            }
+
+                            // Si no se encontró por lógica dinámica, usar la lógica estándar (Jefe del Creador)
+                            if (!$dynamic_supervisor_found && empty($usu_asig_final)) {
+                                if ($datos_creador) {
+                                    $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($datos_creador['car_id']);
+                                    if ($jefe_cargo_id) {
+                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+                                        if ($jefe_info) {
+                                            $usu_asig_final = $jefe_info['usu_id'];
+                                        } else {
+                                            $errors[] = "Se requiere aprobación del jefe inmediato, pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id).";
+                                        }
+                                    } else {
+                                        $errors[] = "Se requiere aprobación del jefe inmediato, pero el creador no tiene jefe definido en el organigrama.";
+                                    }
                                 }
                             }
                         }
@@ -230,7 +286,7 @@ class TicketService
 
             $flujo = $this->flujoModel->get_flujo_por_subcategoria($cats_id);
 
-            $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id);
+            $resolveResult = $this->resolveAssigned($flujo, $usu_id_creador, $ticket_reg_id, $postData);
 
             if (!empty($usu_asig)) {
                 if (is_array($usu_asig)) {
@@ -317,6 +373,11 @@ class TicketService
         $campos = $campoModel->get_campos_por_paso($paso_id);
         if (empty($campos)) return;
 
+        require_once('../models/Regional.php');
+        require_once('../models/Cargo.php');
+        $regionalModel = new Regional();
+        $cargoModel = new Cargo();
+
         $textDataArray = [];
         foreach ($campos as $campo) {
             $key = 'campo_' . $campo['campo_id'];
@@ -324,8 +385,24 @@ class TicketService
                 $valor = $postData[$key];
                 $campoModel->insert_ticket_valor($tick_id, $campo['campo_id'], $valor);
 
+                $texto_a_estampar = $valor;
+
+                if (isset($campo['campo_tipo'])) {
+                    if ($campo['campo_tipo'] == 'regional') {
+                        $reg_data = $regionalModel->get_regional_x_id($valor);
+                        if ($reg_data && count($reg_data) > 0) {
+                            $texto_a_estampar = $reg_data[0]['reg_nom'];
+                        }
+                    } elseif ($campo['campo_tipo'] == 'cargo') {
+                        $cargo_data = $cargoModel->get_cargo_por_id($valor);
+                        if ($cargo_data && count($cargo_data) > 0) {
+                            $texto_a_estampar = $cargo_data[0]['car_nom'];
+                        }
+                    }
+                }
+
                 $textDataArray[] = [
-                    'text' => $valor,
+                    'text' => $texto_a_estampar,
                     'x' => $campo['coord_x'],
                     'y' => $campo['coord_y'],
                     'page' => $campo['pagina']

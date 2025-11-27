@@ -144,14 +144,47 @@ categoriasAnidadas = function () {
                 if (data.requiere) {
                     $('#campos_plantilla_inputs').empty();
                     data.campos.forEach(function (campo) {
-                        var inputHtml = `
-                            <div class="col-md-4">
-                                <fieldset class="form-group">
-                                    <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
-                                    <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" required>
-                                </fieldset>
-                            </div>
-                        `;
+                        var inputHtml = '';
+                        if (campo.campo_tipo === 'regional') {
+                            inputHtml = `
+                                <div class="col-md-4">
+                                    <fieldset class="form-group">
+                                        <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                            <option value="">Seleccionar...</option>
+                                        </select>
+                                    </fieldset>
+                                </div>
+                            `;
+                            // Populate Regional Select
+                            $.post("../../controller/regional.php?op=combo", function (data) {
+                                $('#campo_' + campo.campo_id).append(data);
+                            });
+                        } else if (campo.campo_tipo === 'cargo') {
+                            inputHtml = `
+                                <div class="col-md-4">
+                                    <fieldset class="form-group">
+                                        <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                        <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                            <option value="">Seleccionar...</option>
+                                        </select>
+                                    </fieldset>
+                                </div>
+                            `;
+                            // Populate Cargo Select
+                            $.post("../../controller/cargo.php?op=combo", function (data) {
+                                $('#campo_' + campo.campo_id).append(data);
+                            });
+                        } else {
+                            inputHtml = `
+                                <div class="col-md-4">
+                                    <fieldset class="form-group">
+                                        <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                        <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" required>
+                                    </fieldset>
+                                </div>
+                            `;
+                        }
                         $('#campos_plantilla_inputs').append(inputHtml);
                     });
                     $('#campos_plantilla_container').show();

@@ -3,11 +3,11 @@ class CampoPlantilla extends Conectar
 {
     // --- tm_campo_plantilla methods ---
 
-    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina)
+    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text')
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())";
+        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, campo_tipo, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->bindValue(2, $campo_nombre);
@@ -15,22 +15,24 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(4, $coord_x);
         $sql->bindValue(5, $coord_y);
         $sql->bindValue(6, $pagina);
+        $sql->bindValue(7, $campo_tipo);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina)
+    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text')
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=? WHERE campo_id=?";
+        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=?, campo_tipo=? WHERE campo_id=?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $campo_nombre);
         $sql->bindValue(2, $campo_codigo);
         $sql->bindValue(3, $coord_x);
         $sql->bindValue(4, $coord_y);
         $sql->bindValue(5, $pagina);
-        $sql->bindValue(6, $campo_id);
+        $sql->bindValue(6, $campo_tipo);
+        $sql->bindValue(7, $campo_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
@@ -76,7 +78,7 @@ class CampoPlantilla extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT v.*, c.campo_nombre, c.campo_codigo, c.coord_x, c.coord_y, c.pagina 
+        $sql = "SELECT v.*, c.campo_nombre, c.campo_codigo, c.coord_x, c.coord_y, c.pagina, c.campo_tipo 
                 FROM td_ticket_campo_valor v 
                 INNER JOIN tm_campo_plantilla c ON v.campo_id = c.campo_id 
                 WHERE v.tick_id=? AND v.est=1";

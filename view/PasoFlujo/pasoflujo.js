@@ -64,13 +64,15 @@ function guardaryeditar(e) {
         var row = $(this);
         var campo_nombre = row.find('td:eq(0) input').val();
         var campo_codigo = row.find('td:eq(1) input').val();
-        var pagina = row.find('td:eq(2) input').val();
-        var coord_x = row.find('td:eq(3) input').val();
-        var coord_y = row.find('td:eq(4) input').val();
+        var campo_tipo = row.find('.campo_tipo').val();
+        var pagina = row.find('.campo_pagina').val();
+        var coord_x = row.find('.campo_x').val();
+        var coord_y = row.find('.campo_y').val();
         if (campo_nombre && campo_codigo) {
             camposPlantilla.push({
                 campo_nombre: campo_nombre,
                 campo_codigo: campo_codigo,
+                campo_tipo: campo_tipo,
                 pagina: pagina,
                 coord_x: coord_x,
                 coord_y: coord_y
@@ -860,27 +862,30 @@ $(document).on('click', '.btn-remove-campo', function () {
     $(this).closest('tr').remove();
 });
 
-function addCampoPlantillaRow(data = null) {
-    var campo_nombre = data ? data.campo_nombre : '';
-    var campo_codigo = data ? data.campo_codigo : '';
-    var pagina = data ? data.pagina : 1;
-    var coord_x = data ? data.coord_x : '';
-    var coord_y = data ? data.coord_y : '';
+function addCampoPlantillaRow(campo = null) {
+    var campo_nombre = campo ? campo.campo_nombre : '';
+    var campo_codigo = campo ? campo.campo_codigo : '';
+    var pagina = campo ? campo.pagina : 1;
+    var coord_x = campo ? campo.coord_x : '';
+    var coord_y = campo ? campo.coord_y : '';
 
-    var row = `<tr>
-        <td><input type="text" class="form-control input-sm" placeholder="Ej: Fecha" value="${campo_nombre}"></td>
-        <td><input type="text" class="form-control input-sm" placeholder="Ej: fecha_solicitud" value="${campo_codigo}"></td>
-        <td><input type="number" class="form-control input-sm" value="${pagina}"></td>
-        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_x}"></td>
-        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_y}"></td>
-        <td><button type="button" class="btn btn-danger btn-sm btn-remove-campo"><i class="fa fa-trash"></i></button></td>
-    </tr>`;
-    $('#tabla_campos_plantilla tbody').append(row);
+    var newRow = `
+        <tr>
+            <td><input type="text" class="form-control form-control-sm campo_nombre" value="${campo_nombre || ''}" placeholder="Ej: Nombre Solicitante"></td>
+            <td><input type="text" class="form-control form-control-sm campo_codigo" value="${campo_codigo || ''}" placeholder="Ej: nombre_solicitante"></td>
+            <td>
+                <select class="form-control form-control-sm campo_tipo">
+                    <option value="text" ${campo && campo.campo_tipo === 'text' ? 'selected' : ''}>Texto</option>
+                    <option value="regional" ${campo && campo.campo_tipo === 'regional' ? 'selected' : ''}>Regional</option>
+                    <option value="cargo" ${campo && campo.campo_tipo === 'cargo' ? 'selected' : ''}>Cargo</option>
+                </select>
+            </td>
+            <td><input type="number" class="form-control form-control-sm campo_pagina" value="${pagina || 1}" min="1"></td>
+            <td><input type="number" class="form-control form-control-sm campo_x" value="${coord_x || 0}" step="0.01"></td>
+            <td><input type="number" class="form-control form-control-sm campo_y" value="${coord_y || 0}" step="0.01"></td>
+            <td><button type="button" class="btn btn-sm btn-danger btn-remove-campo"><i class="fa fa-trash"></i></button></td>
+        </tr>
+    `;
+    $('#tabla_campos_plantilla tbody').append(newRow);
 }
-if (usu_id) {
-    $.post("../../controller/usuario.php?op=mostrar", { usu_id: usu_id }, function (userData) {
-        userData = JSON.parse(userData);
-        var option = new Option(userData.usu_nom + ' ' + userData.usu_ape, userData.usu_id, true, true);
-        $select.append(option).trigger('change');
-    });
-}
+

@@ -176,7 +176,7 @@ class FlujoPaso extends Conectar
 
         if (is_array($campos)) {
             foreach ($campos as $campo) {
-                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina']);
+                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo']);
             }
         }
     }

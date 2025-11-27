@@ -104,12 +104,13 @@
                         <table class="table table-bordered table-sm" id="tabla_campos_plantilla">
                             <thead>
                                 <tr>
-                                    <th style="width: 30%;">Etiqueta</th>
-                                    <th style="width: 20%;">Código (Variable)</th>
+                                    <th style="width: 25%;">Etiqueta</th>
+                                    <th style="width: 15%;">Código (Variable)</th>
+                                    <th style="width: 15%;">Tipo</th>
                                     <th style="width: 10%;">Página</th>
                                     <th style="width: 15%;">Coord X</th>
                                     <th style="width: 15%;">Coord Y</th>
-                                    <th style="width: 10%;"></th>
+                                    <th style="width: 5%;"></th>
                                 </tr>
                             </thead>
                             <tbody>
