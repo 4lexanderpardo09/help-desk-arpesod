@@ -725,30 +725,41 @@ class TicketService
 
 
 
-        // --- LÓGICA DE JEFE INMEDIATO ---
+        // --- LÓGICA DE JEFE INMEDIATO (Lineal) ---
         // Verificar si el paso requiere aprobación del jefe inmediato
         if (isset($siguiente_paso['necesita_aprobacion_jefe']) && $siguiente_paso['necesita_aprobacion_jefe'] == 1) {
-            // Obtener información del creador del ticket
-            $ticket_info = $this->ticketModel->listar_ticket_x_id($ticket_id);
-            $creador_id = $ticket_info['usu_id'];
-            $creador_info = $this->usuarioModel->get_usuario_x_id($creador_id);
 
-            if ($creador_info) {
-                // Obtener el cargo del jefe inmediato
-                $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($creador_info['car_id']);
+            // 1. Check if we have a specific Boss identified via Template (usu_id_jefe_aprobador)
+            $ticket_info_check = $this->ticketModel->listar_ticket_x_id($ticket_id);
+            if (!empty($ticket_info_check['usu_id_jefe_aprobador'])) {
+                $nuevo_asignado_info = $this->usuarioModel->get_usuario_x_id($ticket_info_check['usu_id_jefe_aprobador']);
+                if ($nuevo_asignado_info) {
+                    $usu_asig = null; // Force assignment to this boss
+                }
+            } else {
+                // 2. Fallback to Creator's Boss (Original Logic)
+                // Obtener información del creador del ticket
+                $creador_id = $ticket_info_check['usu_id']; // Use info from check
+                $creador_info = $this->usuarioModel->get_usuario_x_id($creador_id);
 
-                if ($jefe_cargo_id) {
-                    // Buscar usuario con ese cargo
-                    // Priorizamos buscar en la misma regional si es posible, o usamos la búsqueda general
-                    $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+                if ($creador_info) {
+                    // Obtener el cargo del jefe inmediato
+                    $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($creador_info['car_id']);
 
-                    if ($nuevo_asignado_info) {
-                        // Si encontramos al jefe, forzamos la asignación y anulamos cualquier selección manual
-                        $usu_asig = null;
+                    if ($jefe_cargo_id) {
+                        // Buscar usuario con ese cargo
+                        // Priorizamos buscar en la misma regional si es posible, o usamos la búsqueda general
+                        $nuevo_asignado_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+
+                        if ($nuevo_asignado_info) {
+                            // Si encontramos al jefe, forzamos la asignación y anulamos cualquier selección manual
+                            $usu_asig = null;
+                        }
                     }
                 }
             }
         }
+
 
         if (!$nuevo_asignado_info) {
             if (!empty($usu_asig) || $usu_asig != null) {
@@ -1803,17 +1814,23 @@ class TicketService
                     if (!empty($config['car_id'])) {
                         if ($config['car_id'] === 'JEFE_INMEDIATO') {
                             // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
+                            $is_jefe_match = false;
+
                             if (!empty($ticket_info['usu_id_jefe_aprobador'])) {
                                 if ($user_info['usu_id'] == $ticket_info['usu_id_jefe_aprobador']) {
-                                    $my_config = $config;
-                                    break;
+                                    $is_jefe_match = true;
                                 }
-                            } else {
-                                // Fallback for legacy tickets or if not set: Use Creator's Boss logic (Simplified)
-                                // ... existing fallback logic or just fail safe ...
-                                // For now, let's keep the fallback to creator's boss if the column is null
+                            }
+
+                            // Fallback: If not explicitly set (or mismatch), check if user is the one ASSIGNED to the ticket.
+                            // If the system assigned them, we trust they are the intended actor.
+                            if (!$is_jefe_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
+                                $is_jefe_match = true;
+                            }
+
+                            if (!$is_jefe_match) {
+                                // Fallback for legacy tickets: Use Creator's Boss logic
                                 $subordinate_car_id = null;
-                                // 2. Fallback to Creator
                                 $creador_usu_id = $ticket_info['usu_id'];
                                 $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
                                 if ($creador_data) {
@@ -1828,11 +1845,15 @@ class TicketService
                                     if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
                                         // Check Regional or National
                                         if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
-                                            $my_config = $config;
-                                            break;
+                                            $is_jefe_match = true;
                                         }
                                     }
                                 }
+                            }
+
+                            if ($is_jefe_match) {
+                                $my_config = $config;
+                                break;
                             }
                         } else {
                             // Logic for specific Cargo
