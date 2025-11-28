@@ -298,6 +298,7 @@ class Ticket extends Conectar
         p.pd_nom,
         d.dp_nom,
         e.emp_nom,
+        t.usu_id_jefe_aprobador,
         paso.paso_nombre
     FROM
         tm_ticket t

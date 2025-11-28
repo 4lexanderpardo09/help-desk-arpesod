@@ -379,6 +379,9 @@ class TicketService
         $cargoModel = new Cargo();
 
         $textDataArray = [];
+        $captured_cargo_id = null;
+        $captured_regional_id = null;
+
         foreach ($campos as $campo) {
             $key = 'campo_' . $campo['campo_id'];
             if (isset($postData[$key])) {
@@ -389,11 +392,13 @@ class TicketService
 
                 if (isset($campo['campo_tipo'])) {
                     if ($campo['campo_tipo'] == 'regional') {
+                        $captured_regional_id = $valor;
                         $reg_data = $regionalModel->get_regional_x_id($valor);
                         if ($reg_data && count($reg_data) > 0) {
                             $texto_a_estampar = $reg_data[0]['reg_nom'];
                         }
                     } elseif ($campo['campo_tipo'] == 'cargo') {
+                        $captured_cargo_id = $valor;
                         $cargo_data = $cargoModel->get_cargo_por_id($valor);
                         if ($cargo_data && count($cargo_data) > 0) {
                             $texto_a_estampar = $cargo_data[0]['car_nom'];
@@ -407,6 +412,59 @@ class TicketService
                     'y' => $campo['coord_y'],
                     'page' => $campo['pagina']
                 ];
+            }
+        }
+
+        // Logic to capture Jefe Inmediato User (Refactored)
+        if ($captured_cargo_id && $captured_regional_id) {
+            require_once('../models/Usuario.php');
+            require_once('../models/Organigrama.php');
+            $usuarioModel = new Usuario();
+            $organigramaModel = new Organigrama();
+
+            // 1. Identify the Subordinate (User identified by Template Fields)
+            // We look for a user with the captured Cargo and Regional
+            $subordinate_user = $usuarioModel->get_usuario_por_cargo_y_regional($captured_cargo_id, $captured_regional_id);
+
+            // If not found in regional, check if there is a national user with that cargo? 
+            // The requirement implies the template defines the subordinate's location. 
+            // If the subordinate is national, they might not have a specific regional_id in the template or the template regional matches their record.
+            // Let's assume strict match for subordinate first.
+
+            if ($subordinate_user) {
+                $subordinate_car_id = $subordinate_user['car_id'];
+                $subordinate_reg_id = $subordinate_user['reg_id']; // Should match captured_regional_id
+
+                // 2. Find the Boss's Cargo from Organigrama
+                $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
+
+                if ($jefe_car_id) {
+                    // 3. Find the Boss User(s)
+                    // Priority: Boss in the same regional as Subordinate -> National Boss
+                    $jefe_encontrado_id = null;
+
+                    // Try to find boss in the same regional
+                    $boss_in_regional = $usuarioModel->get_usuario_por_cargo_y_regional($jefe_car_id, $subordinate_reg_id);
+
+                    if ($boss_in_regional) {
+                        $jefe_encontrado_id = $boss_in_regional['usu_id'];
+                    } else {
+                        // If not found, look for a National Boss
+                        $boss_national = $usuarioModel->get_usuario_nacional_por_cargo($jefe_car_id);
+                        if ($boss_national) {
+                            $jefe_encontrado_id = $boss_national['usu_id'];
+                        }
+                    }
+
+                    // 4. Update tm_ticket with the Boss's ID
+                    if ($jefe_encontrado_id) {
+                        $sql = "UPDATE tm_ticket SET usu_id_jefe_aprobador = ? WHERE tick_id = ?";
+                        $stmt = $this->pdo->prepare($sql);
+                        $stmt->bindValue(1, $jefe_encontrado_id);
+                        $stmt->bindValue(2, $tick_id);
+                        $stmt->execute();
+                    }
+                }
             }
         }
 
@@ -508,13 +566,17 @@ class TicketService
 
     public function actualizar_estado_ticket($ticket_id, $nuevo_paso_id, $ruta_id, $ruta_paso_orden, $usu_asig)
     {
+        error_log("TicketService::actualizar_estado_ticket - Called. Ticket: $ticket_id, Nuevo Paso: $nuevo_paso_id");
 
         $cats_nom = $this->ticketModel->listar_ticket_x_id($ticket_id)['cats_nom'];
 
         $siguiente_paso = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
         if (!$siguiente_paso) {
+            error_log("TicketService::actualizar_estado_ticket - Error: Siguiente paso no encontrado.");
             throw new Exception("No se encontró la información del siguiente paso (ID: $nuevo_paso_id).");
         }
+        error_log("TicketService::actualizar_estado_ticket - Siguiente paso encontrado: " . $siguiente_paso['paso_nombre'] . " (ID: " . $siguiente_paso['paso_id'] . ")");
+        error_log("TicketService::actualizar_estado_ticket - Es Paralelo: " . ($siguiente_paso['es_paralelo'] ?? 'NULL'));
 
         $siguiente_cargo_id = $siguiente_paso['cargo_id_asignado'] ?? null;
         $nuevo_asignado_info = null;
@@ -530,6 +592,28 @@ class TicketService
 
             // A.2 Verificar si hay CARGOS específicos configurados (Nuevo requerimiento)
             $cargos_especificos = $this->flujoPasoModel->get_cargos_especificos($siguiente_paso['paso_id']);
+
+            // A.3 (FIX) Verificar si hay configuracion de FIRMA y agregar esos usuarios/cargos a la asignación
+            $firma_config = $this->flujoPasoModel->get_firma_config($siguiente_paso['paso_id']);
+            if (!empty($firma_config)) {
+                foreach ($firma_config as $fc) {
+                    if (!empty($fc['car_id'])) {
+                        $cargos_especificos[] = $fc['car_id'];
+                    }
+                    if (!empty($fc['usu_id'])) {
+                        $usuarios_especificos[] = $fc['usu_id'];
+                    }
+                }
+                // Eliminar duplicados
+                $cargos_especificos = array_unique($cargos_especificos);
+                $usuarios_especificos = array_unique($usuarios_especificos);
+            }
+
+            error_log("TicketService::actualizar_estado_ticket - Usuarios especificos count: " . count($usuarios_especificos));
+            error_log("TicketService::actualizar_estado_ticket - Cargos especificos count: " . count($cargos_especificos));
+            if (!empty($cargos_especificos)) {
+                error_log("TicketService::actualizar_estado_ticket - Cargos especificos: " . implode(', ', $cargos_especificos));
+            }
 
             if (!empty($usuarios_especificos) || !empty($cargos_especificos)) {
                 // Si hay configuración específica (usuarios o cargos), la usamos.
@@ -547,54 +631,38 @@ class TicketService
                     $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
 
                     foreach ($cargos_especificos as $cargo_id) {
+                        error_log("TicketService::actualizar_estado_ticket - Processing cargo_id: $cargo_id");
                         if ($cargo_id === 'JEFE_INMEDIATO') {
-                            $subordinate_car_id = null;
+                            // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
+                            $ticket_info_check = $this->ticketModel->listar_ticket_x_id($ticket_id);
 
-                            // 1. Check for Reference Field in Step Configuration
-                            // We need step info. Assuming $siguiente_paso is the step being assigned (parallel).
+                            error_log("TicketService::actualizar_estado_ticket - Checking JEFE_INMEDIATO. Ticket ID: $ticket_id");
+                            error_log("TicketService::actualizar_estado_ticket - usu_id_jefe_aprobador found: " . ($ticket_info_check['usu_id_jefe_aprobador'] ?? 'NULL'));
 
-                            if (!empty($siguiente_paso['campo_id_referencia_jefe'])) {
-                                require_once('../models/CampoPlantilla.php');
-                                $campoModel = new CampoPlantilla();
-                                $valor = $campoModel->get_valor_campo($ticket_id, $siguiente_paso['campo_id_referencia_jefe']);
-
-                                if ($valor) {
-                                    // Check if it's a Cargo
-                                    require_once('../models/Cargo.php');
-                                    $cargoModel = new Cargo();
-                                    $cargo_check = $cargoModel->get_cargo_por_id($valor);
-
-                                    if ($cargo_check && count($cargo_check) > 0) {
-                                        $subordinate_car_id = $valor;
-                                    } else {
-                                        // Check if it's a User
-                                        $user_check = $this->usuarioModel->get_usuario_detalle_x_id($valor);
-                                        if ($user_check) {
-                                            $subordinate_car_id = $user_check['car_id'];
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 2. Fallback to Ticket Creator
-                            if (!$subordinate_car_id) {
+                            if (!empty($ticket_info_check['usu_id_jefe_aprobador'])) {
+                                $usuarios_destino[] = $ticket_info_check['usu_id_jefe_aprobador'];
+                                error_log("TicketService::actualizar_estado_ticket - Assigned from usu_id_jefe_aprobador.");
+                            } else {
+                                // Fallback Logic
+                                $subordinate_car_id = null;
+                                // 2. Fallback to Ticket Creator
                                 if ($creador_data && !empty($creador_data['car_id'])) {
                                     $subordinate_car_id = $creador_data['car_id'];
                                 }
-                            }
 
-                            // 3. Find Boss
-                            if ($subordinate_car_id) {
-                                require_once('../models/Organigrama.php');
-                                $organigramaModel = new Organigrama();
-                                $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
+                                // 3. Find Boss
+                                if ($subordinate_car_id) {
+                                    require_once('../models/Organigrama.php');
+                                    $organigramaModel = new Organigrama();
+                                    $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
 
-                                if ($jefe_car_id) {
-                                    // Asignar a usuarios con ese cargo (en la misma regional o nacionales)
-                                    $usuarios_jefe = $this->usuarioModel->get_usuarios_por_cargo_regional_o_nacional($jefe_car_id, $regional_origen_id);
-                                    if ($usuarios_jefe) {
-                                        foreach ($usuarios_jefe as $u) {
-                                            $usuarios_destino[] = $u['usu_id'];
+                                    if ($jefe_car_id) {
+                                        // Asignar a usuarios con ese cargo (en la misma regional o nacionales)
+                                        $usuarios_jefe = $this->usuarioModel->get_usuarios_por_cargo_regional_o_nacional($jefe_car_id, $regional_origen_id);
+                                        if ($usuarios_jefe) {
+                                            foreach ($usuarios_jefe as $u) {
+                                                $usuarios_destino[] = $u['usu_id'];
+                                            }
                                         }
                                     }
                                 }
@@ -1728,76 +1796,42 @@ class TicketService
             // Get ticket info to know the regional
             $ticket_info = $this->ticketModel->listar_ticket_x_id($tick_id);
 
-            error_log("TicketService::handleSignature - Checking Role Logic. User: " . json_encode($user_info));
-
             if ($user_info && $ticket_info) {
                 $ticket_regional = $ticket_info['reg_id'];
-                error_log("TicketService::handleSignature - Ticket Regional: $ticket_regional");
 
                 foreach ($firma_configs as $config) {
-                    error_log("TicketService::handleSignature - Checking Config: " . json_encode($config));
                     if (!empty($config['car_id'])) {
                         if ($config['car_id'] === 'JEFE_INMEDIATO') {
-                            error_log("TicketService::handleSignature - Logic for JEFE_INMEDIATO");
-                            $subordinate_car_id = null;
-
-                            // 1. Check for Reference Field
-                            if (!empty($paso_info['campo_id_referencia_jefe'])) {
-                                error_log("TicketService::handleSignature - Reference Field Found: " . $paso_info['campo_id_referencia_jefe']);
-                                require_once('../models/CampoPlantilla.php');
-                                $campoModel = new CampoPlantilla();
-                                $valor = $campoModel->get_valor_campo($tick_id, $paso_info['campo_id_referencia_jefe']);
-                                error_log("TicketService::handleSignature - Reference Field Value: $valor");
-
-                                if ($valor) {
-                                    // Check if it's a Cargo
-                                    require_once('../models/Cargo.php');
-                                    $cargoModel = new Cargo();
-                                    $cargo_check = $cargoModel->get_cargo_por_id($valor);
-
-                                    if ($cargo_check && count($cargo_check) > 0) {
-                                        $subordinate_car_id = $valor;
-                                        error_log("TicketService::handleSignature - Value is Cargo ID: $subordinate_car_id");
-                                    } else {
-                                        // Check if it's a User
-                                        $user_check = $this->usuarioModel->get_usuario_detalle_x_id($valor);
-                                        if ($user_check) {
-                                            $subordinate_car_id = $user_check['car_id'];
-                                            error_log("TicketService::handleSignature - Value is User ID. Cargo derived: $subordinate_car_id");
-                                        }
-                                    }
+                            // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
+                            if (!empty($ticket_info['usu_id_jefe_aprobador'])) {
+                                if ($user_info['usu_id'] == $ticket_info['usu_id_jefe_aprobador']) {
+                                    $my_config = $config;
+                                    break;
                                 }
-                            }
-
-                            // 2. Fallback to Creator
-                            if (!$subordinate_car_id) {
+                            } else {
+                                // Fallback for legacy tickets or if not set: Use Creator's Boss logic (Simplified)
+                                // ... existing fallback logic or just fail safe ...
+                                // For now, let's keep the fallback to creator's boss if the column is null
+                                $subordinate_car_id = null;
+                                // 2. Fallback to Creator
                                 $creador_usu_id = $ticket_info['usu_id'];
                                 $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
                                 if ($creador_data) {
                                     $subordinate_car_id = $creador_data['car_id'];
-                                    error_log("TicketService::handleSignature - Fallback to Creator Cargo: $subordinate_car_id");
                                 }
-                            }
 
-                            // 3. Find Boss
-                            if ($subordinate_car_id) {
-                                require_once('../models/Organigrama.php');
-                                $organigramaModel = new Organigrama();
-                                $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
-                                error_log("TicketService::handleSignature - Boss Cargo Found: $jefe_car_id");
+                                if ($subordinate_car_id) {
+                                    require_once('../models/Organigrama.php');
+                                    $organigramaModel = new Organigrama();
+                                    $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
 
-                                if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
-                                    error_log("TicketService::handleSignature - User matches Boss Cargo.");
-                                    // Check Regional or National
-                                    if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
-                                        error_log("TicketService::handleSignature - Regional/National check passed.");
-                                        $my_config = $config;
-                                        break;
-                                    } else {
-                                        error_log("TicketService::handleSignature - Regional/National check FAILED. User Reg: " . $user_info['reg_id'] . ", Ticket Reg: $ticket_regional, EsNacional: " . $user_info['es_nacional']);
+                                    if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
+                                        // Check Regional or National
+                                        if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
+                                            $my_config = $config;
+                                            break;
+                                        }
                                     }
-                                } else {
-                                    error_log("TicketService::handleSignature - User does NOT match Boss Cargo. User Cargo: " . $user_info['car_id']);
                                 }
                             }
                         } else {
