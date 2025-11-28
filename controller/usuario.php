@@ -58,25 +58,26 @@ switch ($_GET["op"]) {
         break;
 
     case "mostrar":
-
-        $datos = $usuario->get_usuario_x_id($_POST['usu_id']);
-        if (is_array($datos) == true and count($datos) > 0) {
-            $row = $datos;
-            $output['usu_id'] = $row['usu_id'];
-            $output['emp_ids'] = $row['emp_ids'];
-            $output['usu_nom'] = $row['usu_nom'];
-            $output['usu_ape'] = $row['usu_ape'];
-            $output['usu_correo'] = $row['usu_correo'];
-            $output['usu_pass'] = $row['usu_pass'];
-            $output['rol_id'] = $row['rol_id'];
-            $output['dp_id'] = $row['dp_id'];
-            $output['reg_id'] = $row['reg_id'];
-            $output['car_id'] = $row['car_id'];
-            $output['es_nacional'] = $row['es_nacional'];
+        $usu_id = isset($_POST['usu_id']) ? $_POST['usu_id'] : (isset($_GET['usu_id']) ? $_GET['usu_id'] : null);
+        $output = [];
+        if ($usu_id) {
+            $datos = $usuario->get_usuario_x_id($usu_id);
+            if (is_array($datos) == true and count($datos) > 0) {
+                $row = $datos;
+                $output['usu_id'] = $row['usu_id'];
+                $output['emp_ids'] = $row['emp_ids'];
+                $output['usu_nom'] = $row['usu_nom'];
+                $output['usu_ape'] = $row['usu_ape'];
+                $output['usu_correo'] = $row['usu_correo'];
+                $output['usu_pass'] = $row['usu_pass'];
+                $output['rol_id'] = $row['rol_id'];
+                $output['dp_id'] = $row['dp_id'];
+                $output['reg_id'] = $row['reg_id'];
+                $output['car_id'] = $row['car_id'];
+                $output['es_nacional'] = $row['es_nacional'];
+            }
         }
         echo json_encode($output);
-
-
         break;
 
     case "total":

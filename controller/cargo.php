@@ -6,16 +6,33 @@ $cargo = new Cargo();
 switch ($_GET["op"]) {
 
     case "combo":
-        
+
         $datos = $cargo->get_cargos();
-        if(is_array($datos) and count($datos) > 0){
+        if (is_array($datos) and count($datos) > 0) {
             $html = "";
-            foreach($datos as $row){
-                 $html.= "<option value='".$row["car_id"]."'>".$row["car_nom"]."</option>";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row["car_id"] . "'>" . $row["car_nom"] . "</option>";
             }
             echo $html;
         }
 
+        break;
+
+    case "combo_select2":
+        $datos = $cargo->get_cargos();
+        $data = array();
+        if (is_array($datos) and count($datos) > 0) {
+            foreach ($datos as $row) {
+                // Filtrar por término de búsqueda si existe
+                if (isset($_GET['q']) && !empty($_GET['q'])) {
+                    if (stripos($row["car_nom"], $_GET['q']) === false) {
+                        continue;
+                    }
+                }
+                $data[] = array("id" => $row['car_id'], "text" => $row['car_nom']);
+            }
+        }
+        echo json_encode($data);
         break;
 
     case "listar":
@@ -61,4 +78,3 @@ switch ($_GET["op"]) {
         $cargo->delete_cargo($_POST["car_id"]);
         break;
 }
-?>

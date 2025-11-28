@@ -100,10 +100,13 @@ switch ($_GET["op"]) {
             );
         }
 
-        if (($requiere_seleccion_manual || $es_paralelo) && isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos'])) {
-            $flujopaso->set_usuarios_especificos($paso_id, $_POST['usuarios_especificos']);
+        if (($requiere_seleccion_manual || $es_paralelo)) {
+            $usuarios_especificos = isset($_POST['usuarios_especificos']) && is_array($_POST['usuarios_especificos']) ? $_POST['usuarios_especificos'] : [];
+            $cargos_especificos = isset($_POST['cargos_especificos']) && is_array($_POST['cargos_especificos']) ? $_POST['cargos_especificos'] : [];
+
+            $flujopaso->set_usuarios_especificos($paso_id, $usuarios_especificos, $cargos_especificos);
         } else {
-            $flujopaso->set_usuarios_especificos($paso_id, []);
+            $flujopaso->set_usuarios_especificos($paso_id, [], []);
         }
 
         if ($requiere_firma && isset($_POST['firma_config'])) {

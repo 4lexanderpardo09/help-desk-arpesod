@@ -259,6 +259,17 @@ class Usuario extends Conectar
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
 
+    public function get_usuario_detalle_x_id($usu_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT * FROM tm_usuario WHERE usu_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_id);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function get_usuario_total_id($usu_id)
     {
         $conectar = parent::Conexion();
@@ -376,6 +387,22 @@ class Usuario extends Conectar
         $conectar = parent::Conexion();
         parent::set_names();
         $sql = "SELECT * FROM tm_usuario WHERE car_id = ? AND reg_id = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->bindValue(2, $reg_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_usuarios_por_cargo_regional_o_nacional($car_id, $reg_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        // Selecciona usuarios del cargo que sean de la regional O que sean nacionales
+        $sql = "SELECT * FROM tm_usuario 
+                WHERE car_id = ? 
+                AND (reg_id = ? OR es_nacional = 1) 
+                AND est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $car_id);
         $sql->bindValue(2, $reg_id);

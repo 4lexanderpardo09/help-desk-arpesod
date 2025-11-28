@@ -290,7 +290,7 @@ class FlujoPaso extends Conectar
         return $resultado['total'] > 0;
     }
 
-    public function set_usuarios_especificos($paso_id, $user_ids)
+    public function set_usuarios_especificos($paso_id, $user_ids, $cargo_ids = [])
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -301,11 +301,25 @@ class FlujoPaso extends Conectar
 
         if (is_array($user_ids)) {
             foreach ($user_ids as $user_id) {
-                $sql = "INSERT INTO tm_flujo_paso_usuarios (paso_id, usu_id) VALUES (?, ?)";
-                $sql = $conectar->prepare($sql);
-                $sql->bindValue(1, $paso_id);
-                $sql->bindValue(2, $user_id);
-                $sql->execute();
+                if (!empty($user_id)) {
+                    $sql = "INSERT INTO tm_flujo_paso_usuarios (paso_id, usu_id) VALUES (?, ?)";
+                    $sql = $conectar->prepare($sql);
+                    $sql->bindValue(1, $paso_id);
+                    $sql->bindValue(2, $user_id);
+                    $sql->execute();
+                }
+            }
+        }
+
+        if (is_array($cargo_ids)) {
+            foreach ($cargo_ids as $cargo_id) {
+                if (!empty($cargo_id)) {
+                    $sql = "INSERT INTO tm_flujo_paso_usuarios (paso_id, car_id) VALUES (?, ?)";
+                    $sql = $conectar->prepare($sql);
+                    $sql->bindValue(1, $paso_id);
+                    $sql->bindValue(2, $cargo_id);
+                    $sql->execute();
+                }
             }
         }
     }
@@ -314,7 +328,18 @@ class FlujoPaso extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT usu_id FROM tm_flujo_paso_usuarios WHERE paso_id = ?";
+        $sql = "SELECT usu_id FROM tm_flujo_paso_usuarios WHERE paso_id = ? AND usu_id IS NOT NULL";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
+    }
+
+    public function get_cargos_especificos($paso_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT car_id FROM tm_flujo_paso_usuarios WHERE paso_id = ? AND car_id IS NOT NULL";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
@@ -325,6 +350,10 @@ class FlujoPaso extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
+
+        $data = [];
+
+        // Obtener usuarios
         $sql = "SELECT tm_usuario.usu_id, tm_usuario.usu_nom, tm_usuario.usu_ape 
                 FROM tm_flujo_paso_usuarios 
                 INNER JOIN tm_usuario ON tm_flujo_paso_usuarios.usu_id = tm_usuario.usu_id
@@ -332,7 +361,35 @@ class FlujoPaso extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
-        return $sql->fetchAll(PDO::FETCH_ASSOC);
+        $usuarios = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($usuarios as $u) {
+            $data[] = [
+                'tipo' => 'usuario',
+                'id' => $u['usu_id'],
+                'nombre' => $u['usu_nom'] . ' ' . $u['usu_ape']
+            ];
+        }
+
+        // Obtener cargos
+        $sql = "SELECT tm_cargo.car_id, tm_cargo.car_nom 
+                FROM tm_flujo_paso_usuarios 
+                INNER JOIN tm_cargo ON tm_flujo_paso_usuarios.car_id = tm_cargo.car_id
+                WHERE paso_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $paso_id);
+        $sql->execute();
+        $cargos = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($cargos as $c) {
+            $data[] = [
+                'tipo' => 'cargo',
+                'id' => $c['car_id'],
+                'nombre' => 'Cargo: ' . $c['car_nom']
+            ];
+        }
+
+        return $data;
     }
 
     public function get_paso_anterior($paso_actual_id)
@@ -383,13 +440,14 @@ class FlujoPaso extends Conectar
         // Insertamos las nuevas
         if (is_array($configuraciones)) {
             foreach ($configuraciones as $config) {
-                $sql = "INSERT INTO tm_flujo_paso_firma (paso_id, usu_id, coord_x, coord_y, pagina, est) VALUES (?, ?, ?, ?, ?, 1)";
+                $sql = "INSERT INTO tm_flujo_paso_firma (paso_id, usu_id, car_id, coord_x, coord_y, pagina, est) VALUES (?, ?, ?, ?, ?, ?, 1)";
                 $sql = $conectar->prepare($sql);
                 $sql->bindValue(1, $paso_id);
                 $sql->bindValue(2, !empty($config['usu_id']) ? $config['usu_id'] : null);
-                $sql->bindValue(3, $config['coord_x']);
-                $sql->bindValue(4, $config['coord_y']);
-                $sql->bindValue(5, !empty($config['pagina']) ? $config['pagina'] : 1);
+                $sql->bindValue(3, !empty($config['car_id']) ? $config['car_id'] : null);
+                $sql->bindValue(4, $config['coord_x']);
+                $sql->bindValue(5, $config['coord_y']);
+                $sql->bindValue(6, !empty($config['pagina']) ? $config['pagina'] : 1);
                 $sql->execute();
             }
         }
@@ -399,7 +457,10 @@ class FlujoPaso extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT * FROM tm_flujo_paso_firma WHERE paso_id = ? AND est = 1";
+        $sql = "SELECT tm_flujo_paso_firma.*, tm_cargo.car_nom 
+                FROM tm_flujo_paso_firma 
+                LEFT JOIN tm_cargo ON tm_flujo_paso_firma.car_id = tm_cargo.car_id
+                WHERE paso_id = ? AND tm_flujo_paso_firma.est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();

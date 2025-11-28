@@ -48,12 +48,13 @@ function guardaryeditar(e) {
     var firmas = [];
     $('#tabla_firmas tbody tr').each(function () {
         var row = $(this);
-        var usu_id = row.find('select').val();
-        var pagina = row.find('td:eq(1) input').val();
-        var coord_x = row.find('td:eq(2) input').val();
-        var coord_y = row.find('td:eq(3) input').val();
+        var usu_id = row.find('.select2-firma-user').val();
+        var car_id = row.find('.select2-firma-cargo').val();
+        var pagina = row.find('td:eq(2) input').val();
+        var coord_x = row.find('td:eq(3) input').val();
+        var coord_y = row.find('td:eq(4) input').val();
         if (coord_x && coord_y) {
-            firmas.push({ usu_id: usu_id, pagina: pagina, coord_x: coord_x, coord_y: coord_y });
+            firmas.push({ usu_id: usu_id, car_id: car_id, pagina: pagina, coord_x: coord_x, coord_y: coord_y });
         }
     });
     formData.append('firma_config', JSON.stringify(firmas));
@@ -426,6 +427,27 @@ $(document).ready(function () {
         minimumInputLength: 1
     });
 
+    $('#cargos_especificos').select2({
+        width: '100%',
+        ajax: {
+            url: "../../controller/cargo.php?op=combo_select2", // Need to create this endpoint or use existing combo
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 0 // Allow loading all on click
+    });
+
     $('#requiere_seleccion_manual').change(function () {
         if ($(this).is(':checked') || $('#es_paralelo').is(':checked')) {
             $('#usuarios_especificos_container').show();
@@ -767,16 +789,25 @@ function eliminarTransicion(transicion_id, paso_origen_id, paso_origen_nombre_en
         }
     });
 }
-function cargarUsuariosEspecificos(usuariosData) {
-    var select = $('#usuarios_especificos');
-    select.empty(); // Clear existing options
+function cargarUsuariosEspecificos(data) {
+    var selectUsuarios = $('#usuarios_especificos');
+    var selectCargos = $('#cargos_especificos');
 
-    if (usuariosData && usuariosData.length > 0) {
-        usuariosData.forEach(function (user) {
-            var option = new Option(user.usu_nom + ' ' + user.usu_ape, user.usu_id, true, true);
-            select.append(option);
+    selectUsuarios.empty();
+    selectCargos.empty();
+
+    if (data && data.length > 0) {
+        data.forEach(function (item) {
+            if (item.tipo === 'usuario') {
+                var option = new Option(item.nombre, item.id, true, true);
+                selectUsuarios.append(option);
+            } else if (item.tipo === 'cargo') {
+                var option = new Option(item.nombre, item.id, true, true);
+                selectCargos.append(option);
+            }
         });
-        select.trigger('change');
+        selectUsuarios.trigger('change');
+        selectCargos.trigger('change');
     }
 }
 function editarTransicion(transicion_id) {
@@ -807,23 +838,26 @@ init();
 
 function addFirmaRow(data = null) {
     var usu_id = data ? data.usu_id : '';
+    var car_id = data ? data.car_id : '';
     var pagina = data ? data.pagina : 1;
     var coord_x = data ? data.coord_x : '';
     var coord_y = data ? data.coord_y : '';
 
     var row = `<tr>
         <td><select class="form-control select2-firma-user" style="width:100%"></select></td>
-        <td><input type="number" class="form-control input-sm" value="${pagina}"></td>
-        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_x}"></td>
-        <td><input type="number" class="form-control input-sm" step="0.01" value="${coord_y}"></td>
+        <td><select class="form-control select2-firma-cargo" style="width:100%"></select></td>
+        <td><input type="number" class="form-control" value="${pagina}"></td>
+        <td><input type="number" class="form-control" step="0.01" value="${coord_x}" style="width:100px;"></td>
+        <td><input type="number" class="form-control" step="0.01" value="${coord_y}" style="width:100px;"></td>
         <td><button type="button" class="btn btn-danger btn-sm btn-remove-firma"><i class="fa fa-trash"></i></button></td>
     </tr>`;
     var $row = $(row);
     $('#tabla_firmas tbody').append($row);
 
-    var $select = $row.find('.select2-firma-user');
+    var $selectUser = $row.find('.select2-firma-user');
+    var $selectCargo = $row.find('.select2-firma-cargo');
 
-    $select.select2({
+    $selectUser.select2({
         placeholder: "Seleccione un usuario (Opcional)",
         allowClear: true,
         ajax: {
@@ -832,7 +866,7 @@ function addFirmaRow(data = null) {
             delay: 250,
             data: function (params) {
                 return {
-                    search: params.term
+                    q: params.term
                 };
             },
             processResults: function (data) {
@@ -843,6 +877,59 @@ function addFirmaRow(data = null) {
             cache: true
         }
     });
+
+    $selectCargo.select2({
+        placeholder: "Seleccione un cargo (Opcional)",
+        allowClear: true,
+        ajax: {
+            url: '../../controller/cargo.php?op=combo_select2',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            },
+            cache: true
+        }
+    });
+
+    // Pre-select values if editing
+    if (usu_id) {
+        // Fetch user name to display (optional, or just set value if we had the name)
+        // For now, we might need to fetch it or just set the ID if select2 supports it without text (it usually needs text)
+        // A better approach is to pass the name in 'data' from the backend
+        // But for simplicity, let's assume we might need to fetch it or the user re-selects.
+        // Actually, let's try to set it.
+        $.ajax({
+            type: 'GET',
+            url: '../../controller/usuario.php?op=mostrar',
+            data: { usu_id: usu_id },
+            success: function (response) {
+                var user = JSON.parse(response);
+                var option = new Option(user.usu_nom + ' ' + user.usu_ape, user.usu_id, true, true);
+                $selectUser.append(option).trigger('change');
+            }
+        });
+    }
+
+    if (car_id) {
+        $.ajax({
+            type: 'POST',
+            url: '../../controller/cargo.php?op=mostrar',
+            data: { car_id: car_id },
+            success: function (response) {
+                var cargo = JSON.parse(response);
+                var option = new Option(cargo.car_nom, cargo.car_id, true, true);
+                $selectCargo.append(option).trigger('change');
+            }
+        });
+    }
 }
 
 // Logic for Dynamic PDF Fields

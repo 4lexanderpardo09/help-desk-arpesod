@@ -292,6 +292,7 @@ class Ticket extends Conectar
         u.usu_nom,
         u.usu_ape,
         u.usu_correo,
+        u.reg_id,
         c.cat_nom,
         sc.cats_nom,
         p.pd_nom,

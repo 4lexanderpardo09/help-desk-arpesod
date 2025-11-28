@@ -528,13 +528,35 @@ class TicketService
             // A. Verificar si hay usuarios específicos configurados en el paso
             $usuarios_especificos = $this->flujoPasoModel->get_usuarios_especificos($siguiente_paso['paso_id']);
 
-            if (!empty($usuarios_especificos)) {
-                $usuarios_destino = $usuarios_especificos;
+            // A.2 Verificar si hay CARGOS específicos configurados (Nuevo requerimiento)
+            $cargos_especificos = $this->flujoPasoModel->get_cargos_especificos($siguiente_paso['paso_id']);
+
+            if (!empty($usuarios_especificos) || !empty($cargos_especificos)) {
+                // Si hay configuración específica (usuarios o cargos), la usamos.
+
+                if (!empty($usuarios_especificos)) {
+                    $usuarios_destino = $usuarios_especificos;
+                }
+
+                if (!empty($cargos_especificos)) {
+                    $regional_origen_id = $this->ticketModel->get_ticket_region($ticket_id);
+                    foreach ($cargos_especificos as $cargo_id) {
+                        // Buscar usuarios de ese cargo en la regional del ticket O nacionales
+                        $usuarios_cargo = $this->usuarioModel->get_usuarios_por_cargo_regional_o_nacional($cargo_id, $regional_origen_id);
+                        if ($usuarios_cargo) {
+                            foreach ($usuarios_cargo as $u) {
+                                $usuarios_destino[] = $u['usu_id'];
+                            }
+                        }
+                    }
+                    // Eliminar duplicados por si acaso
+                    $usuarios_destino = array_unique($usuarios_destino);
+                }
             } elseif (is_array($usu_asig)) {
                 // B. Se seleccionaron manualmente en el paso anterior (si aplica)
                 $usuarios_destino = $usu_asig;
             } else {
-                // C. Todos los usuarios del cargo asignado
+                // C. Todos los usuarios del cargo asignado (Fallback original)
                 if ($siguiente_paso['es_tarea_nacional'] == 1) {
                     $usuarios_db = $this->usuarioModel->get_usuarios_por_cargo($siguiente_cargo_id);
                 } else {
@@ -621,7 +643,7 @@ class TicketService
                 // Si es un valor escalar (viene de $usu_asig que pasamos arriba), lo usamos directo
                 $nuevo_usuario_asignado = is_array($nuevo_asignado_info) ? $nuevo_asignado_info['usu_id'] : $nuevo_asignado_info;
             }
-            
+
             // Calcular SLA del paso anterior ANTES de cambiar el estado y asignar al nuevo
             $this->computeAndUpdateEstadoPaso($ticket_id);
 
@@ -1030,11 +1052,11 @@ class TicketService
                 if ($mi_paralelo && $mi_paralelo['estado'] == 'Pendiente') {
                     // 2. Marcar mi parte como completada
                     $comentario_paralelo = isset($_POST['tick_descrip']) ? $_POST['tick_descrip'] : 'Aprobado';
-                    
+
                     // Calcular SLA
                     $estado_tiempo_paso = 'N/A';
                     $dias_habiles = isset($paso_actual_info['paso_tiempo_habil']) ? $paso_actual_info['paso_tiempo_habil'] : 0;
-                    
+
                     if ($dias_habiles > 0) {
                         $fecha_asignacion = $mi_paralelo['fech_crea'];
                         $fecha_limite = $this->dateHelper->calcularFechaLimiteHabil($fecha_asignacion, $dias_habiles);
@@ -1526,7 +1548,7 @@ class TicketService
     {
         // Calcular SLA antes de cerrar
         $this->computeAndUpdateEstadoPaso($tick_id);
-        
+
         // Llamar al modelo para cerrar
         $this->ticketModel->cerrar_ticket_con_nota($tick_id, $usu_id, $nota_cierre, $files);
     }
@@ -1638,9 +1660,33 @@ class TicketService
                 break;
             }
         }
+
+        // 2. Check Role (New Logic)
+        if (!$my_config) {
+            // Get current user info (Role, Regional, National status)
+            $user_info = $this->usuarioModel->get_usuario_detalle_x_id($usu_id);
+            // Get ticket info to know the regional
+            $ticket_info = $this->ticketModel->listar_ticket_x_id($tick_id);
+
+            if ($user_info && $ticket_info) {
+                $ticket_regional = $ticket_info['reg_id'];
+
+                foreach ($firma_configs as $config) {
+                    if (!empty($config['car_id']) && $config['car_id'] == $user_info['car_id']) {
+                        // Check Regional or National
+                        // If user is National OR user's regional matches ticket's regional
+                        if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
+                            $my_config = $config;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         if (!$my_config) {
             foreach ($firma_configs as $config) {
-                if (empty($config['usu_id'])) {
+                if (empty($config['usu_id']) && empty($config['car_id'])) {
                     $my_config = $config;
                     break;
                 }
