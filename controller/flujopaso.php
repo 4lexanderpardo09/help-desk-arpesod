@@ -60,6 +60,7 @@ switch ($_GET["op"]) {
         }
 
         $cargo_id_asignado = isset($_POST['cargo_id_asignado']) ? $_POST['cargo_id_asignado'] : null;
+        $campo_id_referencia_jefe = isset($_POST['campo_id_referencia_jefe']) && $_POST['campo_id_referencia_jefe'] !== '' ? $_POST['campo_id_referencia_jefe'] : null;
 
         if (empty($_POST['paso_id'])) {
             $paso_id = $flujopaso->insert_paso(
@@ -77,7 +78,8 @@ switch ($_GET["op"]) {
                 $necesita_aprobacion_jefe,
                 $es_paralelo,
                 $requiere_firma,
-                $requiere_campos_plantilla
+                $requiere_campos_plantilla,
+                $campo_id_referencia_jefe
             );
         } else {
             $paso_id = $_POST['paso_id'];
@@ -96,7 +98,8 @@ switch ($_GET["op"]) {
                 $necesita_aprobacion_jefe,
                 $es_paralelo,
                 $requiere_firma,
-                $requiere_campos_plantilla
+                $requiere_campos_plantilla,
+                $campo_id_referencia_jefe
             );
         }
 

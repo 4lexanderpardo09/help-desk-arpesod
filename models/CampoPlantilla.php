@@ -59,6 +59,20 @@ class CampoPlantilla extends Conectar
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function get_campos_por_flujo($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT c.* 
+                FROM tm_campo_plantilla c
+                JOIN tm_flujo_paso p ON c.paso_id = p.paso_id
+                WHERE p.flujo_id = ? AND c.est = 1 AND p.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // --- td_ticket_campo_valor methods ---
 
     public function insert_ticket_valor($tick_id, $campo_id, $valor)
@@ -86,5 +100,18 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(1, $tick_id);
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function get_valor_campo($tick_id, $campo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT valor FROM td_ticket_campo_valor WHERE tick_id=? AND campo_id=? AND est=1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $tick_id);
+        $sql->bindValue(2, $campo_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['valor'] : null;
     }
 }

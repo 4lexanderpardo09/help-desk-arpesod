@@ -40,6 +40,14 @@
                         <input type="checkbox" id="requiere_seleccion_manual" name="requiere_seleccion_manual" value="1">
                         <label for="requiere_seleccion_manual">¿Requiere selección manual del anterior agente?</label>
                     </div>
+                    <div class="form-group">
+                        <label class="form-label" for="campo_id_referencia_jefe">Campo Plantilla para Jefe Inmediato (Opcional)</label>
+                        <select class="form-control" id="campo_id_referencia_jefe" name="campo_id_referencia_jefe">
+                            <option value="">-- Seleccione un Campo --</option>
+                        </select>
+                        <small class="text-muted">Si se selecciona "Jefe Inmediato" en asignaciones o firmas, se usará el valor de este campo para determinar el subordinado.</small>
+                    </div>
+
                     <div id="usuarios_especificos_container" style="display: none;">
                         <fieldset class="form-group">
                             <label class="form-label" for="usuarios_especificos">Usuarios Específicos</label>

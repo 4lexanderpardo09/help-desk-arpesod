@@ -598,8 +598,15 @@ function editar(paso_id) {
         } else {
             $('#paso_attachment_display').html('');
         }
+
+        if (data.campo_id_referencia_jefe) {
+            cargarCamposFlujo(data.flujo_id, data.campo_id_referencia_jefe);
+        } else {
+            cargarCamposFlujo(data.flujo_id);
+        }
+
+        $('#modalnuevopaso').modal('show');
     });
-    $('#modalnuevopaso').modal('show');
 }
 
 function nuevo() {
@@ -612,7 +619,13 @@ function nuevo() {
     $('#paso_attachment_display').html('');
     $('#necesita_aprobacion_jefe').prop('checked', false);
     $('#cargo_id_asignado').prop('disabled', false);
+    $('#requiere_campos_plantilla').prop('checked', false);
+    $('#campos_plantilla_container').hide();
+    $('#tabla_campos_plantilla tbody').empty();
+    $('#campo_id_referencia_jefe').val('');
+
     $('#modalnuevopaso').modal('show');
+    cargarCamposFlujo(flujo_id);
 }
 function eliminar(paso_id) {
     swal({
@@ -834,8 +847,6 @@ function editarTransicion(transicion_id) {
     });
 }
 
-init();
-
 function addFirmaRow(data = null) {
     var usu_id = data ? data.usu_id : '';
     var car_id = data ? data.car_id : '';
@@ -919,16 +930,21 @@ function addFirmaRow(data = null) {
     }
 
     if (car_id) {
-        $.ajax({
-            type: 'POST',
-            url: '../../controller/cargo.php?op=mostrar',
-            data: { car_id: car_id },
-            success: function (response) {
-                var cargo = JSON.parse(response);
-                var option = new Option(cargo.car_nom, cargo.car_id, true, true);
-                $selectCargo.append(option).trigger('change');
-            }
-        });
+        if (car_id === 'JEFE_INMEDIATO') {
+            var option = new Option("Jefe Inmediato", "JEFE_INMEDIATO", true, true);
+            $selectCargo.append(option).trigger('change');
+        } else {
+            $.ajax({
+                type: 'POST',
+                url: '../../controller/cargo.php?op=mostrar',
+                data: { car_id: car_id },
+                success: function (response) {
+                    var cargo = JSON.parse(response);
+                    var option = new Option(cargo.car_nom, cargo.car_id, true, true);
+                    $selectCargo.append(option).trigger('change');
+                }
+            });
+        }
     }
 }
 
@@ -975,4 +991,15 @@ function addCampoPlantillaRow(campo = null) {
     `;
     $('#tabla_campos_plantilla tbody').append(newRow);
 }
+
+function cargarCamposFlujo(flujo_id, selected_id = null) {
+    $.post("../../controller/campoplantilla.php?op=combo_flujo", { flujo_id: flujo_id }, function (data) {
+        $("#campo_id_referencia_jefe").html(data);
+        if (selected_id) {
+            $("#campo_id_referencia_jefe").val(selected_id);
+        }
+    });
+}
+
+init();
 

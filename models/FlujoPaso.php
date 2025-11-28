@@ -31,11 +31,11 @@ class FlujoPaso extends Conectar
     }
 
 
-    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla)
+    public function insert_paso($flujo_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null)
     {
-        $conectar = parent::Conexion();
+        $conectar = parent::conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, requiere_campos_plantilla, est) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)";
+        $sql = "INSERT INTO tm_flujo_paso (flujo_id, paso_orden, paso_nombre, cargo_id_asignado, paso_tiempo_habil, paso_descripcion, requiere_seleccion_manual, es_tarea_nacional, es_aprobacion, paso_nom_adjunto, permite_cerrar, necesita_aprobacion_jefe, es_paralelo, requiere_firma, requiere_campos_plantilla, est, campo_id_referencia_jefe) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $flujo_id);
         $sql->bindValue(2, $paso_orden);
@@ -52,6 +52,12 @@ class FlujoPaso extends Conectar
         $sql->bindValue(13, $es_paralelo);
         $sql->bindValue(14, $requiere_firma);
         $sql->bindValue(15, $requiere_campos_plantilla);
+        // Handle null for campo_id_referencia_jefe
+        if (empty($campo_id_referencia_jefe)) {
+            $sql->bindValue(16, null, PDO::PARAM_NULL);
+        } else {
+            $sql->bindValue(16, $campo_id_referencia_jefe);
+        }
         $sql->execute();
         return $conectar->lastInsertId();
     }
@@ -68,29 +74,11 @@ class FlujoPaso extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla)
+    public function update_paso($paso_id, $paso_orden, $paso_nombre, $cargo_id_asignado, $paso_tiempo_habil, $paso_descripcion, $requiere_seleccion_manual, $es_tarea_nacional, $es_aprobacion, $paso_nom_adjunto, $permite_cerrar, $necesita_aprobacion_jefe, $es_paralelo, $requiere_firma, $requiere_campos_plantilla, $campo_id_referencia_jefe = null)
     {
-        $conectar = parent::Conexion();
+        $conectar = parent::conexion();
         parent::set_names();
-        // Se añade la nueva columna a la consulta
-        $sql = "UPDATE tm_flujo_paso 
-                    SET 
-                        paso_orden = ?, 
-                        paso_nombre = ?, 
-                        cargo_id_asignado = ?, 
-                        paso_tiempo_habil = ?, 
-                        paso_descripcion = ?,
-                        requiere_seleccion_manual = ?,
-                        es_tarea_nacional = ?,
-                        es_aprobacion = ?,
-                        paso_nom_adjunto = ?,
-                        permite_cerrar = ?,
-                        necesita_aprobacion_jefe = ?,
-                        es_paralelo = ?,
-                        requiere_firma = ?,
-                        requiere_campos_plantilla = ?
-                    WHERE 
-                        paso_id = ?";
+        $sql = "UPDATE tm_flujo_paso SET paso_orden=?, paso_nombre=?, cargo_id_asignado=?, paso_tiempo_habil=?, paso_descripcion=?, requiere_seleccion_manual=?, es_tarea_nacional=?, es_aprobacion=?, paso_nom_adjunto=?, permite_cerrar=?, necesita_aprobacion_jefe=?, es_paralelo=?, requiere_firma=?, requiere_campos_plantilla=?, campo_id_referencia_jefe=? WHERE paso_id=?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_orden);
         $sql->bindValue(2, $paso_nombre);
@@ -106,8 +94,15 @@ class FlujoPaso extends Conectar
         $sql->bindValue(12, $es_paralelo);
         $sql->bindValue(13, $requiere_firma);
         $sql->bindValue(14, $requiere_campos_plantilla);
-        $sql->bindValue(15, $paso_id);
+        // Handle null for campo_id_referencia_jefe
+        if (empty($campo_id_referencia_jefe)) {
+            $sql->bindValue(15, null, PDO::PARAM_NULL);
+        } else {
+            $sql->bindValue(15, $campo_id_referencia_jefe);
+        }
+        $sql->bindValue(16, $paso_id);
         $sql->execute();
+        return $resultado = $sql->fetchAll();
     }
 
     public function get_paso_x_id($emp_id)
@@ -314,10 +309,14 @@ class FlujoPaso extends Conectar
         if (is_array($cargo_ids)) {
             foreach ($cargo_ids as $cargo_id) {
                 if (!empty($cargo_id)) {
+                    $cargo_id_to_save = $cargo_id;
+                    if ($cargo_id === 'JEFE_INMEDIATO') {
+                        $cargo_id_to_save = -1;
+                    }
                     $sql = "INSERT INTO tm_flujo_paso_usuarios (paso_id, car_id) VALUES (?, ?)";
                     $sql = $conectar->prepare($sql);
                     $sql->bindValue(1, $paso_id);
-                    $sql->bindValue(2, $cargo_id);
+                    $sql->bindValue(2, $cargo_id_to_save);
                     $sql->execute();
                 }
             }
@@ -343,7 +342,15 @@ class FlujoPaso extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
-        return $sql->fetchAll(PDO::FETCH_COLUMN, 0);
+        $results = $sql->fetchAll(PDO::FETCH_COLUMN, 0);
+
+        // Convert sentinel value back
+        foreach ($results as &$car_id) {
+            if ($car_id == -1) {
+                $car_id = 'JEFE_INMEDIATO';
+            }
+        }
+        return $results;
     }
 
     public function get_usuarios_especificos_data($paso_id)
@@ -376,17 +383,29 @@ class FlujoPaso extends Conectar
                 FROM tm_flujo_paso_usuarios 
                 INNER JOIN tm_cargo ON tm_flujo_paso_usuarios.car_id = tm_cargo.car_id
                 WHERE paso_id = ?";
+        $sql = "SELECT tpfu.car_id, tc.car_nom 
+                FROM tm_flujo_paso_usuarios tpfu
+                LEFT JOIN tm_cargo tc ON tpfu.car_id = tc.car_id
+                WHERE tpfu.paso_id = ? AND tpfu.car_id IS NOT NULL";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
         $cargos = $sql->fetchAll(PDO::FETCH_ASSOC);
 
-        foreach ($cargos as $c) {
-            $data[] = [
-                'tipo' => 'cargo',
-                'id' => $c['car_id'],
-                'nombre' => 'Cargo: ' . $c['car_nom']
-            ];
+        foreach ($cargos as $cargo) {
+            if ($cargo['car_id'] == -1) {
+                $data[] = [
+                    'id' => 'JEFE_INMEDIATO',
+                    'nombre' => 'Jefe Inmediato',
+                    'tipo' => 'cargo'
+                ];
+            } else {
+                $data[] = [
+                    'id' => $cargo['car_id'],
+                    'nombre' => 'Cargo: ' . $cargo['car_nom'],
+                    'tipo' => 'cargo'
+                ];
+            }
         }
 
         return $data;
@@ -440,11 +459,16 @@ class FlujoPaso extends Conectar
         // Insertamos las nuevas
         if (is_array($configuraciones)) {
             foreach ($configuraciones as $config) {
+                $car_id_to_save = !empty($config['car_id']) ? $config['car_id'] : null;
+                if ($car_id_to_save === 'JEFE_INMEDIATO') {
+                    $car_id_to_save = -1; // Sentinel value for JEFE_INMEDIATO
+                }
+
                 $sql = "INSERT INTO tm_flujo_paso_firma (paso_id, usu_id, car_id, coord_x, coord_y, pagina, est) VALUES (?, ?, ?, ?, ?, ?, 1)";
                 $sql = $conectar->prepare($sql);
                 $sql->bindValue(1, $paso_id);
                 $sql->bindValue(2, !empty($config['usu_id']) ? $config['usu_id'] : null);
-                $sql->bindValue(3, !empty($config['car_id']) ? $config['car_id'] : null);
+                $sql->bindValue(3, $car_id_to_save);
                 $sql->bindValue(4, $config['coord_x']);
                 $sql->bindValue(5, $config['coord_y']);
                 $sql->bindValue(6, !empty($config['pagina']) ? $config['pagina'] : 1);
@@ -464,6 +488,15 @@ class FlujoPaso extends Conectar
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
-        return $sql->fetchAll(PDO::FETCH_ASSOC);
+        $results = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        // Convert sentinel value back to string
+        foreach ($results as &$row) {
+            if ($row['car_id'] == -1) {
+                $row['car_id'] = 'JEFE_INMEDIATO';
+                $row['car_nom'] = 'Jefe Inmediato';
+            }
+        }
+        return $results;
     }
 }

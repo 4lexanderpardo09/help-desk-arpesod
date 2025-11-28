@@ -21,11 +21,18 @@ switch ($_GET["op"]) {
     case "combo_select2":
         $datos = $cargo->get_cargos();
         $data = array();
+
+        // Agregar opción especial "Jefe Inmediato"
+        $term = isset($_GET['q']) ? $_GET['q'] : '';
+        if (empty($term) || stripos('Jefe Inmediato', $term) !== false) {
+            $data[] = array("id" => "JEFE_INMEDIATO", "text" => "Jefe Inmediato");
+        }
+
         if (is_array($datos) and count($datos) > 0) {
             foreach ($datos as $row) {
                 // Filtrar por término de búsqueda si existe
-                if (isset($_GET['q']) && !empty($_GET['q'])) {
-                    if (stripos($row["car_nom"], $_GET['q']) === false) {
+                if (!empty($term)) {
+                    if (stripos($row['car_nom'], $term) === false) {
                         continue;
                     }
                 }
