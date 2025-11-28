@@ -1783,7 +1783,25 @@ class TicketService
 
         // 1. Get current step info
         $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
-        $paso_id = $ticket['paso_actual_id'];
+        
+        // FIX: If ticket is in a route, we must get the paso_id from the route step, not the main flow step.
+        if (!empty($ticket['ruta_id']) && !empty($ticket['ruta_paso_orden'])) {
+            require_once('../models/RutaPaso.php');
+            $rutaPasoModel = new RutaPaso();
+            $ruta_paso_info = $rutaPasoModel->get_paso_por_orden($ticket['ruta_id'], $ticket['ruta_paso_orden']);
+            
+            if ($ruta_paso_info && !empty($ruta_paso_info['paso_id'])) {
+                $paso_id = $ruta_paso_info['paso_id'];
+                error_log("TicketService::handleSignature - Ticket in Route. Using Route Step ID: $paso_id");
+            } else {
+                // Fallback to main flow step if route step not found (should not happen)
+                $paso_id = $ticket['paso_actual_id'];
+                error_log("TicketService::handleSignature - Ticket in Route but step not found. Fallback to Main Step ID: $paso_id");
+            }
+        } else {
+            $paso_id = $ticket['paso_actual_id'];
+        }
+
         error_log("TicketService::handleSignature - PasoID: $paso_id");
         $paso_info = $this->flujoPasoModel->get_paso_por_id($paso_id);
 
