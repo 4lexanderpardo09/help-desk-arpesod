@@ -484,7 +484,8 @@ class FlujoPaso extends Conectar
         $sql = "SELECT tm_flujo_paso_firma.*, tm_cargo.car_nom 
                 FROM tm_flujo_paso_firma 
                 LEFT JOIN tm_cargo ON tm_flujo_paso_firma.car_id = tm_cargo.car_id
-                WHERE paso_id = ? AND tm_flujo_paso_firma.est = 1";
+                WHERE paso_id = ? AND tm_flujo_paso_firma.est = 1
+                ORDER BY CASE WHEN tm_flujo_paso_firma.car_id = -1 THEN 1 ELSE 0 END ASC, tm_flujo_paso_firma.firma_id ASC";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->execute();
