@@ -1783,13 +1783,13 @@ class TicketService
 
         // 1. Get current step info
         $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
-        
+
         // FIX: If ticket is in a route, we must get the paso_id from the route step, not the main flow step.
         if (!empty($ticket['ruta_id']) && !empty($ticket['ruta_paso_orden'])) {
             require_once('../models/RutaPaso.php');
             $rutaPasoModel = new RutaPaso();
             $ruta_paso_info = $rutaPasoModel->get_paso_por_orden($ticket['ruta_id'], $ticket['ruta_paso_orden']);
-            
+
             if ($ruta_paso_info && !empty($ruta_paso_info['paso_id'])) {
                 $paso_id = $ruta_paso_info['paso_id'];
                 error_log("TicketService::handleSignature - Ticket in Route. Using Route Step ID: $paso_id");
@@ -1875,11 +1875,28 @@ class TicketService
                             }
                         } else {
                             // Logic for specific Cargo
+                            $is_cargo_match = false;
+
+                            // 1. Check if user actually has the role
                             if ($config['car_id'] == $user_info['car_id']) {
                                 if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
-                                    $my_config = $config;
-                                    break;
+                                    $is_cargo_match = true;
                                 }
+                            }
+
+                            // 2. Fallback: Check if user is the one ASSIGNED to the ticket and the config matches the assigned role for the step.
+                            // This allows a user assigned to a step (e.g. via 'Traslado') to sign even if they don't hold the base role.
+                            if (!$is_cargo_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
+                                // Check if the config's car_id matches the step's assigned car_id
+                                if ($config['car_id'] == $paso_info['cargo_id_asignado']) {
+                                    $is_cargo_match = true;
+                                    error_log("TicketService::handleSignature - User is assigned to ticket and config matches assigned role. Allowing signature.");
+                                }
+                            }
+
+                            if ($is_cargo_match) {
+                                $my_config = $config;
+                                break;
                             }
                         }
                     }
@@ -1888,17 +1905,22 @@ class TicketService
         }
 
         if (!$my_config) {
-            foreach ($firma_configs as $config) {
-                if (empty($config['usu_id']) && empty($config['car_id'])) {
-                    $my_config = $config;
-                    break;
-                }
-            }
-        }
-
-        if (!$my_config) {
             error_log("TicketService::handleSignature - No matching config found for user $usu_id in paso $paso_id");
-            return;
+
+            // FALLBACK: If the step requires signature but no config is found (or matches), 
+            // use a default configuration to ensure the signature is applied.
+            if ($paso_info['requiere_firma'] == 1) {
+                error_log("TicketService::handleSignature - Using DEFAULT signature configuration.");
+                $my_config = [
+                    'coord_x' => 20,  // Default X
+                    'coord_y' => 200, // Default Y (near bottom)
+                    'pagina' => 1,
+                    'car_id' => null,
+                    'usu_id' => null
+                ];
+            } else {
+                return;
+            }
         }
         error_log("TicketService::handleSignature - Config used: " . json_encode($my_config));
 
