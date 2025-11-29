@@ -534,11 +534,11 @@ class TicketService
         }
     }
 
-    public function iniciar_ruta_para_ticket($ticket, $ruta_id)
+    public function iniciar_ruta_para_ticket($ticket, $ruta_id, $usu_asig = null)
     {
         $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
         if ($primer_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, null);
+            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, $usu_asig);
         } else {
             throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
         }
@@ -1251,7 +1251,7 @@ class TicketService
                 if ($decision_tomada) {
                     // CASO 1: El usuario eligió una decisión específica.
                     // Esto tiene prioridad incluso si está en una ruta (para permitir salirse o devolverse)
-                    $this->iniciar_ruta_desde_decision($ticket, $decision_tomada);
+                    $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig);
                 } elseif (!empty($ticket["ruta_id"])) {
                     // CASO 2: El ticket YA ESTÁ en una ruta y no se tomó decisión explícita. Avanzamos en la ruta.
                     $this->avanzar_ticket_en_ruta($ticket);
@@ -1273,7 +1273,7 @@ class TicketService
         }
     }
 
-    public function iniciar_ruta_desde_decision($ticket, $decision_nombre)
+    public function iniciar_ruta_desde_decision($ticket, $decision_nombre, $usu_asig = null)
     {
         $paso_actual_id = $ticket['paso_actual_id'];
 
@@ -1283,7 +1283,7 @@ class TicketService
         if ($transicion) {
             if (!empty($transicion['ruta_id'])) {
                 // CASO A: La transición lleva a una RUTA
-                $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id']);
+                $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id'], $usu_asig);
             } elseif (!empty($transicion['paso_destino_id'])) {
                 // CASO B: La transición lleva DIRECTAMENTE a un PASO
                 $nuevo_paso_id = $transicion['paso_destino_id'];
@@ -1291,50 +1291,17 @@ class TicketService
                 // Obtenemos info del nuevo paso para saber si requiere asignación manual, etc.
                 $nuevo_paso_info = $this->flujoPasoModel->get_paso_por_id($nuevo_paso_id);
 
-                // Lógica de asignación (similar a avanzar_ticket_lineal o createTicket)
-                // Por defecto, mantenemos el usuario actual si no hay reglas específicas
-                // O si el paso tiene un cargo asignado, buscamos un usuario de ese cargo.
-
-                // Para simplificar, usaremos la lógica de asignación automática básica o mantendremos el usuario si no se especifica.
-                // Si el frontend envió un usuario asignado (usu_asig), createDetailTicket lo manejará en avanzar_ticket_con_usuario_asignado?
-                // No, createDetailTicket llama a ESTE método y luego hace commit.
-                // Así que aquí debemos actualizar el estado del ticket.
-
                 $nuevo_asignado_id = null;
 
-                // Si viene un usuario asignado en el POST, usémoslo (aunque este método no recibe el POST directamente, 
-                // podríamos pasarlo o asumir que se manejó antes. Pero createDetailTicket no pasa el usu_asig a este método).
-                // Vamos a intentar resolver la asignación automática aquí.
-
-                if ($nuevo_paso_info['requiere_seleccion_manual'] == 1) {
-                    // Si requiere selección manual, se supone que el frontend ya envió el usuario en 'usu_asig'
-                    // Pero createDetailTicket tiene $usu_asig.
-                    // Necesitamos que este método acepte $usu_asig opcionalmente.
-                    // Por ahora, si no tenemos acceso a $usu_asig, asumimos que el ticket se queda con el usuario actual 
-                    // o que se debe actualizar después.
-                    // Vemos que createDetailTicket tiene: $usu_asig = $postData['usu_asig'] ?? null;
-                    // Pero no lo pasa a este método.
-
-                    // FIX: Vamos a obtener el usu_asig de $_POST directamente si es necesario, o mejor, actualizar la firma del método.
-                    // Dado que no puedo cambiar fácilmente todas las llamadas, usaré $_POST['usu_asig'] con precaución o 
-                    // asumiré que la asignación se hace aparte.
-
-                    if (isset($_POST['usu_asig']) && !empty($_POST['usu_asig'])) {
-                        $nuevo_asignado_id = $_POST['usu_asig'];
-                    }
+                // Si viene un usuario asignado explícitamente, lo usamos con prioridad
+                if ($usu_asig) {
+                    $nuevo_asignado_id = $usu_asig;
                 }
 
                 if (empty($nuevo_asignado_id)) {
                     // Intentar asignación automática por cargo
                     $cargo_id = $nuevo_paso_info['cargo_id_asignado'];
-                    // ... lógica para buscar usuario por cargo ...
-                    // Por brevedad, si no hay usuario manual, mantenemos el actual o buscamos uno por defecto.
-                    // Si es tarea nacional, etc.
 
-                    // Si no cambiamos de asignado, usamos el actual del ticket?
-                    // Ojo: Si el paso cambia de cargo, deberíamos cambiar de usuario.
-
-                    // Usaremos una lógica simplificada: Si hay cargo, buscar usuario. Si no, null.
                     $regional_origen_id = $this->ticketModel->get_ticket_region($ticket['tick_id']);
                     $usuario_asignado = $this->usuarioModel->get_usuario_por_cargo_y_regional($cargo_id, $regional_origen_id);
                     if ($usuario_asignado) {
