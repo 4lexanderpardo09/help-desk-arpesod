@@ -1830,7 +1830,9 @@ class TicketService
 
                 foreach ($firma_configs as $config) {
                     if (!empty($config['car_id'])) {
-                        if ($config['car_id'] === 'JEFE_INMEDIATO') {
+                    if (!empty($config['car_id'])) {
+                        // Check for JEFE_INMEDIATO string OR -1 (which seems to be the DB value for it)
+                        if ($config['car_id'] === 'JEFE_INMEDIATO' || $config['car_id'] == -1) {
                             // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
                             $is_jefe_match = false;
 
@@ -2022,4 +2024,5 @@ class TicketService
         // 7. Insert into tm_documento_flujo (NOT td_documento_detalle)
         $documentoFlujoModel->insert_documento_flujo($tick_id, $flujo_id, $paso_id, $usu_id, $new_filename);
     }
+}
 }
