@@ -171,4 +171,9 @@ switch ($_GET["op"]) {
         $datos = $ticketParalelo->get_ticket_paralelo_por_ticket_y_paso($_POST['tick_id'], $_POST['paso_id']);
         echo json_encode($datos);
         break;
+
+    case "get_usuarios_paso":
+        $usuarios = $ticketService->getUsuariosPorPaso($_POST['paso_id']);
+        echo json_encode($usuarios);
+        break;
 }

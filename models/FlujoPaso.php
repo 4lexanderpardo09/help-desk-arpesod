@@ -199,11 +199,47 @@ class FlujoPaso extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT condicion_clave, condicion_nombre FROM tm_flujo_transiciones WHERE paso_origen_id = ? AND est = 1";
+        $sql = "SELECT 
+                    t.condicion_clave, 
+                    t.condicion_nombre,
+                    t.paso_destino_id,
+                    t.ruta_id,
+                    p_dest.requiere_seleccion_manual AS manual_paso,
+                    p_ruta.requiere_seleccion_manual AS manual_ruta,
+                    rp.paso_id AS ruta_first_step_id
+                FROM tm_flujo_transiciones t
+                LEFT JOIN tm_flujo_paso p_dest ON t.paso_destino_id = p_dest.paso_id
+                LEFT JOIN tm_ruta_paso rp ON t.ruta_id = rp.ruta_id AND rp.orden = 1
+                LEFT JOIN tm_flujo_paso p_ruta ON rp.paso_id = p_ruta.paso_id
+                WHERE t.paso_origen_id = ? AND t.est = 1";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_origen_id);
         $sql->execute();
-        return $sql->fetchAll(PDO::FETCH_ASSOC);
+        $results = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        // Process results to unify the flag and target step
+        foreach ($results as &$row) {
+            $row['requiere_seleccion_manual'] = 0;
+            $row['target_step_id'] = null;
+
+            if (!empty($row['ruta_id'])) {
+                $row['target_step_id'] = $row['ruta_first_step_id'];
+                if ($row['manual_ruta'] == 1) {
+                    $row['requiere_seleccion_manual'] = 1;
+                }
+            } elseif (!empty($row['paso_destino_id'])) {
+                $row['target_step_id'] = $row['paso_destino_id'];
+                if ($row['manual_paso'] == 1) {
+                    $row['requiere_seleccion_manual'] = 1;
+                }
+            }
+            // Clean up temporary columns if desired, or leave them
+            unset($row['manual_paso']);
+            unset($row['manual_ruta']);
+            unset($row['ruta_first_step_id']);
+        }
+
+        return $results;
     }
 
     public function get_siguientes_pasos($paso_actual_id)

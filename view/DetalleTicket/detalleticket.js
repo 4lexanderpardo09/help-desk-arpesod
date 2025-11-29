@@ -267,14 +267,24 @@ $(document).ready(function () {
 function updateEnviarButtonState() {
     // El botón solo está habilitado si el checkbox está realmente marcado 	
     var panelVisible = $('#panel_seleccion_usuario').is(':visible');
-
+    var userSelected = !!$('#usuario_seleccionado').val();
     var enabledCheckbox = $('#checkbox_avanzar_flujo').is(':checked');
-    var enabledSelectUserAssign = panelVisible && !!$('#usuario_seleccionado').val();
 
     // Check if it's a parallel task (button text changed)
     var isParallelAction = $('#btnenviar').html() === 'Terminar mi parte';
 
-    var enabled = enabledCheckbox == true || enabledSelectUserAssign == true || isParallelAction;
+    var enabled = false;
+
+    if (isParallelAction) {
+        enabled = true;
+    } else if (panelVisible) {
+        // If manual selection is active, we MUST have a user selected.
+        enabled = userSelected;
+    } else {
+        // If no manual selection, we depend on the checkbox
+        enabled = enabledCheckbox;
+    }
+
     $('#btnenviar').prop('disabled', !enabled);
 }
 
@@ -1032,8 +1042,10 @@ $(document).on('change', '#checkbox_avanzar_flujo', function () {
             // Hay decisiones -> abrir modal para seleccionar (no dejar marcado hasta confirmar)
             $chk.prop('checked', false); // temporalmente desmarcar visualmente
             var options_html = '<option value="" selected disabled>-- Seleccione una opción --</option>';
+            console.log("Decisiones disponibles:", acciones.decisiones);
             acciones.decisiones.forEach(function (d) {
-                options_html += `<option value="${d.condicion_nombre}">${d.condicion_nombre}</option>`;
+                console.log("Procesando decision:", d.condicion_nombre, "Manual:", d.requiere_seleccion_manual, "Target:", d.target_step_id);
+                options_html += `<option value="${d.condicion_nombre}" data-manual="${d.requiere_seleccion_manual}" data-target-step="${d.target_step_id}">${d.condicion_nombre}</option>`;
             });
             $('#select_siguiente_paso').html(options_html);
             $('#modal_seleccionar_paso_label').text('Seleccionar Decisión de Avance');
@@ -1058,12 +1070,49 @@ $(document).on('change', '#checkbox_avanzar_flujo', function () {
 
 
 $(document).on('click', '#btn_confirmar_paso_seleccionado', function () {
-    var seleccion = $('#select_siguiente_paso').val();
+    var $selectedOption = $('#select_siguiente_paso option:selected');
+    var seleccion = $selectedOption.val();
+    
+    console.log("Opción seleccionada:", seleccion);
+    
     if (seleccion && seleccion !== '') {
         decisionSeleccionada = seleccion; // Guardamos la decisión
+        
+        // Check for manual selection requirement
+        var requiresManual = $selectedOption.data('manual');
+        var targetStepId = $selectedOption.data('target-step');
+        
+        console.log("Requires Manual:", requiresManual);
+        console.log("Target Step ID:", targetStepId);
+
+        if (requiresManual == 1 && targetStepId) {
+            console.log('Transition requires manual selection. Target Step:', targetStepId);
+            $('#panel_seleccion_usuario').show();
+            
+            // Fetch users for the target step
+            $.post("../../controller/ticket.php?op=get_usuarios_paso", { paso_id: targetStepId }, function (data) {
+                var usuarios = JSON.parse(data);
+                var options = '<option value="">Seleccionar Usuario</option>';
+                usuarios.forEach(function (usuario) {
+                    options += '<option value="' + usuario.usu_id + '">' + usuario.usu_nom + ' ' + usuario.usu_ape + ' (' + usuario.usu_correo + ')</option>';
+                });
+                $('#usuario_seleccionado').html(options);
+                $('#usuario_seleccionado').select2();
+                swal("Atención", "Esta transición requiere que selecciones manualmente al siguiente usuario.", "info");
+            });
+        } else {
+            // Hide if not required (cleanup)
+            $('#panel_seleccion_usuario').hide();
+            $('#usuario_seleccionado').val('').trigger('change');
+        }
+
         $('#checkbox_avanzar_flujo').prop('checked', true); // Marcamos el checkbox
         $('#modal_seleccionar_paso').modal('hide');
-        swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
+        
+        if (requiresManual != 1) {
+             swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
+        }
+        
         updateEnviarButtonState();
     } else {
         swal("Atención", "Por favor, selecciona una opción para continuar.", "warning");
