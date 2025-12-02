@@ -1824,9 +1824,12 @@ class TicketService
 
                         // Fallback: If not explicitly set (or mismatch), check if user is the one ASSIGNED to the ticket.
                         // If the system assigned them, we trust they are the intended actor.
+                        // FIX: Removed this fallback because in parallel steps, ALL assigned users match this, causing non-bosses to sign as boss.
+                        /*
                         if (!$is_jefe_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
                             $is_jefe_match = true;
                         }
+                        */
 
                         if (!$is_jefe_match) {
                             // Fallback for legacy tickets: Use Creator's Boss logic

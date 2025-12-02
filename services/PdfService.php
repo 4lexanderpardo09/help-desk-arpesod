@@ -35,7 +35,7 @@ class PdfService
                     // Ajustar tamaño según necesidad, por ahora ancho 40 (ajustable)
                     // Validar que la imagen exista
                     if (file_exists($rutaImagenFirma)) {
-                        $pdf->Image($rutaImagenFirma, $coordX, $coordY, 40);
+                        $pdf->Image($rutaImagenFirma, $coordX, $coordY, 60);
                         error_log("PdfService::firmarPdf - Image inserted at page $pageNo");
                     } else {
                         error_log("Imagen de firma no encontrada: " . $rutaImagenFirma);
