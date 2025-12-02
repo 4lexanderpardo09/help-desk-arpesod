@@ -86,11 +86,13 @@ $(document).ready(function () {
                         signaturePad.clear();
 
                         // Calculate aspect ratio to fit
-                        var hRatio = canvas.width / img.width;
-                        var vRatio = canvas.height / img.height;
+                        // FIX: Use offsetWidth/offsetHeight (CSS pixels) instead of width/height (Physical pixels)
+                        // because the context is already scaled by devicePixelRatio.
+                        var hRatio = canvas.offsetWidth / img.width;
+                        var vRatio = canvas.offsetHeight / img.height;
                         var ratio = Math.min(hRatio, vRatio);
-                        var centerShift_x = (canvas.width - img.width * ratio) / 2;
-                        var centerShift_y = (canvas.height - img.height * ratio) / 2;
+                        var centerShift_x = (canvas.offsetWidth - img.width * ratio) / 2;
+                        var centerShift_y = (canvas.offsetHeight - img.height * ratio) / 2;
 
                         ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
 
@@ -1072,23 +1074,23 @@ $(document).on('change', '#checkbox_avanzar_flujo', function () {
 $(document).on('click', '#btn_confirmar_paso_seleccionado', function () {
     var $selectedOption = $('#select_siguiente_paso option:selected');
     var seleccion = $selectedOption.val();
-    
+
     console.log("Opción seleccionada:", seleccion);
-    
+
     if (seleccion && seleccion !== '') {
         decisionSeleccionada = seleccion; // Guardamos la decisión
-        
+
         // Check for manual selection requirement
         var requiresManual = $selectedOption.data('manual');
         var targetStepId = $selectedOption.data('target-step');
-        
+
         console.log("Requires Manual:", requiresManual);
         console.log("Target Step ID:", targetStepId);
 
         if (requiresManual == 1 && targetStepId) {
             console.log('Transition requires manual selection. Target Step:', targetStepId);
             $('#panel_seleccion_usuario').show();
-            
+
             // Fetch users for the target step
             $.post("../../controller/ticket.php?op=get_usuarios_paso", { paso_id: targetStepId }, function (data) {
                 var usuarios = JSON.parse(data);
@@ -1108,11 +1110,11 @@ $(document).on('click', '#btn_confirmar_paso_seleccionado', function () {
 
         $('#checkbox_avanzar_flujo').prop('checked', true); // Marcamos el checkbox
         $('#modal_seleccionar_paso').modal('hide');
-        
+
         if (requiresManual != 1) {
-             swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
+            swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
         }
-        
+
         updateEnviarButtonState();
     } else {
         swal("Atención", "Por favor, selecciona una opción para continuar.", "warning");
