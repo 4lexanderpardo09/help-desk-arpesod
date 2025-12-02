@@ -1794,218 +1794,217 @@ class TicketService
         error_log("TicketService::handleSignature - Configs data: " . json_encode($firma_configs));
         $my_config = null;
 
-        foreach ($firma_configs as $config) {
-            if ($config['usu_id'] == $usu_id) {
-                $my_config = $config;
-                break;
-            }
-        }
+        // 2. Check Role (New Logic - Multi-Signature Support)
+        $matching_configs = [];
 
-        // 2. Check Role (New Logic)
-        if (!$my_config) {
-            // Get current user info (Role, Regional, National status)
-            $user_info = $this->usuarioModel->get_usuario_detalle_x_id($usu_id);
-            // Get ticket info to know the regional
-            $ticket_info = $this->ticketModel->listar_ticket_x_id($tick_id);
+        // Get current user info (Role, Regional, National status)
+        $user_info = $this->usuarioModel->get_usuario_detalle_x_id($usu_id);
+        // Get ticket info to know the regional
+        $ticket_info = $this->ticketModel->listar_ticket_x_id($tick_id);
 
-            if ($user_info && $ticket_info) {
-                $ticket_regional = $ticket_info['reg_id'];
+        if ($user_info && $ticket_info) {
+            $ticket_regional = $ticket_info['reg_id'];
 
-                foreach ($firma_configs as $config) {
-                    if (!empty($config['car_id'])) {
-                        if (!empty($config['car_id'])) {
-                            // Check for JEFE_INMEDIATO string OR -1 (which seems to be the DB value for it)
-                            if ($config['car_id'] === 'JEFE_INMEDIATO' || $config['car_id'] == -1) {
-                                // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
-                                $is_jefe_match = false;
+            foreach ($firma_configs as $config) {
+                $is_match = false;
 
-                                if (!empty($ticket_info['usu_id_jefe_aprobador'])) {
-                                    if ($user_info['usu_id'] == $ticket_info['usu_id_jefe_aprobador']) {
+                if ($config['usu_id'] == $usu_id) {
+                    $is_match = true;
+                } elseif (!empty($config['car_id'])) {
+                    // Check for JEFE_INMEDIATO string OR -1 (which seems to be the DB value for it)
+                    if ($config['car_id'] === 'JEFE_INMEDIATO' || $config['car_id'] == -1) {
+                        // New Logic: Check against usu_id_jefe_aprobador stored in tm_ticket
+                        $is_jefe_match = false;
+
+                        if (!empty($ticket_info['usu_id_jefe_aprobador'])) {
+                            if ($user_info['usu_id'] == $ticket_info['usu_id_jefe_aprobador']) {
+                                $is_jefe_match = true;
+                            }
+                        }
+
+                        // Fallback: If not explicitly set (or mismatch), check if user is the one ASSIGNED to the ticket.
+                        // If the system assigned them, we trust they are the intended actor.
+                        if (!$is_jefe_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
+                            $is_jefe_match = true;
+                        }
+
+                        if (!$is_jefe_match) {
+                            // Fallback for legacy tickets: Use Creator's Boss logic
+                            $subordinate_car_id = null;
+                            $creador_usu_id = $ticket_info['usu_id'];
+                            $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
+                            if ($creador_data) {
+                                $subordinate_car_id = $creador_data['car_id'];
+                            }
+
+                            if ($subordinate_car_id) {
+                                require_once('../models/Organigrama.php');
+                                $organigramaModel = new Organigrama();
+                                $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
+
+                                if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
+                                    // Check Regional or National
+                                    if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
                                         $is_jefe_match = true;
                                     }
                                 }
-
-                                // Fallback: If not explicitly set (or mismatch), check if user is the one ASSIGNED to the ticket.
-                                // If the system assigned them, we trust they are the intended actor.
-                                if (!$is_jefe_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
-                                    $is_jefe_match = true;
-                                }
-
-                                if (!$is_jefe_match) {
-                                    // Fallback for legacy tickets: Use Creator's Boss logic
-                                    $subordinate_car_id = null;
-                                    $creador_usu_id = $ticket_info['usu_id'];
-                                    $creador_data = $this->usuarioModel->get_usuario_detalle_x_id($creador_usu_id);
-                                    if ($creador_data) {
-                                        $subordinate_car_id = $creador_data['car_id'];
-                                    }
-
-                                    if ($subordinate_car_id) {
-                                        require_once('../models/Organigrama.php');
-                                        $organigramaModel = new Organigrama();
-                                        $jefe_car_id = $organigramaModel->get_jefe_cargo_id($subordinate_car_id);
-
-                                        if ($jefe_car_id && $jefe_car_id == $user_info['car_id']) {
-                                            // Check Regional or National
-                                            if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
-                                                $is_jefe_match = true;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if ($is_jefe_match) {
-                                    $my_config = $config;
-                                    break;
-                                }
-                            } else {
-                                // Logic for specific Cargo
-                                $is_cargo_match = false;
-
-                                // 1. Check if user actually has the role
-                                if ($config['car_id'] == $user_info['car_id']) {
-                                    if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
-                                        $is_cargo_match = true;
-                                    }
-                                }
-
-                                // 2. Fallback: Check if user is the one ASSIGNED to the ticket and the config matches the assigned role for the step.
-                                // This allows a user assigned to a step (e.g. via 'Traslado') to sign even if they don't hold the base role.
-                                if (!$is_cargo_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
-                                    // Check if the config's car_id matches the step's assigned car_id
-                                    if ($config['car_id'] == $paso_info['cargo_id_asignado']) {
-                                        $is_cargo_match = true;
-                                        error_log("TicketService::handleSignature - User is assigned to ticket and config matches assigned role. Allowing signature.");
-                                    }
-                                }
-
-                                if ($is_cargo_match) {
-                                    $my_config = $config;
-                                    break;
-                                }
                             }
+                        }
+
+                        if ($is_jefe_match) {
+                            $is_match = true;
+                        }
+                    } else {
+                        // Logic for specific Cargo
+                        $is_cargo_match = false;
+
+                        // 1. Check if user actually has the role
+                        if ($config['car_id'] == $user_info['car_id']) {
+                            if ($user_info['es_nacional'] == 1 || $user_info['reg_id'] == $ticket_regional) {
+                                $is_cargo_match = true;
+                            }
+                        }
+
+                        // 2. Fallback: Check if user is the one ASSIGNED to the ticket and the config matches the assigned role for the step.
+                        // This allows a user assigned to a step (e.g. via 'Traslado') to sign even if they don't hold the base role.
+                        if (!$is_cargo_match && in_array($user_info['usu_id'], explode(',', $ticket_info['usu_asig']))) {
+                            // Check if the config's car_id matches the step's assigned car_id
+                            if ($config['car_id'] == $paso_info['cargo_id_asignado']) {
+                                $is_cargo_match = true;
+                                error_log("TicketService::handleSignature - User is assigned to ticket and config matches assigned role. Allowing signature.");
+                            }
+                        }
+
+                        if ($is_cargo_match) {
+                            $is_match = true;
                         }
                     }
                 }
-            }
 
-            if (!$my_config) {
-                error_log("TicketService::handleSignature - No matching config found for user $usu_id in paso $paso_id");
-
-                // FALLBACK: If the step requires signature but no config is found (or matches), 
-                // use a default configuration to ensure the signature is applied.
-                if ($paso_info['requiere_firma'] == 1) {
-                    error_log("TicketService::handleSignature - Using DEFAULT signature configuration.");
-                    $my_config = [
-                        'coord_x' => 20,  // Default X
-                        'coord_y' => 200, // Default Y (near bottom)
-                        'pagina' => 1,
-                        'car_id' => null,
-                        'usu_id' => null
-                    ];
-                } else {
-                    return;
+                if ($is_match) {
+                    $matching_configs[] = $config;
                 }
             }
-            error_log("TicketService::handleSignature - Config used: " . json_encode($my_config));
-
-            // 3. Identify PDF
-            // Use DocumentoFlujo to get the latest signed document
-            $existing_doc = $documentoFlujoModel->get_ultimo_documento_flujo($tick_id);
-
-            // Define new storage path structure: public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/
-            $flujo_id = $paso_info['flujo_id'];
-            $storage_dir = "../public/document/flujo/{$flujo_id}/{$paso_id}/{$usu_id}/";
-
-            if (!file_exists($storage_dir)) {
-                mkdir($storage_dir, 0777, true);
-            }
-
-            $pdf_path = '';
-            $new_filename = uniqid('signed_', true) . '.pdf';
-            $pdf_path = $storage_dir . $new_filename;
-
-            // Determine source file (existing signed doc or template)
-            $source_path = '';
-
-            if ($existing_doc) {
-                // Existing doc found in tm_documento_flujo
-                // We need to reconstruct the path.
-                // The table stores: flujo_id, paso_id, usu_id, doc_nom
-                // Path: ../public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/{doc_nom}
-
-                $prev_flujo_id = $existing_doc['flujo_id'];
-                $prev_paso_id = $existing_doc['paso_id'];
-                $prev_usu_id = $existing_doc['usu_id'];
-                $prev_doc_nom = $existing_doc['doc_nom'];
-
-                $source_path = "../public/document/flujo/{$prev_flujo_id}/{$prev_paso_id}/{$prev_usu_id}/{$prev_doc_nom}";
-
-                if (!file_exists($source_path)) {
-                    error_log("TicketService::handleSignature - Could not locate previous signed document: $source_path");
-                    $source_path = ''; // Reset if not found
-                }
-            }
-
-            if (empty($source_path)) {
-                // Fallback to template
-
-                // 1. Check for Company-Specific Template
-                $emp_id = isset($ticket['emp_id']) ? $ticket['emp_id'] : null;
-                if ($emp_id) {
-                    $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
-                    if (!empty($plantilla_empresa)) {
-                        $source_path = '../public/document/flujo/' . $plantilla_empresa;
-                    }
-                }
-
-                // 2. Fallback to Default Flow Template
-                if (empty($source_path)) {
-                    $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
-                    if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
-                        $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
-                    } elseif (!empty($paso_info['paso_nom_adjunto'])) {
-                        $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
-                    }
-                }
-            }
-
-            if (!empty($source_path) && file_exists($source_path)) {
-                if (copy($source_path, $pdf_path)) {
-                    error_log("TicketService::handleSignature - Copied source $source_path to $pdf_path");
-                } else {
-                    error_log("TicketService::handleSignature - Failed to copy source.");
-                    return;
-                }
-            } else {
-                error_log("TicketService::handleSignature - No source document found.");
-                return;
-            }
-
-            // 4. Save signature image
-            $img_parts = explode(";base64,", $signature_data);
-            if (count($img_parts) < 2) {
-                error_log("TicketService::handleSignature - Invalid base64 image data.");
-                return;
-            }
-            $img_base64 = base64_decode($img_parts[1]);
-
-            // Save signature image in the same folder
-            $firma_path = $storage_dir . 'firma_' . uniqid() . '.png';
-            file_put_contents($firma_path, $img_base64);
-            error_log("TicketService::handleSignature - Signature image saved: $firma_path");
-
-            // 5. Sign PDF
-            $result = $pdfService->firmarPdf($pdf_path, $firma_path, $my_config['coord_x'], $my_config['coord_y'], $my_config['pagina']);
-            error_log("TicketService::handleSignature - firmarPdf result: " . ($result ? 'Success' : 'Failure'));
-
-            // 6. Cleanup
-            if (file_exists($firma_path)) {
-                unlink($firma_path);
-            }
-
-            // 7. Insert into tm_documento_flujo (NOT td_documento_detalle)
-            $documentoFlujoModel->insert_documento_flujo($tick_id, $flujo_id, $paso_id, $usu_id, $new_filename);
         }
+
+        if (empty($matching_configs)) {
+            error_log("TicketService::handleSignature - No matching config found for user $usu_id in paso $paso_id");
+
+            // FALLBACK: If the step requires signature but no config is found (or matches), 
+            // use a default configuration to ensure the signature is applied.
+            if ($paso_info['requiere_firma'] == 1) {
+                error_log("TicketService::handleSignature - Using DEFAULT signature configuration.");
+                $matching_configs[] = [
+                    'coord_x' => 20,  // Default X
+                    'coord_y' => 200, // Default Y (near bottom)
+                    'pagina' => 1,
+                    'car_id' => null,
+                    'usu_id' => null
+                ];
+            } else {
+                return;
+            }
+        }
+        error_log("TicketService::handleSignature - Configs used: " . json_encode($matching_configs));
+
+        // 3. Identify PDF
+        // Use DocumentoFlujo to get the latest signed document
+        $existing_doc = $documentoFlujoModel->get_ultimo_documento_flujo($tick_id);
+
+        // Define new storage path structure: public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/
+        $flujo_id = $paso_info['flujo_id'];
+        $storage_dir = "../public/document/flujo/{$flujo_id}/{$paso_id}/{$usu_id}/";
+
+        if (!file_exists($storage_dir)) {
+            mkdir($storage_dir, 0777, true);
+        }
+
+        $pdf_path = '';
+        $new_filename = uniqid('signed_', true) . '.pdf';
+        $pdf_path = $storage_dir . $new_filename;
+
+        // Determine source file (existing signed doc or template)
+        $source_path = '';
+
+        if ($existing_doc) {
+            // Existing doc found in tm_documento_flujo
+            // We need to reconstruct the path.
+            // The table stores: flujo_id, paso_id, usu_id, doc_nom
+            // Path: ../public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/{doc_nom}
+
+            $prev_flujo_id = $existing_doc['flujo_id'];
+            $prev_paso_id = $existing_doc['paso_id'];
+            $prev_usu_id = $existing_doc['usu_id'];
+            $prev_doc_nom = $existing_doc['doc_nom'];
+
+            $source_path = "../public/document/flujo/{$prev_flujo_id}/{$prev_paso_id}/{$prev_usu_id}/{$prev_doc_nom}";
+
+            if (!file_exists($source_path)) {
+                error_log("TicketService::handleSignature - Could not locate previous signed document: $source_path");
+                $source_path = ''; // Reset if not found
+            }
+        }
+
+        if (empty($source_path)) {
+            // Fallback to template
+
+            // 1. Check for Company-Specific Template
+            $emp_id = isset($ticket['emp_id']) ? $ticket['emp_id'] : null;
+            if ($emp_id) {
+                $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
+                if (!empty($plantilla_empresa)) {
+                    $source_path = '../public/document/flujo/' . $plantilla_empresa;
+                }
+            }
+
+            // 2. Fallback to Default Flow Template
+            if (empty($source_path)) {
+                $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
+                if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+                    $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+                } elseif (!empty($paso_info['paso_nom_adjunto'])) {
+                    $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+                }
+            }
+        }
+
+        if (!empty($source_path) && file_exists($source_path)) {
+            if (copy($source_path, $pdf_path)) {
+                error_log("TicketService::handleSignature - Copied source $source_path to $pdf_path");
+            } else {
+                error_log("TicketService::handleSignature - Failed to copy source.");
+                return;
+            }
+        } else {
+            error_log("TicketService::handleSignature - No source document found.");
+            return;
+        }
+
+        // 4. Save signature image
+        $img_parts = explode(";base64,", $signature_data);
+        if (count($img_parts) < 2) {
+            error_log("TicketService::handleSignature - Invalid base64 image data.");
+            return;
+        }
+        $img_base64 = base64_decode($img_parts[1]);
+
+        // Save signature image in the same folder
+        $firma_path = $storage_dir . 'firma_' . uniqid() . '.png';
+        file_put_contents($firma_path, $img_base64);
+        error_log("TicketService::handleSignature - Signature image saved: $firma_path");
+
+        // 5. Sign PDF (Iterate through all matching configs)
+        foreach ($matching_configs as $config) {
+            $result = $pdfService->firmarPdf($pdf_path, $firma_path, $config['coord_x'], $config['coord_y'], $config['pagina']);
+            error_log("TicketService::handleSignature - firmarPdf result for config " . json_encode($config) . ": " . ($result ? 'Success' : 'Failure'));
+        }
+
+        // 6. Cleanup
+        if (file_exists($firma_path)) {
+            unlink($firma_path);
+        }
+
+        // 7. Insert into tm_documento_flujo (NOT td_documento_detalle)
+        $documentoFlujoModel->insert_documento_flujo($tick_id, $flujo_id, $paso_id, $usu_id, $new_filename);
     }
 }
