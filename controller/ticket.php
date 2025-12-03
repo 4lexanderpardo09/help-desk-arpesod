@@ -74,8 +74,7 @@ switch ($_GET["op"]) {
         break;
 
     case "update":
-        $ticket->update_ticket($_POST["tick_id"]);
-        $ticket->insert_ticket_detalle_cerrar($_POST["tick_id"], $_POST["usu_id"]);
+        $ticketService->cerrar_ticket($_POST["tick_id"], "Ticket cerrado manualmente");
         break;
 
     case 'cerrar_con_nota':
