@@ -68,10 +68,18 @@ $(document).ready(function () {
         window.addEventListener("resize", resizeCanvas);
         $('#modalFirma').on('shown.bs.modal', resizeCanvas);
 
+        var isProfileSignatureLoaded = false;
+
         $('#btnLimpiarFirma').click(function () {
             signaturePad.clear();
             $('#upload_signature').val(''); // Clear file input
+            isProfileSignatureLoaded = false;
         });
+
+        // When user starts drawing, clear the flag (though signaturePad.onBegin handles clearing empty state)
+        signaturePad.onBegin = function () {
+            isProfileSignatureLoaded = false;
+        };
 
         $('#upload_signature').change(function (e) {
             var file = e.target.files[0];
@@ -96,12 +104,10 @@ $(document).ready(function () {
 
                         ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
 
-                        // Mark signaturePad as not empty (it doesn't track external draws automatically)
-                        // Actually signaturePad.fromDataURL might be better but it's async and sometimes tricky with ratios.
-                        // Since we drew on the canvas, toDataURL will work, but isEmpty() might return true if we don't use signaturePad methods.
-                        // Let's force a "dot" or just rely on the canvas content.
-                        // However, signaturePad.isEmpty() checks its internal data structure.
-                        // We can bypass isEmpty check if file input has value.
+                        // We treat uploaded file same as profile signature for validation purposes
+                        // But actually the validation check includes !$('#upload_signature').val()
+                        // So we don't strictly need the flag here, but let's be consistent.
+                        isProfileSignatureLoaded = true;
                     }
                     img.src = evt.target.result;
                 };
@@ -110,7 +116,7 @@ $(document).ready(function () {
         });
 
         $('#btnGuardarFirma').click(function () {
-            if (signaturePad.isEmpty() && !$('#upload_signature').val()) {
+            if (signaturePad.isEmpty() && !$('#upload_signature').val() && !isProfileSignatureLoaded) {
                 swal("Atención", "Por favor, proporcione su firma.", "warning");
                 return;
             }
@@ -118,6 +124,33 @@ $(document).ready(function () {
             var signatureData = document.getElementById('signature-pad').toDataURL();
             $('#modalFirma').modal('hide');
             enviarDetalle(signatureData);
+        });
+
+        $('#btnUsarFirmaPerfil').click(function () {
+            var usu_id = $('#user_idx').val();
+            $.post('../../controller/usuario.php?op=obtener_firma', { usu_id: usu_id }, function (response) {
+                var data = JSON.parse(response);
+                if (data.status === 'success') {
+                    var img = new Image();
+                    img.onload = function () {
+                        var ctx = canvas.getContext('2d');
+                        signaturePad.clear();
+
+                        // Use same scaling logic as file upload
+                        var hRatio = canvas.offsetWidth / img.width;
+                        var vRatio = canvas.offsetHeight / img.height;
+                        var ratio = Math.min(hRatio, vRatio);
+                        var centerShift_x = (canvas.offsetWidth - img.width * ratio) / 2;
+                        var centerShift_y = (canvas.offsetHeight - img.height * ratio) / 2;
+
+                        ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+                        isProfileSignatureLoaded = true;
+                    }
+                    img.src = '../../public/img/firmas/' + usu_id + '/' + data.firma;
+                } else {
+                    swal("Atención", "No tiene una firma guardada en su perfil.", "warning");
+                }
+            });
         });
     }
 

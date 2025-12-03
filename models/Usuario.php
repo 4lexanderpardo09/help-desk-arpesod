@@ -247,15 +247,30 @@ class Usuario extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function update_firma($usu_id, $usu_firma)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "UPDATE tm_usuario SET usu_firma = ? WHERE usu_id = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_firma);
+        $sql->bindValue(2, $usu_id);
+        $sql->execute();
+        return $resultado = $sql->fetchAll();
+    }
+
     public function get_usuario_x_id($usu_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "call sp_l_usuario_02(?)";
+        $sql = "SELECT tm_usuario.usu_id, tm_usuario.usu_nom, tm_usuario.usu_ape, tm_usuario.usu_correo, tm_usuario.usu_pass, tm_usuario.rol_id, tm_usuario.dp_id, tm_usuario.reg_id, tm_usuario.car_id, tm_usuario.es_nacional, tm_usuario.usu_firma, GROUP_CONCAT(empresa_usuario.emp_id) as emp_ids
+                FROM tm_usuario
+                LEFT JOIN empresa_usuario ON tm_usuario.usu_id = empresa_usuario.usu_id
+                WHERE tm_usuario.usu_id = ?
+                GROUP BY tm_usuario.usu_id";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->execute();
-
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
 

@@ -353,6 +353,7 @@ if (isset($_SESSION["usu_id"])) {
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-info pull-left" id="btnUsarFirmaPerfil">Usar Firma del Perfil</button>
                         <button type="button" class="btn btn-secondary" id="btnLimpiarFirma">Limpiar</button>
                         <button type="button" class="btn btn-primary" id="btnGuardarFirma">Guardar y Terminar</button>
                     </div>

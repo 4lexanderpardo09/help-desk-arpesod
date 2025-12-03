@@ -166,4 +166,43 @@ switch ($_GET["op"]) {
         }
         echo json_encode($data);
         break;
+
+    case "guardar_firma":
+        $usu_id = $_POST['usu_id'];
+        $firma_nombre = '';
+
+        if (isset($_FILES['usu_firma']) && $_FILES['usu_firma']['error'] == 0) {
+            $extension = pathinfo($_FILES['usu_firma']['name'], PATHINFO_EXTENSION);
+            $firma_nombre = "firma_" . $usu_id . "_" . time() . "." . $extension;
+            $carpeta_usuario = '../public/img/firmas/' . $usu_id . '/';
+            $ruta_destino = $carpeta_usuario . $firma_nombre;
+
+            if (!file_exists($carpeta_usuario)) {
+                mkdir($carpeta_usuario, 0777, true);
+            }
+
+            if (move_uploaded_file($_FILES['usu_firma']['tmp_name'], $ruta_destino)) {
+                $usuario->update_firma($usu_id, $firma_nombre);
+                echo json_encode(['status' => 'success', 'message' => 'Firma actualizada correctamente', 'firma' => $firma_nombre]);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Error al subir la imagen']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'No se seleccionó ninguna imagen']);
+        }
+        break;
+
+    case "obtener_firma":
+        $usu_id = $_POST['usu_id'];
+        $datos = $usuario->get_usuario_x_id($usu_id);
+        if (is_array($datos) == true and count($datos) > 0) {
+            if (!empty($datos['usu_firma'])) {
+                echo json_encode(['status' => 'success', 'firma' => $datos['usu_firma']]);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'No hay firma registrada']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Usuario no encontrado']);
+        }
+        break;
 }
