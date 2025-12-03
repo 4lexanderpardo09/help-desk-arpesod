@@ -1,3 +1,4 @@
 /vendor/
 /public/document/**
+/public/img/firmas/**
 .env

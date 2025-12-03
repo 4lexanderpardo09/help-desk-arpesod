@@ -1325,10 +1325,17 @@ class TicketService
 
 
 
-    private function cerrar_ticket($ticket_id, $mensaje)
+    public function cerrar_ticket($ticket_id, $mensaje)
     {
         $this->ticketModel->update_ticket($ticket_id);
         $this->ticketModel->insert_ticket_detalle_cerrar($ticket_id, $_SESSION['usu_id']);
+
+        // Insertar registro en historial de asignaciones
+        $ticket_data = $this->ticketModel->listar_ticket_x_id($ticket_id);
+        $usu_asig = $ticket_data['usu_asig'];
+        $paso_actual = $ticket_data['paso_actual_id'];
+
+        $this->assignmentRepository->insertAssignment($ticket_id, $usu_asig, $_SESSION['usu_id'], $paso_actual, 'Ticket cerrado');
     }
 
     public function updateTicket($tickId)
