@@ -449,6 +449,25 @@ function enviarDetalle(signatureData = null) {
         formData.append('assign_on_send', 'true'); // flag opcional para proceso server-side
     }
 
+    // Recopilar campos dinámicos de plantilla
+    if ($('#panel_campos_plantilla').is(':visible')) {
+        var camposFaltantes = [];
+        $('#campos_plantilla_inputs input, #campos_plantilla_inputs select').each(function () {
+            var input = $(this);
+            if (input.prop('required') && !input.val()) {
+                camposFaltantes.push(input.prev('label').text());
+            }
+            formData.append(input.attr('name'), input.val());
+        });
+
+        if (camposFaltantes.length > 0) {
+            swal("Atención", "Por favor complete los siguientes campos requeridos: " + camposFaltantes.join(', '), "warning");
+            $('#btnenviar').data('processing', false).prop('disabled', false);
+            updateEnviarButtonState();
+            return false;
+        }
+    }
+
     if (signatureData) {
         formData.append('signature_data', signatureData);
     }
@@ -807,6 +826,16 @@ function listarDetalle(tick_id) {
             $('#checkbox_avanzar_flujo').prop('checked', false).prop('disabled', true).hide();
         }
 
+        // Lógica para cargar campos del SIGUIENTE paso (Look-ahead)
+        if (ticketData.siguientes_pasos_lineales && ticketData.siguientes_pasos_lineales.length === 1) {
+            var siguientePasoId = ticketData.siguientes_pasos_lineales[0].paso_id;
+            loadStepFields(siguientePasoId);
+        } else {
+            $('#panel_campos_plantilla').hide();
+            $('#campos_plantilla_inputs').empty();
+        }
+
+
         // --- Reinserción del bloque de paso que tenías antes ---
         var pasoInfo = ticketData.paso_actual_info || {};
 
@@ -1148,6 +1177,11 @@ $(document).on('click', '#btn_confirmar_paso_seleccionado', function () {
             swal("Decisión registrada", "Tu elección \"" + decisionSeleccionada + "\" se aplicará al enviar la respuesta.", "info");
         }
 
+        // Cargar campos dinámicos para el paso destino de la decisión
+        if (targetStepId) {
+            loadStepFields(targetStepId);
+        }
+
         updateEnviarButtonState();
     } else {
         swal("Atención", "Por favor, selecciona una opción para continuar.", "warning");
@@ -1209,6 +1243,62 @@ function checkParallelStatus(tick_id, paso_id) {
             }
         } else {
             $('#panel_paralelo').hide();
+        }
+    });
+}
+
+function loadStepFields(pasoId) {
+    $.post("../../controller/flujopaso.php?op=get_campos_paso", { paso_id: pasoId }, function (data) {
+        var response = JSON.parse(data);
+        if (response.requiere) {
+            $('#campos_plantilla_inputs').empty();
+            response.campos.forEach(function (campo) {
+                var inputHtml = '';
+                // Reutilizar lógica de renderizado de nuevoticket.js
+                if (campo.campo_tipo === 'regional') {
+                    inputHtml = `
+                        <div class="col-md-6">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </fieldset>
+                        </div>
+                    `;
+                    $.post("../../controller/regional.php?op=combo", function (data) {
+                        $('#campo_' + campo.campo_id).append(data);
+                    });
+                } else if (campo.campo_tipo === 'cargo') {
+                    inputHtml = `
+                        <div class="col-md-6">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                <select class="form-control select2" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" required>
+                                    <option value="">Seleccionar...</option>
+                                </select>
+                            </fieldset>
+                        </div>
+                    `;
+                    $.post("../../controller/cargo.php?op=combo", function (data) {
+                        $('#campo_' + campo.campo_id).append(data);
+                    });
+                } else {
+                    inputHtml = `
+                        <div class="col-md-6">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="campo_${campo.campo_id}">${campo.campo_nombre}</label>
+                                <input type="text" class="form-control" id="campo_${campo.campo_id}" name="campo_${campo.campo_id}" placeholder="${campo.campo_nombre}" required>
+                            </fieldset>
+                        </div>
+                    `;
+                }
+                $('#campos_plantilla_inputs').append(inputHtml);
+            });
+            $('#panel_campos_plantilla').show();
+        } else {
+            $('#panel_campos_plantilla').hide();
+            $('#campos_plantilla_inputs').empty();
         }
     });
 }

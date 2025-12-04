@@ -371,7 +371,12 @@ class TicketService
 
         // Check if we have fields for this step
         $campos = $campoModel->get_campos_por_paso($paso_id);
-        if (empty($campos)) return;
+        error_log("TicketService::handleDynamicFields - Paso ID: $paso_id. Campos found: " . count($campos));
+
+        if (empty($campos)) {
+            error_log("TicketService::handleDynamicFields - No fields configured for this step. Exiting.");
+            return;
+        }
 
         require_once('../models/Regional.php');
         require_once('../models/Cargo.php');
@@ -477,29 +482,66 @@ class TicketService
         // Determine source template
         $source_path = '';
 
-        // 1. Check for Company-Specific Template
-        $emp_id = isset($postData['emp_id']) ? $postData['emp_id'] : null;
-        if ($emp_id) {
-            $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
-            if (!empty($plantilla_empresa)) {
-                $source_path = '../public/document/flujo/' . $plantilla_empresa;
+        // 0. Check if there is an existing signed document (Accumulation Logic)
+        $ultimo_doc = $docFlujoModel->get_ultimo_documento_flujo($tick_id);
+        if ($ultimo_doc) {
+            // Construct path to the latest document
+            // Path format: ../public/document/flujo/{flujo_id}/{paso_id}/{usu_id}/{filename}
+            $prev_path = "../public/document/flujo/{$ultimo_doc['flujo_id']}/{$ultimo_doc['paso_id']}/{$ultimo_doc['usu_id']}/{$ultimo_doc['doc_nom']}";
+
+            error_log("TicketService::handleDynamicFields - Checking previous document: $prev_path");
+
+            if (file_exists($prev_path)) {
+                $source_path = $prev_path;
+                error_log("TicketService::handleDynamicFields - Using previous document as source.");
             }
         }
 
-        // 2. Fallback to Default Flow Template
+        // If no previous document, look for the blank template
         if (empty($source_path)) {
-            $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
-            if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
-                $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
-            } elseif (!empty($paso_info['paso_nom_adjunto'])) {
-                $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
-            }
-        }
 
-        if (empty($source_path) || !file_exists($source_path)) {
-            error_log("TicketService::handleDynamicFields - No template found.");
-            return;
-        }
+            // 1. Check for Company-Specific Template
+            $emp_id = isset($postData['emp_id']) ? $postData['emp_id'] : null;
+
+            // FIX: If emp_id is not in postData (e.g. during advancement), get it from the ticket
+            if (!$emp_id) {
+                $ticket_info = $this->ticketModel->listar_ticket_x_id($tick_id);
+                if ($ticket_info) {
+                    $emp_id = $ticket_info['emp_id'];
+                }
+            }
+
+            if ($emp_id) {
+                $plantilla_empresa = $this->flujoModel->get_plantilla_por_empresa($flujo_id, $emp_id);
+                if (!empty($plantilla_empresa)) {
+                    $source_path = '../public/document/flujo/' . $plantilla_empresa;
+                }
+            }
+
+            // 2. Fallback to Default Flow Template
+            if (empty($source_path)) {
+                $flujo_info = $this->flujoModel->get_flujo_x_id($flujo_id);
+                error_log("TicketService::handleDynamicFields - Flujo Info: " . json_encode($flujo_info));
+                error_log("TicketService::handleDynamicFields - Paso Info: " . json_encode($paso_info));
+
+                if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+                    $source_path = '../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+                } elseif (!empty($paso_info['paso_nom_adjunto'])) {
+                    $source_path = '../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+                }
+            }
+
+            error_log("TicketService::handleDynamicFields - Flujo ID: $flujo_id");
+            error_log("TicketService::handleDynamicFields - Source Path Candidate: $source_path");
+            if (!empty($source_path)) {
+                error_log("TicketService::handleDynamicFields - File Exists? " . (file_exists($source_path) ? 'YES' : 'NO'));
+            }
+
+            if (empty($source_path) || !file_exists($source_path)) {
+                error_log("TicketService::handleDynamicFields - No template found.");
+                return;
+            }
+        } // End of template discovery block
 
         // Define storage path
         $storage_dir = "../public/document/flujo/{$flujo_id}/{$paso_id}/{$usu_id}/";
@@ -528,9 +570,10 @@ class TicketService
         $siguiente_paso_info = $this->rutaPasoModel->get_paso_por_orden($ticket["ruta_id"], $siguiente_orden);
 
         if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], $ticket["ruta_id"], $siguiente_orden, null);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Ruta completada.");
+            return null;
         }
     }
 
@@ -538,19 +581,35 @@ class TicketService
     {
         $primer_paso_info = $this->rutaPasoModel->get_paso_por_orden($ruta_id, 1);
         if ($primer_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, 1, $usu_asig);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $primer_paso_info["paso_id"], $ruta_id, $primer_paso_info["paso_orden"], $usu_asig);
         } else {
-            throw new Exception("La ruta seleccionada (ID: $ruta_id) no tiene un primer paso definido.");
+            throw new Exception("La ruta seleccionada no tiene pasos definidos.");
         }
     }
 
     public function avanzar_ticket_con_usuario_asignado($ticket, $usu_asig)
     {
+        // ... misma lógica de avanzar lineal pero forzando usuario ...
+        // En realidad, esto debería llamar a actualizar_estado_ticket con el paso siguiente
+        // Ojo: si es lineal, llamamos a get_siguiente_paso
+
+        // Si el ticket tiene ruta, usamos avanzar_ticket_en_ruta?
+        // No, este método se usa cuando NO se tomó decisión explícita pero se quiere avanzar (quizás reasignando)
+
+        if (!empty($ticket['ruta_id'])) {
+            // Si está en ruta, avanzar en ruta
+            // Pero ojo, avanzar_ticket_en_ruta calcula el siguiente paso.
+            // Si queremos reasignar el paso ACTUAL, es diferente.
+            // Pero el nombre dice "avanzar". Asumimos que avanza.
+            return $this->avanzar_ticket_en_ruta($ticket);
+        }
+
         $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, $usu_asig);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+            return null;
         }
     }
 
@@ -558,9 +617,10 @@ class TicketService
     {
         $siguiente_paso_info = $this->flujoModel->get_siguiente_paso($ticket["paso_actual_id"]);
         if ($siguiente_paso_info) {
-            $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
+            return $this->actualizar_estado_ticket($ticket['tick_id'], $siguiente_paso_info["paso_id"], null, null, null);
         } else {
             $this->cerrar_ticket($ticket['tick_id'], "Flujo principal completado.");
+            return null;
         }
     }
 
@@ -793,6 +853,7 @@ class TicketService
 
             $mensaje_notificacion = "Se le ha trasladado el ticket #{$ticket_id} - {$cats_nom}.";
             $this->notificationRepository->insertNotification($nuevo_usuario_asignado, $mensaje_notificacion, $ticket_id);
+            return $nuevo_paso_id;
         } else {
             throw new Exception("No se encontró un usuario para asignar al cargo ID: $siguiente_cargo_id.");
         }
@@ -1246,24 +1307,33 @@ class TicketService
             $reassigned = false; // Por defecto, no se reasigna
 
             // SOLO avanzamos si se dio una instrucción para ello
+            $nuevo_paso_id_result = null;
+
             if ($decision_tomada || $avanzar_lineal) {
 
                 if ($decision_tomada) {
                     // CASO 1: El usuario eligió una decisión específica.
-                    // Esto tiene prioridad incluso si está en una ruta (para permitir salirse o devolverse)
-                    $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig);
+                    $nuevo_paso_id_result = $this->iniciar_ruta_desde_decision($ticket, $decision_tomada, $usu_asig);
                 } elseif (!empty($ticket["ruta_id"])) {
                     // CASO 2: El ticket YA ESTÁ en una ruta y no se tomó decisión explícita. Avanzamos en la ruta.
-                    $this->avanzar_ticket_en_ruta($ticket);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_en_ruta($ticket);
                 } elseif ($avanzar_lineal) {
                     // CASO 3: El usuario quiere avanzar en un flujo sin decisiones.
-                    $this->avanzar_ticket_lineal($ticket);
+                    $nuevo_paso_id_result = $this->avanzar_ticket_lineal($ticket);
                 }
                 $reassigned = true; // Si entramos en este bloque, significa que se avanzó/reasignó.
             } else {
-                $this->avanzar_ticket_con_usuario_asignado($ticket, $usu_asig);
+                $nuevo_paso_id_result = $this->avanzar_ticket_con_usuario_asignado($ticket, $usu_asig);
                 $reassigned = true;
             }
+
+            // --- FIX: Procesar campos dinámicos para el nuevo paso ---
+            if ($reassigned && $nuevo_paso_id_result) {
+                error_log("TicketService::createDetailTicket - Using returned New Paso ID: " . $nuevo_paso_id_result);
+                $this->handleDynamicFields($tickId, $postData, $nuevo_paso_id_result, $usuId);
+            }
+            // ---------------------------------------------------------
+
             $this->pdo->commit();
             echo json_encode(["status" => "success", "reassigned" => $reassigned]);
         } catch (Exception $e) {
@@ -1283,7 +1353,7 @@ class TicketService
         if ($transicion) {
             if (!empty($transicion['ruta_id'])) {
                 // CASO A: La transición lleva a una RUTA
-                $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id'], $usu_asig);
+                return $this->iniciar_ruta_para_ticket($ticket, $transicion['ruta_id'], $usu_asig);
             } elseif (!empty($transicion['paso_destino_id'])) {
                 // CASO B: La transición lleva DIRECTAMENTE a un PASO
                 $nuevo_paso_id = $transicion['paso_destino_id'];

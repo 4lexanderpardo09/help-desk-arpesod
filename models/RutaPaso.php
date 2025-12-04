@@ -7,7 +7,7 @@ class RutaPaso extends Conectar
     public function get_paso_por_orden($ruta_id, $orden)
     {
         $conectar = parent::Conexion();
-        $sql = "SELECT rp.*, fp.paso_nombre, fp.cargo_id_asignado, fp.es_tarea_nacional, fp.requiere_seleccion_manual
+        $sql = "SELECT rp.*, rp.orden as paso_orden, fp.paso_nombre, fp.cargo_id_asignado, fp.es_tarea_nacional, fp.requiere_seleccion_manual
                 FROM tm_ruta_paso rp
                 JOIN tm_flujo_paso fp ON rp.paso_id = fp.paso_id
                 WHERE rp.ruta_id = ? AND rp.orden = ? AND rp.est = 1";

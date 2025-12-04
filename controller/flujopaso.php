@@ -215,4 +215,20 @@ switch ($_GET["op"]) {
         }
         echo json_encode(['requiere' => false]);
         break;
+
+    case "get_campos_paso":
+        require_once('../models/CampoPlantilla.php');
+        $campoModel = new CampoPlantilla();
+        $paso_id = $_POST['paso_id'];
+
+        // Primero verificamos si el paso requiere campos
+        $paso_data = $flujopaso->get_paso_por_id($paso_id);
+
+        if ($paso_data && $paso_data['requiere_campos_plantilla'] == 1) {
+            $campos = $campoModel->get_campos_por_paso($paso_id);
+            echo json_encode(['requiere' => true, 'campos' => $campos]);
+        } else {
+            echo json_encode(['requiere' => false]);
+        }
+        break;
 }

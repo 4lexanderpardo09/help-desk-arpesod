@@ -176,6 +176,15 @@ if (isset($_SESSION["usu_id"])) {
                                     </div>
                                 </fieldset>
 
+                                <div id="panel_campos_plantilla" class="row" style="display:none; margin-top: 15px; border-top: 1px solid #d8d8d8; padding-top: 15px;">
+                                    <div class="col-lg-12">
+                                        <h5 class="m-t-lg with-border">Campos Requeridos para el Siguiente Paso</h5>
+                                    </div>
+                                    <div id="campos_plantilla_inputs" class="col-lg-12 row">
+                                        <!-- Inputs dinámicos aquí -->
+                                    </div>
+                                </div>
+
                                 <div id="panel_checkbox_flujo" class="form-group" style="display: none;">
                                     <div class="checkbox-toggle">
                                         <input type="checkbox" id="checkbox_avanzar_flujo" name="avanzar_flujo">
