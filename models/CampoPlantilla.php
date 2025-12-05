@@ -3,11 +3,11 @@ class CampoPlantilla extends Conectar
 {
     // --- tm_campo_plantilla methods ---
 
-    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text')
+    public function insert_campo($paso_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, campo_tipo, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())";
+        $sql = "INSERT INTO tm_campo_plantilla (paso_id, campo_nombre, campo_codigo, coord_x, coord_y, pagina, campo_tipo, font_size, est, fech_crea) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $paso_id);
         $sql->bindValue(2, $campo_nombre);
@@ -16,15 +16,16 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(5, $coord_y);
         $sql->bindValue(6, $pagina);
         $sql->bindValue(7, $campo_tipo);
+        $sql->bindValue(8, $font_size);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
 
-    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text')
+    public function update_campo($campo_id, $campo_nombre, $campo_codigo, $coord_x, $coord_y, $pagina, $campo_tipo = 'text', $font_size = 10)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=?, campo_tipo=? WHERE campo_id=?";
+        $sql = "UPDATE tm_campo_plantilla SET campo_nombre=?, campo_codigo=?, coord_x=?, coord_y=?, pagina=?, campo_tipo=?, font_size=? WHERE campo_id=?";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $campo_nombre);
         $sql->bindValue(2, $campo_codigo);
@@ -32,7 +33,8 @@ class CampoPlantilla extends Conectar
         $sql->bindValue(4, $coord_y);
         $sql->bindValue(5, $pagina);
         $sql->bindValue(6, $campo_tipo);
-        $sql->bindValue(7, $campo_id);
+        $sql->bindValue(7, $font_size);
+        $sql->bindValue(8, $campo_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }

@@ -83,7 +83,8 @@ class PdfService
                 foreach ($textDataArray as $data) {
                     // $data = ['text' => '...', 'x' => 10, 'y' => 20, 'page' => 1]
                     if (isset($data['page']) && $data['page'] == $pageNo) {
-                        $pdf->SetFont('Arial', '', 10); // Fuente por defecto
+                        $fontSize = isset($data['font_size']) ? $data['font_size'] : 10;
+                        $pdf->SetFont('Arial', '', $fontSize);
                         $pdf->SetXY($data['x'], $data['y']);
                         $pdf->Write(0, iconv('UTF-8', 'ISO-8859-1', $data['text']));
                     }

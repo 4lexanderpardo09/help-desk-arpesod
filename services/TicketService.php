@@ -415,7 +415,8 @@ class TicketService
                     'text' => $texto_a_estampar,
                     'x' => $campo['coord_x'],
                     'y' => $campo['coord_y'],
-                    'page' => $campo['pagina']
+                    'page' => $campo['pagina'],
+                    'font_size' => isset($campo['font_size']) ? $campo['font_size'] : 10
                 ];
             }
         }

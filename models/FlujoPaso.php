@@ -171,7 +171,9 @@ class FlujoPaso extends Conectar
 
         if (is_array($campos)) {
             foreach ($campos as $campo) {
-                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo']);
+                // Default font size to 10 if not present
+                $font_size = isset($campo['font_size']) ? $campo['font_size'] : 10;
+                $campoModel->insert_campo($paso_id, $campo['campo_nombre'], $campo['campo_codigo'], $campo['coord_x'], $campo['coord_y'], $campo['pagina'], $campo['campo_tipo'], $font_size);
             }
         }
     }

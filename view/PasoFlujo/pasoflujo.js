@@ -66,6 +66,7 @@ function guardaryeditar(e) {
         var campo_nombre = row.find('td:eq(0) input').val();
         var campo_codigo = row.find('td:eq(1) input').val();
         var campo_tipo = row.find('.campo_tipo').val();
+        var font_size = row.find('.campo_font_size').val();
         var pagina = row.find('.campo_pagina').val();
         var coord_x = row.find('.campo_x').val();
         var coord_y = row.find('.campo_y').val();
@@ -74,6 +75,7 @@ function guardaryeditar(e) {
                 campo_nombre: campo_nombre,
                 campo_codigo: campo_codigo,
                 campo_tipo: campo_tipo,
+                font_size: font_size,
                 pagina: pagina,
                 coord_x: coord_x,
                 coord_y: coord_y
@@ -974,6 +976,7 @@ function addCampoPlantillaRow(campo = null) {
     var pagina = campo ? campo.pagina : 1;
     var coord_x = campo ? campo.coord_x : '';
     var coord_y = campo ? campo.coord_y : '';
+    var font_size = campo ? campo.font_size : 10;
 
     var newRow = `
         <tr>
@@ -986,6 +989,7 @@ function addCampoPlantillaRow(campo = null) {
                     <option value="cargo" ${campo && campo.campo_tipo === 'cargo' ? 'selected' : ''}>Cargo</option>
                 </select>
             </td>
+            <td><input type="number" class="form-control form-control-sm campo_font_size" value="${font_size || 10}" min="6" max="72"></td>
             <td><input type="number" class="form-control form-control-sm campo_pagina input-pagina" value="${pagina || 1}" min="1"></td>
             <td><input type="number" class="form-control form-control-sm campo_x input-x" value="${coord_x || 0}" step="0.01"></td>
             <td>
