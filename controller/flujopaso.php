@@ -152,6 +152,24 @@ switch ($_GET["op"]) {
         echo json_encode($result);
         break;
 
+    case "get_transiciones_inicio":
+        $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
+
+        if (!$flujo_id && isset($_POST["cats_id"])) {
+            require_once("../models/Flujo.php");
+            $flujoModel = new Flujo();
+            $flujo = $flujoModel->get_flujo_por_subcategoria($_POST["cats_id"]);
+            $flujo_id = isset($flujo['flujo_id']) ? $flujo['flujo_id'] : null;
+        }
+
+        if ($flujo_id) {
+            $datos = $flujopaso->get_transiciones_inicio($flujo_id);
+            echo json_encode($datos);
+        } else {
+            echo json_encode([]);
+        }
+        break;
+
     case "eliminar":
         $flujopaso->delete_paso($_POST["paso_id"]);
         break;

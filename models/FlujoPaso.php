@@ -538,4 +538,21 @@ class FlujoPaso extends Conectar
         }
         return $results;
     }
+
+    public function get_transiciones_inicio($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT 
+                    t.condicion_clave, 
+                    t.condicion_nombre,
+                    t.paso_destino_id
+                FROM tm_flujo_transiciones t
+                INNER JOIN tm_flujo_paso p_origen ON t.paso_origen_id = p_origen.paso_id
+                WHERE p_origen.flujo_id = ? AND p_origen.paso_orden = 0 AND t.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
+        return $sql->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

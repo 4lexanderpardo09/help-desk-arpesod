@@ -60,6 +60,13 @@ if (isset($_SESSION["usu_id"])) {
                                 </select>
                             </fieldset>
                         </div>
+                        <div class="col-lg-3" id="panel_condicion_inicio" style="display: none;">
+                            <fieldset class="form-group">
+                                <label class="form-label semibold" for="paso_inicio_id">Condición de Inicio</label>
+                                <select class="form-control" id="paso_inicio_id" name="paso_inicio_id">
+                                </select>
+                            </fieldset>
+                        </div>
                         <div class="col-lg-3" id="panel_asignacion_manual" style="display: none;">
                             <fieldset class="form-group">
                                 <label class="form-label semibold" for="usu_asig">Asignar Ticket a:</label>

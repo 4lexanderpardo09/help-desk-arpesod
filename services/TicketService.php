@@ -86,8 +86,18 @@ class TicketService
         $paso_actual_id_final = null;
 
         if ($flujo) { {
-                $paso_inicial = $this->flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+                // Check if a specific start step was selected (Conditional Start)
+                if (isset($postData['paso_inicio_id']) && !empty($postData['paso_inicio_id'])) {
+                    error_log("Conditional Start: paso_inicio_id received = " . $postData['paso_inicio_id']);
+                    $paso_inicial = $this->flujoPasoModel->get_paso_por_id($postData['paso_inicio_id']);
+                    error_log("Conditional Start: Resolved paso_inicial = " . json_encode($paso_inicial));
+                } else {
+                    error_log("Conditional Start: No paso_inicio_id received. Using default.");
+                    $paso_inicial = $this->flujoModel->get_paso_inicial_por_flujo($flujo['flujo_id']);
+                }
+
                 $paso_actual_id_final = $paso_inicial ? $paso_inicial['paso_id'] : null;
+                error_log("Conditional Start: Final paso_actual_id_final = " . $paso_actual_id_final);
 
                 if (!$paso_inicial) {
                     $errors[] = "El flujo (id: {$flujo['flujo_id']}) no tiene paso inicial definido.";

@@ -138,6 +138,22 @@ categoriasAnidadas = function () {
                 }
             });
 
+            // NEW: Verificar condiciones de inicio (Paso 0)
+            $.post("../../controller/flujopaso.php?op=get_transiciones_inicio", { cats_id: cats_id }, function (data) {
+                data = JSON.parse(data);
+                if (data.length > 0) {
+                    var options = '<option value="">Seleccione una opción...</option>';
+                    data.forEach(function (transicion) {
+                        options += `<option value="${transicion.paso_destino_id}">${transicion.condicion_nombre}</option>`;
+                    });
+                    $('#paso_inicio_id').html(options);
+                    $('#panel_condicion_inicio').show();
+                } else {
+                    $('#panel_condicion_inicio').hide();
+                    $('#paso_inicio_id').empty();
+                }
+            });
+
             // c. Verificar campos dinámicos de plantilla
             $.post("../../controller/flujopaso.php?op=get_campos_primer_paso", { cats_id: cats_id }, function (data) {
                 data = JSON.parse(data);
