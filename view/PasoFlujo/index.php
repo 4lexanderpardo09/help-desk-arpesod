@@ -335,6 +335,12 @@ if (isset($_SESSION["usu_id"])) {
         <?php require_once('../PasoFlujo/modalnuevopaso.php') ?>
         <?php require_once('../MainJs/js.php') ?>
 
+        <script src="../../public/js/pdf.min.js"></script>
+        <script>
+            // Set worker source
+            pdfjsLib.GlobalWorkerOptions.workerSrc = '../../public/js/pdf.worker.min.js';
+        </script>
+
         <script type="text/javascript" src="../PasoFlujo/pasoflujo.js"></script>
         <script type="text/javascript" src="../notificacion.js"></script>
 

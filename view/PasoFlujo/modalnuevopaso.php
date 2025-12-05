@@ -188,3 +188,34 @@
         </form>
     </div>
 </div>
+
+<!-- Modal para Selector de Coordenadas PDF -->
+<div class="modal fade" id="modalPDFSelector" tabindex="-1" role="dialog" aria-labelledby="modalPDFSelectorLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" style="width: 90%;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="modal-close" data-dismiss="modal" aria-label="Close">
+                    <i class="font-icon-close-2"></i>
+                </button>
+                <h4 class="modal-title" id="modalPDFSelectorLabel">Seleccionar Coordenadas en PDF</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-12 text-center mb-2">
+                        <button type="button" class="btn btn-sm btn-secondary" id="prev-page">Anterior</button>
+                        <span id="page-num"></span> / <span id="page-count"></span>
+                        <button type="button" class="btn btn-sm btn-secondary" id="next-page">Siguiente</button>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12" style="overflow: auto; max-height: 70vh; text-align: center; background-color: #f0f0f0; padding: 10px;">
+                        <canvas id="pdf-render" style="border: 1px solid black; cursor: crosshair;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-rounded btn-default" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>

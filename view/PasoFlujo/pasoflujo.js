@@ -857,9 +857,12 @@ function addFirmaRow(data = null) {
     var row = `<tr>
         <td><select class="form-control select2-firma-user" style="width:100%"></select></td>
         <td><select class="form-control select2-firma-cargo" style="width:100%"></select></td>
-        <td><input type="number" class="form-control" value="${pagina}"></td>
-        <td><input type="number" class="form-control" step="0.01" value="${coord_x}" style="width:100px;"></td>
-        <td><input type="number" class="form-control" step="0.01" value="${coord_y}" style="width:100px;"></td>
+        <td><input type="number" class="form-control input-pagina" value="${pagina}"></td>
+        <td><input type="number" class="form-control input-x" step="0.01" value="${coord_x}" style="width:70px; display:inline-block;"></td>
+        <td>
+            <input type="number" class="form-control input-y" step="0.01" value="${coord_y}" style="width:70px; display:inline-block;">
+            <button type="button" class="btn btn-sm btn-secondary btn-selector" title="Seleccionar en PDF"><i class="fa fa-crosshairs"></i></button>
+        </td>
         <td><button type="button" class="btn btn-danger btn-sm btn-remove-firma"><i class="fa fa-trash"></i></button></td>
     </tr>`;
     var $row = $(row);
@@ -912,11 +915,6 @@ function addFirmaRow(data = null) {
 
     // Pre-select values if editing
     if (usu_id) {
-        // Fetch user name to display (optional, or just set value if we had the name)
-        // For now, we might need to fetch it or just set the ID if select2 supports it without text (it usually needs text)
-        // A better approach is to pass the name in 'data' from the backend
-        // But for simplicity, let's assume we might need to fetch it or the user re-selects.
-        // Actually, let's try to set it.
         $.ajax({
             type: 'GET',
             url: '../../controller/usuario.php?op=mostrar',
@@ -946,6 +944,11 @@ function addFirmaRow(data = null) {
             });
         }
     }
+
+    // Attach click handler for selector
+    $row.find('.btn-selector').click(function () {
+        abrirSelectorCoordenadas(this);
+    });
 }
 
 // Logic for Dynamic PDF Fields
@@ -983,13 +986,24 @@ function addCampoPlantillaRow(campo = null) {
                     <option value="cargo" ${campo && campo.campo_tipo === 'cargo' ? 'selected' : ''}>Cargo</option>
                 </select>
             </td>
-            <td><input type="number" class="form-control form-control-sm campo_pagina" value="${pagina || 1}" min="1"></td>
-            <td><input type="number" class="form-control form-control-sm campo_x" value="${coord_x || 0}" step="0.01"></td>
-            <td><input type="number" class="form-control form-control-sm campo_y" value="${coord_y || 0}" step="0.01"></td>
+            <td><input type="number" class="form-control form-control-sm campo_pagina input-pagina" value="${pagina || 1}" min="1"></td>
+            <td><input type="number" class="form-control form-control-sm campo_x input-x" value="${coord_x || 0}" step="0.01"></td>
+            <td>
+                <div style="display: flex; align-items: center;">
+                    <input type="number" class="form-control form-control-sm campo_y input-y" value="${coord_y || 0}" step="0.01">
+                    <button type="button" class="btn btn-sm btn-secondary btn-selector ml-1" title="Seleccionar en PDF"><i class="fa fa-crosshairs"></i></button>
+                </div>
+            </td>
             <td><button type="button" class="btn btn-sm btn-danger btn-remove-campo"><i class="fa fa-trash"></i></button></td>
         </tr>
     `;
-    $('#tabla_campos_plantilla tbody').append(newRow);
+    var $row = $(newRow);
+    $('#tabla_campos_plantilla tbody').append($row);
+
+    // Attach click handler for selector
+    $row.find('.btn-selector').click(function () {
+        abrirSelectorCoordenadas(this);
+    });
 }
 
 function cargarCamposFlujo(flujo_id, selected_id = null) {
@@ -1000,6 +1014,140 @@ function cargarCamposFlujo(flujo_id, selected_id = null) {
         }
     });
 }
+
+// --- PDF Visual Selector Logic ---
+
+var pdfDoc = null,
+    pageNum = 1,
+    pageRendering = false,
+    pageNumPending = null,
+    scale = 1.5,
+    canvas = document.getElementById('pdf-render'),
+    ctx = canvas.getContext('2d'),
+    currentInputX = null,
+    currentInputY = null,
+    currentInputPage = null;
+
+function renderPage(num) {
+    pageRendering = true;
+    // Fetch page
+    pdfDoc.getPage(num).then(function (page) {
+        var viewport = page.getViewport({ scale: scale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render PDF page into canvas context
+        var renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+
+        // Wait for render to finish
+        renderTask.promise.then(function () {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+        });
+    });
+
+    // Update page counters
+    document.getElementById('page-num').textContent = num;
+}
+
+function queueRenderPage(num) {
+    if (pageRendering) {
+        pageNumPending = num;
+    } else {
+        renderPage(num);
+    }
+}
+
+function onPrevPage() {
+    if (pageNum <= 1) {
+        return;
+    }
+    pageNum--;
+    queueRenderPage(pageNum);
+}
+document.getElementById('prev-page').addEventListener('click', onPrevPage);
+
+function onNextPage() {
+    if (pageNum >= pdfDoc.numPages) {
+        return;
+    }
+    pageNum++;
+    queueRenderPage(pageNum);
+}
+document.getElementById('next-page').addEventListener('click', onNextPage);
+
+function abrirSelectorCoordenadas(btn) {
+    var $row = $(btn).closest('tr');
+    currentInputX = $row.find('.input-x');
+    currentInputY = $row.find('.input-y');
+    currentInputPage = $row.find('.input-pagina');
+
+    var paso_id = $('#paso_id').val();
+    var flujo_id = $('#flujo_id').val();
+
+    // Get PDF Path
+    $.post("../../controller/flujopaso.php?op=get_pdf_path", { paso_id: paso_id, flujo_id: flujo_id }, function (data) {
+        var response = JSON.parse(data);
+        if (response.status === 'success') {
+            var url = response.path;
+
+            // Load PDF
+            pdfjsLib.getDocument(url).promise.then(function (pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('page-count').textContent = pdfDoc.numPages;
+
+                // Initial/Current page
+                pageNum = parseInt(currentInputPage.val()) || 1;
+                if (pageNum < 1) pageNum = 1;
+                if (pageNum > pdfDoc.numPages) pageNum = pdfDoc.numPages;
+
+                renderPage(pageNum);
+                $('#modalPDFSelector').modal('show');
+            });
+        } else {
+            swal("Error", response.message, "error");
+        }
+    });
+}
+
+// Canvas Click Handler
+canvas.addEventListener('click', function (event) {
+    var rect = canvas.getBoundingClientRect();
+    var x = event.clientX - rect.left;
+    var y = event.clientY - rect.top;
+
+    // Convert pixels to mm
+    // PDF.js uses 72 DPI by default for viewport calculations (points)
+    // mm = points * (25.4 / 72)
+    // x_points = x / scale
+
+    var x_mm = (x / scale) * (25.4 / 72);
+    var y_mm = (y / scale) * (25.4 / 72);
+
+    if (currentInputX && currentInputY) {
+        currentInputX.val(x_mm.toFixed(2));
+        currentInputY.val(y_mm.toFixed(2));
+        if (currentInputPage) {
+            currentInputPage.val(pageNum);
+        }
+        $('#modalPDFSelector').modal('hide');
+        swal("Coordenadas Capturadas", "X: " + x_mm.toFixed(2) + ", Y: " + y_mm.toFixed(2) + ", Pág: " + pageNum, "success");
+    }
+});
+
+// Fix for nested modals scrolling issue
+$('#modalPDFSelector').on('hidden.bs.modal', function () {
+    if ($('#modalnuevopaso').hasClass('show') || $('#modalnuevopaso').hasClass('in')) {
+        $('body').addClass('modal-open');
+    }
+});
 
 init();
 

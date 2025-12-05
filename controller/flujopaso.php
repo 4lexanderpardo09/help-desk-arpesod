@@ -231,4 +231,40 @@ switch ($_GET["op"]) {
             echo json_encode(['requiere' => false]);
         }
         break;
+    case "get_pdf_path":
+        $paso_id = isset($_POST["paso_id"]) ? $_POST["paso_id"] : null;
+        $flujo_id = isset($_POST["flujo_id"]) ? $_POST["flujo_id"] : null;
+
+        $path = "";
+
+        // 1. Try to get step-specific PDF
+        if (!empty($paso_id)) {
+            $paso_info = $flujopaso->get_paso_por_id($paso_id);
+            if (!empty($paso_info['paso_nom_adjunto'])) {
+                $path = '../../public/document/paso/' . $paso_info['paso_nom_adjunto'];
+            }
+        }
+
+        // 2. Fallback to flow-default PDF
+        if (empty($path) && !empty($flujo_id)) {
+            require_once("../models/Flujo.php");
+            $flujoModel = new Flujo();
+            $flujo_info = $flujoModel->get_flujo_x_id($flujo_id);
+            if (!empty($flujo_info['flujo']['flujo_nom_adjunto'])) {
+                $path = '../../public/document/flujo/' . $flujo_info['flujo']['flujo_nom_adjunto'];
+            } else {
+                // 3. Fallback to ANY company template
+                $plantilla_cualquiera = $flujoModel->get_plantilla_cualquiera($flujo_id);
+                if (!empty($plantilla_cualquiera)) {
+                    $path = '../../public/document/flujo/' . $plantilla_cualquiera;
+                }
+            }
+        }
+
+        if (!empty($path) && file_exists(str_replace('../../', '../', $path))) {
+            echo json_encode(["status" => "success", "path" => $path]);
+        } else {
+            echo json_encode(["status" => "error", "message" => "No se encontró plantilla PDF."]);
+        }
+        break;
 }

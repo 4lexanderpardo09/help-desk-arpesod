@@ -99,6 +99,19 @@ class Flujo extends Conectar
         return $resultado = $sql->fetchAll();
     }
 
+    public function get_plantilla_cualquiera($flujo_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        // Get the first available template for this flow from any company
+        $sql = "SELECT plantilla_nom FROM tm_flujo_plantilla WHERE flujo_id = ? AND est = 1 LIMIT 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $flujo_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['plantilla_nom'] : null;
+    }
+
     public function get_flujo_x_id($flujo_id)
     {
         $conectar = parent::Conexion();
