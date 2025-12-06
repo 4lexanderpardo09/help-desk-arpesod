@@ -5,12 +5,12 @@ $regional = new Regional();
 
 switch ($_GET["op"]) {
 
-     case "combo":
+    case "combo":
         $datos = $regional->get_regionales();
-        if(is_array($datos) and count($datos) > 0){
+        if (is_array($datos) and count($datos) > 0) {
             $html = "";
-            foreach($datos as $row){
-                 $html.= "<option value='".$row["reg_id"]."'>".$row["reg_nom"]."</option>";
+            foreach ($datos as $row) {
+                $html .= "<option value='" . $row["reg_id"] . "'>" . $row["reg_nom"] . "</option>";
             }
             echo $html;
         }
@@ -20,9 +20,9 @@ switch ($_GET["op"]) {
 
     case "guardaryeditar":
         if (empty($_POST["reg_id"])) {
-            $regional->insert_regional($_POST["reg_nom"]);
+            $regional->insert_regional($_POST["reg_nom"], $_POST["zona_id"]);
         } else {
-            $regional->update_regional($_POST["reg_id"], $_POST["reg_nom"]);
+            $regional->update_regional($_POST["reg_id"], $_POST["reg_nom"], $_POST["zona_id"]);
         }
         break;
 
@@ -32,6 +32,7 @@ switch ($_GET["op"]) {
         foreach ($datos as $row) {
             $sub_array = array();
             $sub_array[] = $row["reg_nom"];
+            $sub_array[] = $row["zona_nom"]; // Display Zone Name
             $sub_array[] = '<button type="button" onClick="editar(' . $row['reg_id'] . ');" id="' . $row['reg_id'] . '" class="btn btn-inline btn-waring btn-sm ladda-button"><i class="fa fa-edit"></i></button>';
             $sub_array[] = '<button type="button" onClick="eliminar(' . $row['reg_id'] . ');" id="' . $row['reg_id'] . '" class="btn btn-inline btn-danger btn-sm ladda-button"><i class="fa fa-trash"></i></button>';
             $data[] = $sub_array;
@@ -52,6 +53,7 @@ switch ($_GET["op"]) {
             foreach ($datos as $row) {
                 $output["reg_id"] = $row["reg_id"];
                 $output["reg_nom"] = $row["reg_nom"];
+                $output["zona_id"] = $row["zona_id"];
             }
             echo json_encode($output);
         }
@@ -61,4 +63,3 @@ switch ($_GET["op"]) {
         $regional->delete_regional($_POST["reg_id"]);
         break;
 }
-?>

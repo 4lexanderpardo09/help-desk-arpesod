@@ -1,24 +1,24 @@
 var tabla;
 
 function init() {
-    $('#regional_form').on("submit", function(e){
+    $("#zona_form").on("submit", function (e) {
         guardaryeditar(e);
-    })
+    });
 }
 
 function guardaryeditar(e) {
     e.preventDefault();
-    var formData = new FormData($("#regional_form")[0]);
+    var formData = new FormData($("#zona_form")[0]);
     $.ajax({
-        url: "../../controller/regional.php?op=guardaryeditar",
+        url: "../../controller/zona.php?op=guardaryeditar",
         type: "POST",
         data: formData,
         contentType: false,
         processData: false,
         success: function (datos) {
-            $('#regional_form')[0].reset();
-            $("#modalnuevaregional").modal('hide');
-            $('#regional_data').DataTable().ajax.reload();
+            $('#zona_form')[0].reset();
+            $("#modalnuevazona").modal('hide');
+            $('#zona_data').DataTable().ajax.reload();
 
             swal({
                 title: "Correcto!",
@@ -31,11 +31,7 @@ function guardaryeditar(e) {
 }
 
 $(document).ready(function () {
-    $.post("../../controller/zona.php?op=combo", function (data) {
-        $('#zona_id').html(data);
-    });
-
-    tabla = $('#regional_data').dataTable({
+    tabla = $('#zona_data').dataTable({
         "aProcessing": true,
         "aServerSide": true,
         dom: 'Bfrtip',
@@ -49,7 +45,7 @@ $(document).ready(function () {
             'pdfHtml5',
         ],
         "ajax": {
-            url: '../../controller/regional.php?op=listar',
+            url: '../../controller/zona.php?op=listar',
             type: "post",
             dataType: "json",
             error: function (e) {
@@ -88,18 +84,17 @@ $(document).ready(function () {
     }).DataTable();
 });
 
-function editar(reg_id) {
+function editar(zona_id) {
     $('#mdltitulo').html('Editar Registro');
-    $.post("../../controller/regional.php?op=mostrar", { reg_id: reg_id }, function (data) {
+    $.post("../../controller/zona.php?op=mostrar", { zona_id: zona_id }, function (data) {
         data = JSON.parse(data);
-        $('#reg_id').val(data.reg_id);
-        $('#reg_nom').val(data.reg_nom);
         $('#zona_id').val(data.zona_id);
+        $('#zona_nom').val(data.zona_nom);
     });
-    $('#modalnuevaregional').modal('show');
+    $('#modalnuevazona').modal('show');
 }
 
-function eliminar(reg_id) {
+function eliminar(zona_id) {
     swal({
         title: "Atención",
         text: "¿Está seguro de eliminar el registro?",
@@ -113,8 +108,8 @@ function eliminar(reg_id) {
     },
         function (isConfirm) {
             if (isConfirm) {
-                $.post("../../controller/regional.php?op=eliminar", { reg_id: reg_id }, function (data) {
-                    $('#regional_data').DataTable().ajax.reload();
+                $.post("../../controller/zona.php?op=eliminar", { zona_id: zona_id }, function (data) {
+                    $('#zona_data').DataTable().ajax.reload();
                     swal({
                         title: "Correcto!",
                         text: "Registro Eliminado.",
@@ -128,9 +123,9 @@ function eliminar(reg_id) {
 
 $('#btnnuevo').click(function () {
     $('#mdltitulo').html('Nuevo Registro');
-    $('#regional_form')[0].reset();
-    $('#reg_id').val('');
-    $('#modalnuevaregional').modal('show');
+    $('#zona_form')[0].reset();
+    $('#zona_id').val('');
+    $('#modalnuevazona').modal('show');
 });
 
 init();

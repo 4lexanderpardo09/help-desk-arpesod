@@ -108,67 +108,45 @@ class TicketService
                         // Lógica de Jefe Inmediato
                         if (isset($paso_inicial['necesita_aprobacion_jefe']) && $paso_inicial['necesita_aprobacion_jefe'] == 1) {
 
-                            $dynamic_supervisor_found = false;
+                            // Usar la lógica estándar (Jefe del Creador / Regional Seleccionada)
+                            if ($datos_creador) {
+                                $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($creador_car_id);
+                                if ($jefe_cargo_id) {
+                                    $jefe_info = null;
 
-                            // Verificar si hay campos dinámicos de tipo 'regional' y 'cargo'
-                            $campos_plantilla = $this->campoPlantillaModel->get_campos_por_paso($paso_inicial['paso_id']);
+                                    // Lógica de Zona: Usar la regional del ticket (seleccionada o del usuario)
+                                    if ($ticket_reg_id) {
+                                        require_once("../models/Regional.php");
+                                        $regionalModel = new Regional();
+                                        $zona = $regionalModel->get_zona_por_regional($ticket_reg_id);
 
-                            if ($campos_plantilla) {
-                                $selected_regional_id = null;
-                                $selected_cargo_id = null;
-
-                                foreach ($campos_plantilla as $campo) {
-                                    if (isset($campo['campo_tipo'])) {
-                                        if ($campo['campo_tipo'] == 'regional' && isset($postData['campo_' . $campo['campo_id']])) {
-                                            $selected_regional_id = $postData['campo_' . $campo['campo_id']];
-                                        }
-                                        if ($campo['campo_tipo'] == 'cargo' && isset($postData['campo_' . $campo['campo_id']])) {
-                                            $selected_cargo_id = $postData['campo_' . $campo['campo_id']];
+                                        if ($zona) {
+                                            $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_zona($jefe_cargo_id, $zona);
                                         }
                                     }
-                                }
 
-                                if ($selected_regional_id && $selected_cargo_id) {
-                                    // Lógica dinámica: Usar Cargo seleccionado para buscar Jefe, y luego buscar Usuario por Cargo Jefe y Regional seleccionada
-                                    $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($selected_cargo_id);
-                                    if ($jefe_cargo_id) {
-                                        // 1. PRIORIDAD: Buscar usuario en la regional seleccionada
-                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $selected_regional_id);
+                                    // Si no se encuentra por zona, buscar por regional exacta
+                                    if (!$jefe_info && $ticket_reg_id) {
+                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo_y_regional($jefe_cargo_id, $ticket_reg_id);
+                                    }
 
-                                        if ($jefe_info) {
-                                            $usu_asig_final = $jefe_info['usu_id'];
-                                            $dynamic_supervisor_found = true;
-                                        } else {
-                                            // 2. Si no encuentra en la regional, buscar usuario NACIONAL con ese cargo
-                                            $jefe_nacional = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
+                                    // Si no se encuentra por regional, buscar por cargo general (Nacional)
+                                    if (!$jefe_info) {
+                                        $jefe_info = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
+                                    }
+                                    
+                                    // Fallback final: cualquier usuario con ese cargo (si aplica)
+                                    if (!$jefe_info) {
+                                         $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+                                    }
 
-                                            if ($jefe_nacional) {
-                                                $usu_asig_final = $jefe_nacional['usu_id'];
-                                                $dynamic_supervisor_found = true;
-                                            } else {
-                                                $errors[] = "Se requiere aprobación del jefe inmediato (dinámico), pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id) en la regional seleccionada (ID: $selected_regional_id) ni a nivel nacional.";
-                                            }
-                                        }
+                                    if ($jefe_info) {
+                                        $usu_asig_final = $jefe_info['usu_id'];
                                     } else {
-                                        $errors[] = "Se requiere aprobación del jefe inmediato (dinámico), pero el cargo seleccionado (ID: $selected_cargo_id) no tiene jefe definido en el organigrama.";
+                                        $errors[] = "Se requiere aprobación del jefe inmediato, pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id) en la zona/regional correspondiente.";
                                     }
-                                }
-                            }
-
-                            // Si no se encontró por lógica dinámica, usar la lógica estándar (Jefe del Creador)
-                            if (!$dynamic_supervisor_found && empty($usu_asig_final)) {
-                                if ($datos_creador) {
-                                    $jefe_cargo_id = $this->organigramaModel->get_jefe_cargo_id($datos_creador['car_id']);
-                                    if ($jefe_cargo_id) {
-                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
-                                        if ($jefe_info) {
-                                            $usu_asig_final = $jefe_info['usu_id'];
-                                        } else {
-                                            $errors[] = "Se requiere aprobación del jefe inmediato, pero no se encontró usuario para el cargo jefe (ID: $jefe_cargo_id).";
-                                        }
-                                    } else {
-                                        $errors[] = "Se requiere aprobación del jefe inmediato, pero el creador no tiene jefe definido en el organigrama.";
-                                    }
+                                } else {
+                                    $errors[] = "Se requiere aprobación del jefe inmediato, pero el creador no tiene jefe definido en el organigrama.";
                                 }
                             }
                         }

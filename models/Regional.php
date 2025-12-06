@@ -1,25 +1,27 @@
 <?php
 class Regional extends Conectar
 {
-    public function insert_regional($reg_nom)
+    public function insert_regional($reg_nom, $zona_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "INSERT INTO tm_regional (reg_nom, est) VALUES (?, '1');";
+        $sql = "INSERT INTO tm_regional (reg_nom, zona_id, est) VALUES (?, ?, '1');";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $reg_nom);
+        $sql->bindValue(2, $zona_id);
         $sql->execute();
-        return $resultado = $sql->fetchAll();
+        return $conectar->lastInsertId();
     }
 
-    public function update_regional($reg_id, $reg_nom)
+    public function update_regional($reg_id, $reg_nom, $zona_id)
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "UPDATE tm_regional SET reg_nom = ? WHERE reg_id = ?;";
+        $sql = "UPDATE tm_regional SET reg_nom = ?, zona_id = ? WHERE reg_id = ?;";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $reg_nom);
-        $sql->bindValue(2, $reg_id);
+        $sql->bindValue(2, $zona_id);
+        $sql->bindValue(3, $reg_id);
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
@@ -39,7 +41,10 @@ class Regional extends Conectar
     {
         $conectar = parent::Conexion();
         parent::set_names();
-        $sql = "SELECT * FROM tm_regional WHERE est = '1';";
+        $sql = "SELECT r.*, z.zona_nom 
+                FROM tm_regional r 
+                LEFT JOIN tm_zona z ON r.zona_id = z.zona_id 
+                WHERE r.est = '1';";
         $sql = $conectar->prepare($sql);
         $sql->execute();
         return $resultado = $sql->fetchAll();
@@ -55,5 +60,19 @@ class Regional extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll();
     }
+
+    public function get_zona_por_regional($reg_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT z.zona_nom 
+                FROM tm_regional r
+                INNER JOIN tm_zona z ON r.zona_id = z.zona_id
+                WHERE r.reg_id = ? AND r.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $reg_id);
+        $sql->execute();
+        $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+        return $resultado ? $resultado['zona_nom'] : null;
+    }
 }
-?>

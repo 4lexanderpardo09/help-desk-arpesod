@@ -424,4 +424,19 @@ class Usuario extends Conectar
         $sql->execute();
         return $sql->fetchAll(PDO::FETCH_ASSOC);
     }
+    public function get_usuario_por_cargo_y_zona($car_id, $zona)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT u.* 
+                FROM tm_usuario u
+                INNER JOIN tm_regional r ON u.reg_id = r.reg_id
+                INNER JOIN tm_zona z ON r.zona_id = z.zona_id
+                WHERE u.car_id = ? AND z.zona_nom = ? AND u.est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $car_id);
+        $sql->bindValue(2, $zona);
+        $sql->execute();
+        return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
+    }
 }

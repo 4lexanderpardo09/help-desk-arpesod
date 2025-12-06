@@ -1,5 +1,5 @@
 <div class="modal fade bd-example-modal-lg"
-    id="modalnuevaregional"
+    id="modalnuevazona"
     tabindex="-1"
     role="dialog"
     aria-labelledby="myLargeModalLabel"
@@ -12,19 +12,13 @@
                 </button>
                 <h4 class="modal-title" id="mdltitulo"></h4>
             </div>
-            <form method="post" id="regional_form">
+            <form method="post" id="zona_form">
                 <div class="modal-body">
 
-                    <input type="hidden" id="reg_id" name="reg_id">
+                    <input type="hidden" id="zona_id" name="zona_id">
                     <div class="form-group">
-                        <label class="form-label semibold" for="reg_nom">Nombre</label>
-                        <input type="text" class="form-control" id="reg_nom" name="reg_nom" placeholder="Ingrese un nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label semibold" for="zona_id">Zona</label>
-                        <select class="form-control" id="zona_id" name="zona_id" required>
-
-                        </select>
+                        <label class="form-label semibold" for="zona_nom">Nombre</label>
+                        <input type="text" class="form-control" id="zona_nom" name="zona_nom" placeholder="Ingrese un nombre" required>
                     </div>
                 </div>
                 <div class="modal-footer">
