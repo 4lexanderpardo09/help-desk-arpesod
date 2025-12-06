@@ -63,14 +63,14 @@ class Usuario extends Conectar
             }
         }
     }
-    public function insert_usuario($usu_nom, $usu_ape, $usu_correo, $usu_pass, $rol_id, $dp_id, $es_nacional, $reg_id, $car_id)
+    public function insert_usuario($usu_nom, $usu_ape, $usu_correo, $usu_pass, $rol_id, $dp_id, $es_nacional, $reg_id, $car_id, $usu_cedula = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
 
         $hashed_pass = password_hash($usu_pass, PASSWORD_BCRYPT);
 
-        $sql = "INSERT INTO tm_usuario (usu_id, usu_nom, usu_ape, usu_correo, usu_pass, rol_id, reg_id, car_id, dp_id, es_nacional, fech_crea, fech_modi, fech_elim, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NULL, NULL, '1')";
+        $sql = "INSERT INTO tm_usuario (usu_id, usu_nom, usu_ape, usu_correo, usu_pass, rol_id, reg_id, car_id, dp_id, es_nacional, usu_cedula, fech_crea, fech_modi, fech_elim, est) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NULL, NULL, '1')";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_nom);
         $sql->bindValue(2, $usu_ape);
@@ -88,6 +88,7 @@ class Usuario extends Conectar
         }
 
         $sql->bindValue(9, $es_nacional);
+        $sql->bindValue(10, $usu_cedula);
 
         $sql->execute();
 
