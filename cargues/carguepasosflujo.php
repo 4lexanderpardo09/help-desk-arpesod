@@ -52,7 +52,15 @@ try {
         $es_tarea_nacional_str = isset($row[7]) ? trim($row[7]) : 'NO';
         $es_aprobacion_str = isset($row[8]) ? trim($row[8]) : 'NO';
         // --- NUEVO: Lectura de la columna paso_nom_adjunto ---
-        $paso_nom_adjunto = isset($row[9]) ? trim($row[9]) : null; // Asume que es la columna J
+        $paso_nom_adjunto = isset($row[9]) ? trim($row[9]) : null;
+
+        // --- NUEVO: Columnas adicionales para coincidir con el modelo FlujoPaso ---
+        $permite_cerrar_str = isset($row[10]) ? trim($row[10]) : 'NO';
+        $necesita_aprobacion_jefe_str = isset($row[11]) ? trim($row[11]) : 'NO';
+        $es_paralelo_str = isset($row[12]) ? trim($row[12]) : 'NO';
+        $requiere_firma_str = isset($row[13]) ? trim($row[13]) : 'NO';
+        $requiere_campos_plantilla_str = isset($row[14]) ? trim($row[14]) : 'NO';
+        $campo_id_referencia_jefe = isset($row[15]) && is_numeric($row[15]) ? intval($row[15]) : null;
 
         if (empty($cats_nom) || empty($paso_nombre)) continue;
 
@@ -78,6 +86,12 @@ try {
         $es_tarea_nacional = (strtoupper($es_tarea_nacional_str) == 'SI') ? 1 : 0;
         $es_aprobacion = (strtoupper($es_aprobacion_str) == 'SI') ? 1 : 0;
 
+        $permite_cerrar = (strtoupper($permite_cerrar_str) == 'SI') ? 1 : 0;
+        $necesita_aprobacion_jefe = (strtoupper($necesita_aprobacion_jefe_str) == 'SI') ? 1 : 0;
+        $es_paralelo = (strtoupper($es_paralelo_str) == 'SI') ? 1 : 0;
+        $requiere_firma = (strtoupper($requiere_firma_str) == 'SI') ? 1 : 0;
+        $requiere_campos_plantilla = (strtoupper($requiere_campos_plantilla_str) == 'SI') ? 1 : 0;
+
         // Si la celda está vacía, nos aseguramos de que sea NULL para la BD
         if (empty($paso_nom_adjunto)) {
             $paso_nom_adjunto = null;
@@ -88,13 +102,19 @@ try {
             $flujo_id,
             $paso_orden,
             $paso_nombre,
-            $cargo_id,
+            $cargo_id, // Changed from $cargo_id_asignado to $cargo_id to match existing variable
             $paso_tiempo_habil,
             $paso_descripcion,
             $req_seleccion_manual,
             $es_tarea_nacional,
             $es_aprobacion,
-            $paso_nom_adjunto // <-- El nuevo parámetro
+            $paso_nom_adjunto,
+            $permite_cerrar,
+            $necesita_aprobacion_jefe,
+            $es_paralelo,
+            $requiere_firma,
+            $requiere_campos_plantilla,
+            $campo_id_referencia_jefe
         );
         echo "<p style='color:green;'>CREADO: Se añadió el paso '{$paso_nombre}' al flujo de '{$cats_nom}'.</p>";
         $creados++;
@@ -108,4 +128,3 @@ try {
 } catch (Exception $e) {
     echo "<h3 style='color:red;'>Error al leer el archivo Excel: " . $e->getMessage() . "</h3>";
 }
-?>
