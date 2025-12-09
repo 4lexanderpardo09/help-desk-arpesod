@@ -23,6 +23,14 @@ class Email extends PHPMailer
     {
         $this->isSMTP();
         $this->Host = 'smtp.gmail.com';
+        $this->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        ); // A veces necesario para certificados autofirmados o errores SSL
+        $this->Host = gethostbyname('smtp.gmail.com'); // Forzar resolucion a IP para evitar problemas de DNS/IPv6
         $this->SMTPDebug = 2; // Descomentar para ver errores en log si es necesario
         $this->Port = 465; // Probar con 465 y ssl, a veces 587 se bloquea
         $this->SMTPAuth = true;
