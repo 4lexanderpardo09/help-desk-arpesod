@@ -440,4 +440,52 @@ class Usuario extends Conectar
         $sql->execute();
         return $resultado = $sql->fetch(PDO::FETCH_ASSOC);
     }
+    public function generar_token_recuperacion($usu_correo)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $usu_token_recuperacion = bin2hex(random_bytes(32));
+        $usu_token_expiracion = date("Y-m-d H:i:s", strtotime("+1 hour"));
+
+        $sql = "UPDATE tm_usuario SET usu_token_recuperacion = ?, usu_token_expiracion = ? WHERE usu_correo = ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_token_recuperacion);
+        $sql->bindValue(2, $usu_token_expiracion);
+        $sql->bindValue(3, $usu_correo);
+        $sql->execute();
+
+        // Check if any row was updated (user exists)
+        if ($sql->rowCount() > 0) {
+            return $usu_token_recuperacion;
+        } else {
+            return false;
+        }
+    }
+
+    public function validar_token_recuperacion($usu_token_recuperacion)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $now = date("Y-m-d H:i:s");
+        $sql = "SELECT * FROM tm_usuario WHERE usu_token_recuperacion = ? AND usu_token_expiracion > ? AND est = 1";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $usu_token_recuperacion);
+        $sql->bindValue(2, $now);
+        $sql->execute();
+        return $sql->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function restablecer_contrasena($usu_token_recuperacion, $usu_pass)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $hashed_pass = password_hash($usu_pass, PASSWORD_BCRYPT);
+
+        $sql = "UPDATE tm_usuario SET usu_pass = ?, usu_token_recuperacion = NULL, usu_token_expiracion = NULL WHERE usu_token_recuperacion = ?";
+        $sql = $conectar->prepare($sql);
+        $sql->bindValue(1, $hashed_pass);
+        $sql->bindValue(2, $usu_token_recuperacion);
+        $sql->execute();
+        return $sql->rowCount() > 0;
+    }
 }

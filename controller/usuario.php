@@ -205,4 +205,34 @@ switch ($_GET["op"]) {
             echo json_encode(['status' => 'error', 'message' => 'Usuario no encontrado']);
         }
         break;
+    case "recuperar":
+        $usu_correo = $_POST["usu_correo"];
+        $token = $usuario->generar_token_recuperacion($usu_correo);
+        if ($token) {
+            require_once("../models/Email.php");
+            $email = new Email();
+            $link = $usuario->ruta() . "view/Recuperar/restablecer.php?token=" . $token;
+            // Send email (handling exceptions implicitly or we could try-catch)
+            try {
+                $email->recuperar_contrasena($usu_correo, $link);
+                echo "1";
+            } catch (Exception $e) {
+                echo "0"; // Mail error
+            }
+        } else {
+            echo "2"; // User not found
+        }
+        break;
+
+    case "restablecer":
+        $token = $_POST["token"];
+        $usu_pass = $_POST["usu_pass"];
+        $datos = $usuario->validar_token_recuperacion($token);
+        if (is_array($datos) && count($datos) > 0) {
+            $usuario->restablecer_contrasena($token, $usu_pass);
+            echo "1";
+        } else {
+            echo "0";
+        }
+        break;
 }

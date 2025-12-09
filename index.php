@@ -8,6 +8,7 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head lang="es">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
@@ -24,11 +25,13 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
             height: 100vh;
             overflow: hidden;
         }
+
         .login-container {
             display: flex;
             height: 100vh;
             width: 100%;
         }
+
         /* -- Columna de la Marca (Izquierda) -- */
         .login-branding {
             /* IMPORTANTE: Cambia esta URL por la de tu propia imagen de fondo */
@@ -39,21 +42,25 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            align-items: flex-start; /* Alineado a la izquierda */
+            align-items: flex-start;
+            /* Alineado a la izquierda */
             text-align: left;
             padding: 5rem;
         }
+
         .login-branding h1 {
             font-weight: 300;
             font-size: 3rem;
             color: black;
             margin-top: 1.5rem;
         }
+
         .login-branding p {
             font-size: 1.2rem;
             color: black;
             opacity: 0.8;
         }
+
         /* -- Columna del Formulario (Derecha) -- */
         .login-form-wrapper {
             display: flex;
@@ -62,41 +69,68 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
             flex-grow: 1;
             background-color: #fff;
         }
+
         .sign-box {
             max-width: 400px;
             width: 100%;
             background: transparent;
             padding: 20px;
         }
+
         .sign-box-logo {
             text-align: center;
             margin-bottom: 2rem;
         }
+
         .sign-title {
             text-align: center;
             font-size: 1.8rem;
             font-weight: 600;
             color: #333;
         }
+
         .sign-subtitle {
             text-align: center;
             color: #777;
             margin-bottom: 2rem;
         }
+
         /* Animación de entrada */
-        .form-group, .sign-box button, .sign-box .float-right {
+        .form-group,
+        .sign-box button,
+        .sign-box .float-right {
             animation: fadeIn 0.5s ease-in-out forwards;
             opacity: 0;
         }
-        .form-group:nth-child(2) { animation-delay: 0.1s; }
-        .form-group:nth-child(3) { animation-delay: 0.2s; }
-        .float-right { animation-delay: 0.3s; }
-        .sign-box button { animation-delay: 0.4s; }
+
+        .form-group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .form-group:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .float-right {
+            animation-delay: 0.3s;
+        }
+
+        .sign-box button {
+            animation-delay: 0.4s;
+        }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
+
         /* Media query para móviles */
         @media (max-width: 992px) {
             .login-branding {
@@ -105,6 +139,7 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="col-lg-7 login-branding">
@@ -138,11 +173,16 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
                 ?>
 
                 <div class="form-group">
-                    <input type="text" class="form-control" id="usu_correo" name="usu_correo" placeholder="Correo Electrónico" required/>
+                    <input type="text" class="form-control" id="usu_correo" name="usu_correo" placeholder="Correo Electrónico" required />
                 </div>
 
                 <div class="form-group">
-                    <input type="password" class="form-control" id="usu_pass" name="usu_pass" placeholder="Contraseña" required/>
+                    <input type="password" class="form-control" id="usu_pass" name="usu_pass" placeholder="Contraseña" required />
+                </div>
+                <div class="form-group">
+                    <div class="float-left reset">
+                        <a href="view/Recuperar/index.php">¿Olvidaste tu contraseña?</a>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -168,4 +208,5 @@ if (isset($_POST["enviar"]) and $_POST["enviar"] == "si") {
     <script src="public/js/app.js"></script>
     <script type="text/javascript" src="index.js"></script>
 </body>
+
 </html>
