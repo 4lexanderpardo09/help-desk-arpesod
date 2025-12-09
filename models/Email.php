@@ -23,12 +23,13 @@ class Email extends PHPMailer
     {
         $this->isSMTP();
         $this->Host = 'smtp.gmail.com';
-        $this->Port = 587;
+        // $this->SMTPDebug = 2; // Descomentar para ver errores en log si es necesario
+        $this->Port = 465; // Probar con 465 y ssl, a veces 587 se bloquea
         $this->SMTPAuth = true;
         $this->Username = $this->gcorreo;
-        $this->Password = $this->gpass;
+        $this->Password = str_replace(' ', '', $this->gpass); // Eliminar espacios si los hay
         $this->From = $this->gcorreo;
-        $this->SMTPSecure = 'tls';
+        $this->SMTPSecure = 'ssl'; // Cambiar a ssl para puerto 465
         $this->FromName = 'Sistema de Tickets';
         $this->CharSet = 'UTF-8';
         $this->addAddress($usu_correo);
@@ -41,6 +42,6 @@ class Email extends PHPMailer
 
         $this->Body = $cuerpo;
 
-        $this->send();
+        return $this->send();
     }
 }
