@@ -134,10 +134,10 @@ class TicketService
                                     if (!$jefe_info) {
                                         $jefe_info = $this->usuarioModel->get_usuario_nacional_por_cargo($jefe_cargo_id);
                                     }
-                                    
+
                                     // Fallback final: cualquier usuario con ese cargo (si aplica)
                                     if (!$jefe_info) {
-                                         $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
+                                        $jefe_info = $this->usuarioModel->get_usuario_por_cargo($jefe_cargo_id);
                                     }
 
                                     if ($jefe_info) {
@@ -2063,9 +2063,19 @@ class TicketService
         error_log("TicketService::handleSignature - Signature image saved: $firma_path");
 
         // 5. Sign PDF (Iterate through all matching configs)
+        // 5. Sign PDF (Batch)
+        $signatures_to_apply = [];
         foreach ($matching_configs as $config) {
-            $result = $pdfService->firmarPdf($pdf_path, $firma_path, $config['coord_x'], $config['coord_y'], $config['pagina']);
-            error_log("TicketService::handleSignature - firmarPdf result for config " . json_encode($config) . ": " . ($result ? 'Success' : 'Failure'));
+            $signatures_to_apply[] = [
+                'x' => $config['coord_x'],
+                'y' => $config['coord_y'],
+                'pagina' => $config['pagina']
+            ];
+        }
+
+        if (count($signatures_to_apply) > 0) {
+            $result = $pdfService->firmarPdfMultiple($pdf_path, $firma_path, $signatures_to_apply);
+            error_log("TicketService::handleSignature - firmarPdfMultiple result: " . ($result ? 'Success' : 'Failure'));
         }
 
         // 6. Cleanup
