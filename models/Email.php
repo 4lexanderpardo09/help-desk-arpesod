@@ -23,7 +23,7 @@ class Email extends PHPMailer
     {
         $this->isSMTP();
         $this->Host = 'smtp.gmail.com';
-        // $this->SMTPDebug = 2; // Descomentar para ver errores en log si es necesario
+        $this->SMTPDebug = 2; // Descomentar para ver errores en log si es necesario
         $this->Port = 465; // Probar con 465 y ssl, a veces 587 se bloquea
         $this->SMTPAuth = true;
         $this->Username = $this->gcorreo;
