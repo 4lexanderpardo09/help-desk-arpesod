@@ -214,10 +214,13 @@ switch ($_GET["op"]) {
             $link = $usuario->ruta() . "view/Recuperar/restablecer.php?token=" . $token;
             // Send email (handling exceptions implicitly or we could try-catch)
             try {
-                $email->recuperar_contrasena($usu_correo, $link);
-                echo "1";
+                if ($email->recuperar_contrasena($usu_correo, $link)) {
+                    echo "1";
+                } else {
+                    echo "0";
+                }
             } catch (Exception $e) {
-                echo "0"; // Mail error
+                echo "0";
             }
         } else {
             echo "2"; // User not found
