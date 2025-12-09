@@ -16,7 +16,7 @@ error_reporting(E_ALL);
 
 class Email extends PHPMailer
 {
-    protected $gcorreo = '';
+    protected $gcorreo = 'mesadeayudaelectroc@gmail.com';
     protected $gpass = 'xcmo yrcr ekss gyuy';
 
     public function recuperar_contrasena($usu_correo, $link)
