@@ -19,11 +19,140 @@ if (isset($_SESSION["usu_id"])) {
         <!-- contenido -->
         <div class="page-content">
             <div class="container-fluid">
+                <style media="print">
+                    @media print {
+                        @page {
+                            margin: 1.5cm;
+                        }
+
+                        body {
+                            background: #fff !important;
+                            font-family: Arial, sans-serif;
+                        }
+
+                        .site-header,
+                        .side-menu,
+                        .mobile-menu-left-overlay,
+                        .breadcrumb,
+                        #btnprint,
+                        #boxdetalleticket,
+                        #panel_respuestas_rapidas,
+                        #panel_checkbox_flujo,
+                        .modal,
+                        .tbl-cell .label,
+                        .section-header .tbl-cell span {
+                            display: none !important;
+                        }
+
+                        /* Except Title and some status info if needed */
+                        .section-header {
+                            padding-bottom: 10px;
+                            border-bottom: 2px solid #eee;
+                            margin-bottom: 20px;
+                        }
+
+                        .page-content {
+                            padding: 0 !important;
+                            margin: 0 !important;
+                            width: 100% !important;
+                            background: #fff !important;
+                        }
+
+                        .container-fluid {
+                            padding: 0 !important;
+                        }
+
+                        /* Layout adjustments */
+                        .box-typical {
+                            border: none !important;
+                            box-shadow: none !important;
+                            margin-bottom: 20px !important;
+                        }
+
+                        /* Inputs as text */
+                        input.form-control,
+                        textarea.summernote,
+                        .summernote-theme-1 {
+                            border: none !important;
+                            background-color: transparent !important;
+                            padding: 0 !important;
+                            font-size: 14px;
+                            color: #000 !important;
+                            height: auto !important;
+                            box-shadow: none !important;
+                        }
+
+                        fieldset {
+                            margin-bottom: 10px !important;
+                        }
+
+                        label.form-label {
+                            font-weight: bold;
+                            color: #555;
+                            margin-bottom: 2px;
+                        }
+
+                        /* Hide Summernote toolbar and popovers */
+                        .note-toolbar,
+                        .note-statusbar,
+                        .note-popover,
+                        .note-control-selection,
+                        .note-handle,
+                        .note-resizebar {
+                            display: none !important;
+                        }
+
+                        .note-editor {
+                            border: none !important;
+                        }
+
+                        /* Activity feed (Conversation) */
+                        .activity-line {
+                            margin-top: 30px;
+                        }
+
+                        .activity-line-item {
+                            border-bottom: 1px solid #eee;
+                            padding-bottom: 15px;
+                            margin-bottom: 15px;
+                            page-break-inside: avoid;
+                        }
+
+                        .activity-line-item-user-name {
+                            font-weight: bold;
+                            font-size: 14px;
+                            color: #333;
+                        }
+
+                        .activity-line-item-user-photo {
+                            display: none;
+                        }
+
+                        /* Optional: Hide avatars for cleaner print */
+                        .time {
+                            color: #999;
+                            font-size: 12px;
+                            float: right;
+                        }
+
+                        /* Ensure full text visibility */
+                        .summernote,
+                        .note-editable {
+                            height: auto !important;
+                            overflow: visible !important;
+                        }
+                    }
+                </style>
                 <header class="section-header">
                     <div class="tbl">
                         <div class="tbl-row">
                             <div class="tbl-cell">
                                 <h3 id="lblticketid"></h3>
+                                <div id="print_info_header" style="display:none; margin-bottom: 10px;">
+                                    <strong>Estado:</strong> <span id="print_lbltickestado"></span> |
+                                    <strong>Fecha:</strong> <span id="print_lblfechacrea"></span> |
+                                    <strong>Usuario:</strong> <span id="print_lblnomusuario"></span>
+                                </div>
                                 <span id="lbltickestado"></span>
                                 <span id="lblestado_tiempo"></span>
                                 <span class="label label-primary" id="lblnomusuario"></span>
@@ -34,6 +163,9 @@ if (isset($_SESSION["usu_id"])) {
                                     <li><a href="..\ConsultarTicket\">Consultar ticket</a></li>
                                     <li class="active">Detalle ticket</li>
                                 </ol>
+                                <button type="button" class="btn btn-inline btn-secondary pull-right" id="btnprint" style="margin-top: -5px;">
+                                    <i class="fa fa-print"></i> Imprimir
+                                </button>
                             </div>
                         </div>
                     </div>

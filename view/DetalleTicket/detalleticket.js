@@ -297,6 +297,24 @@ $(document).ready(function () {
         });
     });
 
+    // Evento para imprimir
+    $(document).on('click', '#btnprint', function () {
+        // Copiar valores a los campos de impresión
+        $('#print_lbltickestado').text($('#lbltickestado').text());
+        $('#print_lblfechacrea').text($('#lblfechacrea').text());
+        $('#print_lblnomusuario').text($('#lblnomusuario').text());
+
+        // Show specific print header for printing
+        $('#print_info_header').show();
+
+        window.print();
+
+        // Hide it back (setTimeout to ensure print dialog captures it)
+        setTimeout(function () {
+            $('#print_info_header').hide();
+        }, 1000);
+    });
+
 });
 
 function updateEnviarButtonState() {
