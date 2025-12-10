@@ -1208,7 +1208,6 @@ class TicketService
 
     public function createDetailTicket($postData)
     {
-
         $tickId = $postData['tick_id'];
         $usuId = $postData['usu_id'];
         $tickdDescrip = $postData['tickd_descrip'];
@@ -1227,13 +1226,20 @@ class TicketService
             } else {
                 error_log("TicketService::createDetailTicket - No signature data received.");
             }
-            if (!empty($_FILES['files']['name'][0])) {
+            // Robust file handling
+            if (isset($_FILES['files']['name']) && is_array($_FILES['files']['name'])) {
                 $countfiles = count($_FILES['files']['name']);
                 $ruta = '../public/document/detalle/' . $tickd_id . '/';
                 if (!file_exists($ruta)) {
                     mkdir($ruta, 0777, true);
                 }
+                
                 for ($index = 0; $index < $countfiles; $index++) {
+                    // Skip if name is empty (e.g. empty slot)
+                    if (empty($_FILES['files']['name'][$index])) {
+                        continue;
+                    }
+                    
                     $doc1 = $_FILES['files']['name'][$index];
                     $tmp_name = $_FILES['files']['tmp_name'][$index];
                     $destino = $ruta . $doc1;

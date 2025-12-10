@@ -273,7 +273,7 @@ if (isset($_SESSION["usu_id"])) {
                                     <div class="col-lg-4">
                                         <fieldset class="form-group">
                                             <label class="form-label semibold" for="cat_id">Documento adicional</label>
-                                            <input type="file" name="fileElem" id="fileElem" class="form-control" multiple>
+                                            <input type="file" name="files[]" id="fileElem" class="form-control" multiple>
                                         </fieldset>
                                     </div>
                                 </div>

@@ -443,6 +443,14 @@ function enviarDetalle(signatureData = null) {
     formData.append("tick_id", getUrlParameter('ID'));
     formData.append("usu_id", $('#user_idx').val());
     formData.append("tickd_descrip", $('#tickd_descrip').summernote('code'));
+    
+    // Explicitly handle file upload to ensure it works
+    var fileInput = document.getElementById('fileElem');
+    if(fileInput && fileInput.files.length > 0) {
+         for (var i = 0; i < fileInput.files.length; i++) {
+            formData.append('files[]', fileInput.files[i]);
+         }
+    }
 
     if ($('#checkbox_avanzar_flujo').is(':checked')) {
         if (decisionSeleccionada) {
