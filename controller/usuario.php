@@ -11,13 +11,17 @@ $empresa = new Empresa();
 switch ($_GET["op"]) {
 
     case "guardaryeditar":
+        $perfiles = isset($_POST['perfiles']) ? $_POST['perfiles'] : [];
+
         if (empty($_POST["usu_id"])) {
             $usu_id = $usuario->insert_usuario($_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id'], $_POST['es_nacional'], $_POST['reg_id'], $_POST['car_id']);
             $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
+            $usuario->insert_usuario_perfil($usu_id, $perfiles);
         } else {
-            var_dump($_POST);
+            // var_dump($_POST);
             $usu_id = $usuario->update_usuario($_POST["usu_id"], $_POST["usu_nom"], $_POST["usu_ape"], $_POST["usu_correo"], $_POST["usu_pass"], $_POST["rol_id"], $_POST['dp_id'], $_POST['es_nacional'], $_POST['reg_id'], $_POST['car_id']);
             $empresa->insert_empresa_for_usu($usu_id, $_POST['emp_id']);
+            $usuario->insert_usuario_perfil($usu_id, $perfiles);
         }
         break;
 
@@ -74,7 +78,16 @@ switch ($_GET["op"]) {
                 $output['dp_id'] = $row['dp_id'];
                 $output['reg_id'] = $row['reg_id'];
                 $output['car_id'] = $row['car_id'];
+                $output['car_id'] = $row['car_id'];
                 $output['es_nacional'] = $row['es_nacional'];
+
+                // Get assigned profiles
+                $perfiles_data = $usuario->get_perfiles_por_usuario($usu_id);
+                $perfiles_ids = array();
+                foreach ($perfiles_data as $p) {
+                    $perfiles_ids[] = $p['per_id'];
+                }
+                $output['perfiles'] = $perfiles_ids;
             }
         }
         echo json_encode($output);

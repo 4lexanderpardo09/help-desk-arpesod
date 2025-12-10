@@ -488,4 +488,42 @@ class Usuario extends Conectar
         $sql->execute();
         return $sql->rowCount() > 0;
     }
+    public function insert_usuario_perfil($usu_id, $per_ids)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+
+        // 1. Delete existing profiles for this user
+        $sqlDelete = "DELETE FROM tm_usuario_perfiles WHERE usu_id = ?";
+        $stmtDelete = $conectar->prepare($sqlDelete);
+        $stmtDelete->bindValue(1, $usu_id);
+        $stmtDelete->execute();
+
+        // 2. Insert new profiles
+        if (is_array($per_ids) && count($per_ids) > 0) {
+            foreach ($per_ids as $per_id) {
+                if (!empty($per_id)) {
+                    $sql = "INSERT INTO tm_usuario_perfiles (usu_id, per_id, est) VALUES (?, ?, 1)";
+                    $stmt = $conectar->prepare($sql);
+                    $stmt->bindValue(1, $usu_id);
+                    $stmt->bindValue(2, $per_id);
+                    $stmt->execute();
+                }
+            }
+        }
+    }
+
+    public function get_perfiles_por_usuario($usu_id)
+    {
+        $conectar = parent::Conexion();
+        parent::set_names();
+        $sql = "SELECT p.per_id, p.per_nom 
+                FROM tm_usuario_perfiles up
+                JOIN tm_perfil p ON up.per_id = p.per_id
+                WHERE up.usu_id = ? AND up.est = 1";
+        $stmt = $conectar->prepare($sql);
+        $stmt->bindValue(1, $usu_id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

@@ -53,6 +53,11 @@
                         </select>
                     </div>
                     <div class="form-group">
+                        <label class="form-label semibold" for="perfiles">Perfiles Adicionales</label>
+                        <select class="select2" id="perfiles" name="perfiles[]" multiple="multiple" style="width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="form-label" for="rol_id">Rol</label>
                         <select class="select2" id="rol_id" name="rol_id" required>
                             <option value="1">Usuario</option>

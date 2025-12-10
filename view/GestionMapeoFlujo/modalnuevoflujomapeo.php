@@ -26,7 +26,12 @@
                         </select>
                     </fieldset>
                     <fieldset class="form-group">
-                                                <label for="creador_car_id"><b>Y</b> es creado por alguien con el cargo:</label>
+                        <label for="creador_per_id"><b>Y/O</b> es creado por alguien con el perfil:</label>
+                        <select id="creador_per_ids" name="creador_per_ids[]" class="select2" multiple="multiple" style="width: 100%;">
+                        </select>
+                    </fieldset>
+                    <fieldset class="form-group">
+                        <label for="creador_car_id"><b>Y</b> es creado por alguien con el cargo:</label>
                         <div>
                             <button type="button" class="btn btn-sm btn-primary" id="select_all_creador">Seleccionar Todos</button>
                             <button type="button" class="btn btn-sm btn-secondary" id="deselect_all_creador">Deseleccionar Todos</button>

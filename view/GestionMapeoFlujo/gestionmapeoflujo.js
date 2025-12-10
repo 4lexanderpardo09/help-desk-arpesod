@@ -20,7 +20,9 @@ function guardaryeditar(e) {
             // Reseteamos todos los combos de Select2
             $('#cat_id').val(null).trigger('change');
             $('#cats_id').val(null).trigger('change');
+            $('#cats_id').val(null).trigger('change');
             $('#creador_car_ids').val(null).trigger('change');
+            $('#creador_per_ids').val(null).trigger('change');
             $('#asignado_car_ids').val(null).trigger('change');
             $("#modalnuevoflujomapeo").modal('hide');
             $('#flujomapeo_data').DataTable().ajax.reload();
@@ -31,8 +33,9 @@ function guardaryeditar(e) {
 
 $(document).ready(function () {
     // --- 1. Inicializar Select2 ---
+    // --- 1. Inicializar Select2 ---
     $('#cat_id, #cats_id').select2({ dropdownParent: $('#modalnuevoflujomapeo'), placeholder: "Seleccione" });
-    $('#creador_car_ids, #asignado_car_ids').select2({ dropdownParent: $('#modalnuevoflujomapeo'), placeholder: "Seleccione uno o varios", multiple: true });
+    $('#creador_car_ids, #asignado_car_ids, #creador_per_ids').select2({ dropdownParent: $('#modalnuevoflujomapeo'), placeholder: "Seleccione uno o varios", multiple: true });
 
     // --- 2. Cargar combos iniciales ---
     // Carga la lista de categorías padre
@@ -44,6 +47,11 @@ $(document).ready(function () {
     $.post("../../controller/flujomapeo.php?op=combo_cargos", function (data) {
         $('#creador_car_ids').html(data);
         $('#asignado_car_ids').html(data);
+    });
+
+    // Carga la lista de perfiles
+    $.post("../../controller/perfil.php?op=combo", function (data) {
+        $('#creador_per_ids').html(data);
     });
 
     // --- 3. Lógica para combos dependientes ---
@@ -61,21 +69,21 @@ $(document).ready(function () {
     });
 
     // --- 4. Lógica para botones de seleccionar/deseleccionar todos ---
-    $('#select_all_creador').on('click', function() {
+    $('#select_all_creador').on('click', function () {
         $("#creador_car_ids > option").prop("selected", "selected");
         $("#creador_car_ids").trigger("change");
     });
 
-    $('#deselect_all_creador').on('click', function() {
+    $('#deselect_all_creador').on('click', function () {
         $("#creador_car_ids").val(null).trigger("change");
     });
 
-    $('#select_all_asignado').on('click', function() {
+    $('#select_all_asignado').on('click', function () {
         $("#asignado_car_ids > option").prop("selected", "selected");
         $("#asignado_car_ids").trigger("change");
     });
 
-    $('#deselect_all_asignado').on('click', function() {
+    $('#deselect_all_asignado').on('click', function () {
         $("#asignado_car_ids").val(null).trigger("change");
     });
 
@@ -146,6 +154,7 @@ function editar(regla_id) {
 
             // Asignamos los arrays de IDs a los combos de selección múltiple
             $('#creador_car_ids').val(data.creadores).trigger('change');
+            $('#creador_per_ids').val(data.creadores_perfiles).trigger('change');
             $('#asignado_car_ids').val(data.asignados).trigger('change');
 
             // Para los combos dependientes, cargamos en cascada
@@ -165,7 +174,7 @@ function editar(regla_id) {
 }
 
 function eliminar(regla_id) {
-        swal({
+    swal({
         title: "Advertencia",
         text: "¿Está seguro de eliminar esta regla?",
         type: "warning",
@@ -175,15 +184,15 @@ function eliminar(regla_id) {
         cancelButtonText: "No, cancelar",
         closeOnConfirm: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            // --- MODIFICADO: Se envía 'regla_id' en lugar de 'map_id' ---
-            $.post("../../controller/flujomapeo.php?op=eliminar", { regla_id: regla_id }, function() {
-                $('#flujomapeo_data').DataTable().ajax.reload();
-                swal("¡Eliminado!", "La regla ha sido eliminada.", "success");
-            });
-        }
-    });
+        function (isConfirm) {
+            if (isConfirm) {
+                // --- MODIFICADO: Se envía 'regla_id' en lugar de 'map_id' ---
+                $.post("../../controller/flujomapeo.php?op=eliminar", { regla_id: regla_id }, function () {
+                    $('#flujomapeo_data').DataTable().ajax.reload();
+                    swal("¡Eliminado!", "La regla ha sido eliminada.", "success");
+                });
+            }
+        });
 }
 
 $('#btnnuevoflujomapeo').on('click', function () {
@@ -193,7 +202,9 @@ $('#btnnuevoflujomapeo').on('click', function () {
     // Reseteamos todos los combos de Select2
     $('#cat_id').val(null).trigger('change');
     $('#cats_id').html('<option value="">Seleccione una categoría primero</option>').trigger('change');
+    $('#cats_id').html('<option value="">Seleccione una categoría primero</option>').trigger('change');
     $('#creador_car_ids').val(null).trigger('change');
+    $('#creador_per_ids').val(null).trigger('change');
     $('#asignado_car_ids').val(null).trigger('change');
     $('#modalnuevoflujomapeo').modal('show');
 });

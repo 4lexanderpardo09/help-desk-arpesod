@@ -69,18 +69,27 @@ switch ($_GET["op"]) {
         }
         break;
 
-    case "combo_filtrado": 
+    case "combo_filtrado":
         // Validar entrada
         $creador_car_id = isset($_POST['creador_car_id']) ? intval($_POST['creador_car_id']) : 0;
 
+        // 1. Obtener perfiles del usuario desde la sesión
+        $creador_per_ids = [];
+        if (isset($_SESSION['usu_id'])) {
+            require_once("../models/Usuario.php");
+            $usuario = new Usuario();
+            $perfiles = $usuario->get_perfiles_por_usuario($_SESSION['usu_id']);
+            $creador_per_ids = array_column($perfiles, 'per_id');
+        }
+
         // Consultar datos en el modelo
-        $datos = $subcategoria->get_subcategorias_filtradas($creador_car_id);
+        $datos = $subcategoria->get_subcategorias_filtradas($creador_car_id, $creador_per_ids);
 
         $html = "";
         if (is_array($datos) && count($datos) > 0) {
             foreach ($datos as $row) {
-                $html .= "<option value='" . htmlspecialchars($row["cats_id"]) . "'>" 
-                    . htmlspecialchars($row["cats_nom"]) 
+                $html .= "<option value='" . htmlspecialchars($row["cats_id"]) . "'>"
+                    . htmlspecialchars($row["cats_nom"])
                     . "</option>";
             }
         } else {
@@ -93,5 +102,4 @@ switch ($_GET["op"]) {
             "datos" => $datos
         ]);
         break;
-
 }

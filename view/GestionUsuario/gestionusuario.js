@@ -22,8 +22,10 @@ function guardaryeditar(e) {
             $('#usu_nom').html('');
             $('#usu_ape').html('');
             $('#usu_correo').html('');
+            $('#usu_correo').html('');
             $('#emp_id').val('').trigger('change')
             $('#rol_id').val('').trigger('change');
+            $('#perfiles').val(null).trigger('change'); // Reset perfiles
             $('#reg_id').val('').trigger('change');
             $('#car_id').val('').trigger('change');
             $('#dp_id').val('').trigger('change');
@@ -42,7 +44,7 @@ function guardaryeditar(e) {
 
 $(document).ready(function () {
 
-    $('#rol_id,#emp_id,#car_id,#reg_id, #creador_car_id').select2({
+    $('#rol_id,#emp_id,#car_id,#reg_id, #creador_car_id, #perfiles').select2({
         dropdownParent: $('#modalnuevousuario'),
         placeholder: "Seleccionar",
     });
@@ -114,8 +116,12 @@ $(document).ready(function () {
         $('#car_id').html(data);
     });
     $.post("../../controller/regional.php?op=combo", function (data) {
-        
+
         $('#reg_id').html(data);
+    });
+
+    $.post("../../controller/perfil.php?op=combo", function (data) {
+        $('#perfiles').html(data);
     });
 
 })
@@ -134,6 +140,15 @@ function editar(usu_id) {
         $('#dp_id').val(data.dp_id).trigger('change');
         $('#reg_id').val(data.reg_id).trigger('change');
         $('#car_id').val(data.car_id).trigger('change');
+        $('#car_id').val(data.car_id).trigger('change');
+
+        // Load profiles
+        if (data.perfiles) {
+            $('#perfiles').val(data.perfiles).trigger('change');
+        } else {
+            $('#perfiles').val(null).trigger('change');
+        }
+
         if (data.es_nacional == 1) {
             $('#es_nacional').prop('checked', true);
         } else {
@@ -196,7 +211,7 @@ $(document).on("click", "#btnnuevoregistro", function () {
     $('#car_id').val('').trigger('change');
 });
 
-$('#modalnuevousuario').on('hidden.bs.modal', function() {
+$('#modalnuevousuario').on('hidden.bs.modal', function () {
     $("#usuario_form")[0].reset();
     $('#usu_id').val('');
     $('#usu_nom').html('');
@@ -205,7 +220,9 @@ $('#modalnuevousuario').on('hidden.bs.modal', function() {
     $('#emp_id').val('').trigger('change')
     $('#rol_id').val('').trigger('change');
     $('#reg_id').val('').trigger('change');
+    $('#reg_id').val('').trigger('change');
     $('#car_id').val('').trigger('change');
+    $('#perfiles').val(null).trigger('change');
     $('#dp_id').val('').trigger('change');
 });
 

@@ -8,7 +8,7 @@ class FlujoMapeo extends Conectar
      * @param array $creador_car_ids    Un array con los IDs de los cargos creadores.
      * @param array $asignado_car_ids   Un array con los IDs de los cargos asignados.
      */
-    public function insert_flujo_mapeo($cats_id, $creador_car_ids, $asignado_car_ids)
+    public function insert_flujo_mapeo($cats_id, $creador_car_ids, $asignado_car_ids, $creador_per_ids)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -31,7 +31,18 @@ class FlujoMapeo extends Conectar
             }
         }
 
-        // 3. Insertar las relaciones con los cargos ASIGNADOS
+        // 3. Insertar las relaciones con los perfiles CREADORES
+        if (is_array($creador_per_ids)) {
+            foreach ($creador_per_ids as $per_id) {
+                $sql_perfil = "INSERT INTO regla_creadores_perfil (regla_id, creator_per_id, est) VALUES (?, ?, 1)";
+                $sql_perfil = $conectar->prepare($sql_perfil);
+                $sql_perfil->bindValue(1, $regla_id);
+                $sql_perfil->bindValue(2, $per_id);
+                $sql_perfil->execute();
+            }
+        }
+
+        // 4. Insertar las relaciones con los cargos ASIGNADOS
         if (is_array($asignado_car_ids)) {
             foreach ($asignado_car_ids as $car_id) {
                 $sql_asignado = "INSERT INTO regla_asignados (regla_id, asignado_car_id) VALUES (?, ?)";
@@ -46,7 +57,7 @@ class FlujoMapeo extends Conectar
     /**
      * Actualiza una regla de mapeo. El método es "borrar y volver a insertar" las relaciones.
      */
-    public function update_flujo_mapeo($regla_id, $cats_id, $creador_car_ids, $asignado_car_ids)
+    public function update_flujo_mapeo($regla_id, $cats_id, $creador_car_ids, $asignado_car_ids, $creador_per_ids)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -64,13 +75,17 @@ class FlujoMapeo extends Conectar
         $sql_del_creador->bindValue(1, $regla_id);
         $sql_del_creador->execute();
 
+        $sql_del_perfil = "DELETE FROM regla_creadores_perfil WHERE regla_id = ?";
+        $sql_del_perfil = $conectar->prepare($sql_del_perfil);
+        $sql_del_perfil->bindValue(1, $regla_id);
+        $sql_del_perfil->execute();
+
         $sql_del_asignado = "DELETE FROM regla_asignados WHERE regla_id = ?";
         $sql_del_asignado = $conectar->prepare($sql_del_asignado);
         $sql_del_asignado->bindValue(1, $regla_id);
         $sql_del_asignado->execute();
 
         // 3. Re-insertar las nuevas relaciones
-        // (La lógica es idéntica a la de la función de inserción)
         if (is_array($creador_car_ids)) {
             foreach ($creador_car_ids as $car_id) {
                 $sql_creador = "INSERT INTO regla_creadores (regla_id, creador_car_id) VALUES (?, ?)";
@@ -80,6 +95,17 @@ class FlujoMapeo extends Conectar
                 $sql_creador->execute();
             }
         }
+
+        if (is_array($creador_per_ids)) {
+            foreach ($creador_per_ids as $per_id) {
+                $sql_perfil = "INSERT INTO regla_creadores_perfil (regla_id, creator_per_id, est) VALUES (?, ?, 1)";
+                $sql_perfil = $conectar->prepare($sql_perfil);
+                $sql_perfil->bindValue(1, $regla_id);
+                $sql_perfil->bindValue(2, $per_id);
+                $sql_perfil->execute();
+            }
+        }
+
         if (is_array($asignado_car_ids)) {
             foreach ($asignado_car_ids as $car_id) {
                 $sql_asignado = "INSERT INTO regla_asignados (regla_id, asignado_car_id) VALUES (?, ?)";
@@ -117,6 +143,13 @@ class FlujoMapeo extends Conectar
         $sql_creadores->execute();
         $output['creadores'] = array_column($sql_creadores->fetchAll(PDO::FETCH_ASSOC), 'creador_car_id');
 
+        // 2.1 Obtener lista de IDs de perfiles creadores asociados
+        $sql_perfiles = "SELECT creator_per_id FROM regla_creadores_perfil WHERE regla_id = ? AND est = 1";
+        $sql_perfiles = $conectar->prepare($sql_perfiles);
+        $sql_perfiles->bindValue(1, $regla_id);
+        $sql_perfiles->execute();
+        $output['creadores_perfiles'] = array_column($sql_perfiles->fetchAll(PDO::FETCH_ASSOC), 'creator_per_id');
+
         // 3. Obtener lista de IDs de cargos asignados asociados
         $sql_asignados = "SELECT asignado_car_id FROM regla_asignados WHERE regla_id = ?";
         $sql_asignados = $conectar->prepare($sql_asignados);
@@ -138,7 +171,8 @@ class FlujoMapeo extends Conectar
         $sql = "SELECT 
                     rm.regla_id,
                     s.cats_nom,
-                    (SELECT GROUP_CONCAT(c.car_nom SEPARATOR ', ') FROM regla_creadores rc JOIN tm_cargo c ON rc.creador_car_id = c.car_id WHERE rc.regla_id = rm.regla_id) AS creadores,
+                    (SELECT GROUP_CONCAT(c.car_nom SEPARATOR ', ') FROM regla_creadores rc JOIN tm_cargo c ON rc.creador_car_id = c.car_id WHERE rc.regla_id = rm.regla_id) AS creadores_cargos,
+                    (SELECT GROUP_CONCAT(p.per_nom SEPARATOR ', ') FROM regla_creadores_perfil rcp JOIN tm_perfil p ON rcp.creator_per_id = p.per_id WHERE rcp.regla_id = rm.regla_id AND rcp.est = 1) AS creadores_perfiles,
                     (SELECT GROUP_CONCAT(c.car_nom SEPARATOR ', ') FROM regla_asignados ra JOIN tm_cargo c ON ra.asignado_car_id = c.car_id WHERE ra.regla_id = rm.regla_id) AS asignados
                 FROM 
                     tm_regla_mapeo rm
