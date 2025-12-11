@@ -240,7 +240,6 @@ class Ticket extends Conectar
             )";
         }
 
-        file_put_contents('/home/alexander/dev/help-desk-arpesod/debug_search_sql.txt', "SQL Query: " . $sql . "\nParams: Asig=$usu_asig, Search=$search_term\n", FILE_APPEND);
 
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
