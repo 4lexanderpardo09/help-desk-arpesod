@@ -17,8 +17,7 @@ class TicketLister
     public function listTicketsByUser($userId)
     {
         $search = isset($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
-        file_put_contents('/home/alexander/dev/help-desk-arpesod/debug_search_lister.txt', "User Search Custom: " . print_r($_POST, true) . "\nTerm: $search\n", FILE_APPEND);
-
+       
         $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search);
         $data = array();
         foreach ($datos as $row) {
