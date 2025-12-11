@@ -258,11 +258,13 @@ class Ticket extends Conectar
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
                 tm_usuario.rol_id,
-                td_documento_detalle.det_nom 
+                GROUP_CONCAT(td_documento_detalle.det_nom SEPARATOR '|') as det_noms
             FROM td_ticketdetalle 
             INNER JOIN tm_usuario ON td_ticketdetalle.usu_id = tm_usuario.usu_id
             LEFT JOIN td_documento_detalle ON td_ticketdetalle.tickd_id = td_documento_detalle.tickd_id
             WHERE td_ticketdetalle.tick_id = ? AND td_ticketdetalle.est = 1
+            GROUP BY td_ticketdetalle.tickd_id
+            ORDER BY td_ticketdetalle.tickd_id DESC
               ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);
@@ -332,14 +334,15 @@ class Ticket extends Conectar
                 d.tickd_descrip AS descripcion,
                 NULL AS nom_receptor,
                 NULL AS ape_receptor,
-                doc.det_nom,
+                GROUP_CONCAT(doc.det_nom SEPARATOR '|') AS det_noms,
                 d.tickd_id,
                 NULL AS estado_tiempo_paso, -- Columna de relleno para que la unión funcione
                 NULL AS error_descrip -- Columna de relleno
             FROM td_ticketdetalle d
             INNER JOIN tm_usuario u ON d.usu_id = u.usu_id
             LEFT JOIN td_documento_detalle doc ON d.tickd_id = doc.tickd_id
-            WHERE d.tick_id = ?)
+            WHERE d.tick_id = ?
+            GROUP BY d.tickd_id)
 
             UNION ALL
 
@@ -352,7 +355,7 @@ class Ticket extends Conectar
                 a.asig_comentario AS descripcion,
                 u_nuevo.usu_nom AS nom_receptor,
                 u_nuevo.usu_ape AS ape_receptor,
-                NULL AS det_nom,
+                NULL AS det_noms,
                 NULL AS tickd_id,
                 a.estado_tiempo_paso, -- AÑADIDO: Seleccionamos el estado del paso
                 a.error_descrip -- NUEVO: Seleccionamos la descripción del error
@@ -372,7 +375,7 @@ class Ticket extends Conectar
                 'Ticket cerrado' AS descripcion,
                 NULL AS nom_receptor,
                 NULL AS ape_receptor,
-                NULL AS det_nom,
+                NULL AS det_noms,
                 NULL AS tickd_id,
                 NULL AS estado_tiempo_paso, -- Columna de relleno
                 NULL AS error_descrip -- Columna de relleno
@@ -391,7 +394,7 @@ class Ticket extends Conectar
                 'Asignación Paralela' AS descripcion,
                 u.usu_nom AS nom_receptor,
                 u.usu_ape AS ape_receptor,
-                NULL AS det_nom,
+                NULL AS det_noms,
                 NULL AS tickd_id,
                 tp.estado_tiempo_paso AS estado_tiempo_paso,
                 NULL AS error_descrip
