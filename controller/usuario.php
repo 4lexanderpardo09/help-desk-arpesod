@@ -131,7 +131,7 @@ switch ($_GET["op"]) {
     case "usuariosxrol":
         $datos = $usuario->get_usuario_x_rol();
         if (is_array($datos) == true and count($datos) > 0) {
-            $html .= "";
+            $html = "";
             foreach ($datos as $row) {
                 $html .= "<option value='" . $row['usu_id'] . "'>" . $row['usu_nom'] . " " . $row['usu_ape'] . "</option>";
             }
