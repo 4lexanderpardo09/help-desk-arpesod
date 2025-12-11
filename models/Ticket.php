@@ -139,7 +139,7 @@ class Ticket extends Conectar
         }
     }
 
-    public function listar_ticket_x_usuario($usu_id)
+    public function listar_ticket_x_usuario($usu_id, $search_term = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -168,14 +168,35 @@ class Ticket extends Conectar
                 WHERE 
                 tm_ticket.est = 1
                 AND tm_usuario.usu_id=?";
+
+        if (!empty($search_term)) {
+            $sql .= " AND (
+                tm_ticket.tick_titulo LIKE ? 
+                OR tm_ticket.tick_descrip LIKE ?
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE ?
+                )
+            )";
+        }
+
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
+
+        if (!empty($search_term)) {
+            $term = "%" . $search_term . "%";
+            $sql->bindValue(2, $term);
+            $sql->bindValue(3, $term);
+            $sql->bindValue(4, $term);
+        }
+
         $sql->execute();
 
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket_x_agente($usu_asig)
+    public function listar_ticket_x_agente($usu_asig, $search_term = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -190,6 +211,7 @@ class Ticket extends Conectar
                 tm_ticket.usu_asig,
                 tm_usuario.usu_nom,
                 tm_usuario.usu_ape,
+                tm_usuario.usu_correo,
                 tm_categoria.cat_nom,
                 tm_subcategoria.cats_nom,
                 pd.pd_nom as prioridad_usuario,
@@ -205,14 +227,37 @@ class Ticket extends Conectar
                 WHERE 
                 tm_ticket.est = 1
                 AND FIND_IN_SET(?, tm_ticket.usu_asig)";
+
+        if (!empty($search_term)) {
+            $sql .= " AND (
+                tm_ticket.tick_titulo LIKE ? 
+                OR tm_ticket.tick_descrip LIKE ?
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE ?
+                )
+            )";
+        }
+
+        file_put_contents('/home/alexander/dev/help-desk-arpesod/debug_search_sql.txt', "SQL Query: " . $sql . "\nParams: Asig=$usu_asig, Search=$search_term\n", FILE_APPEND);
+
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_asig);
+
+        if (!empty($search_term)) {
+            $term = "%" . $search_term . "%";
+            $sql->bindValue(2, $term);
+            $sql->bindValue(3, $term);
+            $sql->bindValue(4, $term);
+        }
+
         $sql->execute();
 
         return $resultado = $sql->fetchAll();
     }
 
-    public function listar_ticket()
+    public function listar_ticket($search_term = null)
     {
         $conectar = parent::Conexion();
         parent::set_names();
@@ -240,7 +285,28 @@ class Ticket extends Conectar
                 INNER join td_prioridad as pdd on tm_subcategoria.pd_id = pdd.pd_id
                 WHERE 
                 tm_ticket.est = 1";
+
+        if (!empty($search_term)) {
+            $sql .= " AND (
+                tm_ticket.tick_titulo LIKE ? 
+                OR tm_ticket.tick_descrip LIKE ?
+                OR EXISTS (
+                    SELECT 1 FROM td_ticketdetalle 
+                    WHERE td_ticketdetalle.tick_id = tm_ticket.tick_id 
+                    AND td_ticketdetalle.tickd_descrip LIKE ?
+                )
+            )";
+        }
+
         $sql = $conectar->prepare($sql);
+
+        if (!empty($search_term)) {
+            $term = "%" . $search_term . "%";
+            $sql->bindValue(1, $term);
+            $sql->bindValue(2, $term);
+            $sql->bindValue(3, $term);
+        }
+
         $sql->execute();
 
         return $resultado = $sql->fetchAll(pdo::FETCH_ASSOC);

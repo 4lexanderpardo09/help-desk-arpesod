@@ -16,7 +16,10 @@ class TicketLister
 
     public function listTicketsByUser($userId)
     {
-        $datos = $this->ticketModel->listar_ticket_x_usuario($userId);
+        $search = isset($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        file_put_contents('/home/alexander/dev/help-desk-arpesod/debug_search_lister.txt', "User Search Custom: " . print_r($_POST, true) . "\nTerm: $search\n", FILE_APPEND);
+
+        $datos = $this->ticketModel->listar_ticket_x_usuario($userId, $search);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -59,8 +62,10 @@ class TicketLister
             $sub_array[] = '<button type="button" onClick="ver(' . $row['tick_id'] . ');" id="' . $row['tick_id'] . '" class="btn btn-inline btn-primary btn-sm ladda-button"><i class="fa fa-eye"></i></button>';
             $data[] = $sub_array;
         }
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
         return [
-            "sEcho" => 1,
+            "sEcho" => $draw,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data
@@ -69,7 +74,10 @@ class TicketLister
 
     public function listTicketsByAgent($agentId)
     {
-        $datos = $this->ticketModel->listar_ticket_x_agente($agentId);
+        $search = isset($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        file_put_contents('/home/alexander/dev/help-desk-arpesod/debug_search_lister.txt', "Agent Search Custom: " . print_r($_POST, true) . "\nTerm: $search\n", FILE_APPEND);
+
+        $datos = $this->ticketModel->listar_ticket_x_agente($agentId, $search);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -114,8 +122,10 @@ class TicketLister
             $data[] = $sub_array;
         }
 
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
         return [
-            "sEcho" => 1,
+            "sEcho" => $draw,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data
@@ -124,7 +134,8 @@ class TicketLister
 
     public function listAllTickets()
     {
-        $datos = $this->ticketModel->listar_ticket();
+        $search = isset($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        $datos = $this->ticketModel->listar_ticket($search);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -172,8 +183,10 @@ class TicketLister
             $data[] = $sub_array;
         }
 
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+
         return [
-            "sEcho" => 1,
+            "sEcho" => $draw,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data
