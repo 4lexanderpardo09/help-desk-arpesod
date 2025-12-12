@@ -196,7 +196,9 @@ class TicketLister
 
     public function listTicketsRecordByAgent($usuId)
     {
-        $datos = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId);
+        // Prioritize custom search if not empty, otherwise fallback to DataTables search
+        $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        $datos = $this->ticketModel->listar_tickets_involucrados_por_usuario($usuId, $search);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -224,7 +226,7 @@ class TicketLister
         }
 
         return [
-            "sEcho" => 1,
+            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data
@@ -233,7 +235,9 @@ class TicketLister
 
     public function listAllTicketsRecord()
     {
-        $datos = $this->ticketModel->listar_tickets_con_historial();
+        // Prioritize custom search if not empty, otherwise fallback to DataTables search
+        $search = !empty($_POST['search_custom']) ? $_POST['search_custom'] : (isset($_POST['search']['value']) ? $_POST['search']['value'] : null);
+        $datos = $this->ticketModel->listar_tickets_con_historial($search);
         $data = array();
         foreach ($datos as $row) {
             $sub_array = array();
@@ -261,7 +265,7 @@ class TicketLister
         }
 
         return [
-            "sEcho" => 1,
+            "sEcho" => isset($_POST['draw']) ? intval($_POST['draw']) : 1,
             "iTotalRecords" => count($data),
             "iTotalDisplayRecords" => count($data),
             "aaData" => $data

@@ -31,6 +31,9 @@ $(document).ready(function(){
             url: '../../controller/ticket.php?op=listar_historial_tabla',
             type: 'post',
             dataType: 'json',
+            data: function (d) {
+                d.search_custom = $('#custom_search').val();
+            },
             error: function(e){
                 console.log(e.responseText);
             }
@@ -84,7 +87,10 @@ $(document).ready(function(){
             url: '../../controller/ticket.php?op=listar_historial_tabla_x_agente',
             type: 'post',
             dataType: 'json',
-            data:{usu_id:usu_id},
+            data: function (d) {
+                d.usu_id = usu_id;
+                d.search_custom = $('#custom_search').val();
+            },
             error: function(e){
                 console.log(e.responseText);
             }
@@ -120,5 +126,16 @@ $(document).ready(function(){
         }
     }).DataTable();
     }
+    
+    // Event listener for custom search
+    $('#btn_search').on('click', function() {
+        $('#historial_data').DataTable().ajax.reload();
+    });
+
+    $('#custom_search').on('keyup', function(e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            $('#historial_data').DataTable().ajax.reload();
+        }
+    });
 
 });

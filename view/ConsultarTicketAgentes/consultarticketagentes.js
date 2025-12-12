@@ -3,32 +3,35 @@ var usu_id = $('#user_idx').val()
 var usu_asig = $('#user_idx').val()
 var rol_id = $('#rol_idx').val()
 
-function init(){
+function init() {
 }
 
 
-$(document).ready(function() {
-    if(rol_id == 2){
+$(document).ready(function () {
+    if (rol_id == 2) {
 
-        tabla=$('#ticket_data').dataTable({
+        tabla = $('#ticket_data').dataTable({
             "aProcessing": true,
             "aServerSide": true,
             dom: 'Bfrtip',
             "searching": true,
             lengthChange: false,
             colRecorder: true,
-            "buttons":[
-                    'copyHtml5',
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5',
-                    ],
+            "buttons": [
+                'copyHtml5',
+                'excelHtml5',
+                'csvHtml5',
+                'pdfHtml5',
+            ],
             "ajax": {
                 url: '../../controller/ticket.php?op=listar_x_usu',
                 type: 'post',
                 dataType: 'json',
-                data:{usu_id: usu_id},
-                error: function(e){
+                data: function (d) {
+                    d.usu_id = usu_id;
+                    d.search_custom = $('#custom_search').val();
+                },
+                error: function (e) {
                     console.log(e.responseText);
                 }
             },
@@ -38,42 +41,53 @@ $(document).ready(function() {
             "isDisplayLength": 10,
             "autoWidth": false,
             "language": {
-            "sProcessing": "Procesando...",
-            "sLengthMenu": "Mostrar _MENU_ registros",
-            "sZeroRecords": "No se encontraron resultados",
-            "sEmptyTable": "Ningún dato disponible en esta tabla",
-            "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
-            "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
-            "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
-            "sInfoPostFix": "",
-            "sSearch": "Buscar:",
-            "sUrl": "",
-            "sInfoThousands": ",",
-            "sLoadingRecords": "Cargando...",
-            "oPaginate": {
-                "sFirst": "Primero",
-                "sLast": "Último",
-                "sNext": "Siguiente",
-                "sPrevious": "Anterior"
-            },
-            "oAria": {
-                "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
-                "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                "sProcessing": "Procesando...",
+                "sLengthMenu": "Mostrar _MENU_ registros",
+                "sZeroRecords": "No se encontraron resultados",
+                "sEmptyTable": "Ningún dato disponible en esta tabla",
+                "sInfo": "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                "sInfoEmpty": "Mostrando registros del 0 al 0 de un total de 0 registros",
+                "sInfoFiltered": "(filtrado de un total de _MAX_ registros)",
+                "sInfoPostFix": "",
+                "sSearch": "Buscar:",
+                "sUrl": "",
+                "sInfoThousands": ",",
+                "sLoadingRecords": "Cargando...",
+                "oPaginate": {
+                    "sFirst": "Primero",
+                    "sLast": "Último",
+                    "sNext": "Siguiente",
+                    "sPrevious": "Anterior"
+                },
+                "oAria": {
+                    "sSortAscending": ": Activar para ordenar la columna de manera ascendente",
+                    "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                }
             }
-        }
         }).DataTable();
-    }else {
+    } else {
 
     }
+
+    // Event listener for custom search
+    $('#btn_search').on('click', function () {
+        $('#ticket_data').DataTable().ajax.reload();
+    });
+
+    $('#custom_search').on('keyup', function (e) {
+        if (e.key === 'Enter' || e.keyCode === 13) {
+            $('#ticket_data').DataTable().ajax.reload();
+        }
+    });
 
 })
 
 
-function ver(tick_id){
-    window.location.href = '/view/DetalleTicket/?ID='+ tick_id
+function ver(tick_id) {
+    window.location.href = '/view/DetalleTicket/?ID=' + tick_id
 }
 
-function cambiarEstado(tick_id){
+function cambiarEstado(tick_id) {
     swal({
         title: "Re-abrir ticket",
         text: "¿Estas que quieres re abrir el ticket?",
@@ -85,27 +99,27 @@ function cambiarEstado(tick_id){
         closeOnConfirm: false,
         closeOnCancel: false
     },
-    function(isConfirm) {
-        if (isConfirm) {
-            $.post("../../controller/ticket.php?op=reabrir", {tick_id:tick_id, usu_id:usu_id}, function(data) {
-                $('#ticket_data').DataTable().ajax.reload(); 
+        function (isConfirm) {
+            if (isConfirm) {
+                $.post("../../controller/ticket.php?op=reabrir", { tick_id: tick_id, usu_id: usu_id }, function (data) {
+                    $('#ticket_data').DataTable().ajax.reload();
+                    swal({
+                        title: "Ticket!",
+                        text: "Ticket nuevamente abierto",
+                        type: "success",
+                        confirmButtonClass: "btn-success"
+                    });
+                });
+            } else {
                 swal({
-                    title: "Ticket!",
-                    text: "Ticket nuevamente abierto",
-                    type: "success",
-                    confirmButtonClass: "btn-success"
-                }); 
-            });
-        } else {
-            swal({
-                title: "Cancelado",
-                text: "El ticket no se abrio.",
-                type: "error",
-                confirmButtonClass: "btn-danger"
-                
-            });
-        }
-    });
+                    title: "Cancelado",
+                    text: "El ticket no se abrio.",
+                    type: "error",
+                    confirmButtonClass: "btn-danger"
+
+                });
+            }
+        });
 }
 
 

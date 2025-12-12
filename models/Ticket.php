@@ -497,7 +497,7 @@ class Ticket extends Conectar
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
-    public function listar_tickets_con_historial()
+    public function listar_tickets_con_historial($search_term = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -514,15 +514,32 @@ class Ticket extends Conectar
                 INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
                 LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
                 WHERE
-                    t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)
-                ORDER BY
-                    t.tick_id DESC";
+                    t.tick_id IN (SELECT tick_id FROM th_ticket_asignacion)";
+
+        if (!empty($search_term)) {
+            $sql .= " AND (
+                t.tick_titulo LIKE ? 
+                OR t.tick_descrip LIKE ?
+                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE ?)
+            )";
+        }
+
+        $sql .= " ORDER BY t.tick_id DESC";
+
         $sql = $conectar->prepare($sql);
+
+        if (!empty($search_term)) {
+            $term = "%" . $search_term . "%";
+            $sql->bindValue(1, $term);
+            $sql->bindValue(2, $term);
+            $sql->bindValue(3, $term);
+        }
+
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function listar_tickets_involucrados_por_usuario($usu_id)
+    public function listar_tickets_involucrados_por_usuario($usu_id, $search_term = null)
     {
         $conectar = parent::conexion();
         parent::set_names();
@@ -538,16 +555,34 @@ class Ticket extends Conectar
                     tm_ticket t
                 INNER JOIN tm_subcategoria cats ON t.cats_id = cats.cats_id
                 LEFT JOIN tm_usuario u ON t.usu_asig = u.usu_id
-                WHERE
+                WHERE (
                     t.tick_id IN (SELECT DISTINCT tick_id FROM th_ticket_asignacion WHERE usu_asig = ?)
                     OR t.how_asig = ?
                     OR t.tick_id IN (SELECT DISTINCT tick_id FROM tm_ticket_paralelo WHERE usu_id = ?)
-                ORDER BY
-                    t.tick_id DESC";
+                )";
+        
+        if (!empty($search_term)) {
+            $sql .= " AND (
+                t.tick_titulo LIKE ? 
+                OR t.tick_descrip LIKE ?
+                OR EXISTS (SELECT 1 FROM td_ticketdetalle d WHERE d.tick_id = t.tick_id AND d.tickd_descrip LIKE ?)
+            )";
+        }
+
+        $sql .= " ORDER BY t.tick_id DESC";
+
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $usu_id);
         $sql->bindValue(2, $usu_id);
         $sql->bindValue(3, $usu_id);
+
+        if (!empty($search_term)) {
+            $term = "%" . $search_term . "%";
+            $sql->bindValue(4, $term);
+            $sql->bindValue(5, $term);
+            $sql->bindValue(6, $term);
+        }
+
         $sql->execute();
         return $resultado = $sql->fetchAll(PDO::FETCH_ASSOC);
     }
