@@ -1801,6 +1801,7 @@ class TicketService
 
             $this->ticketRepository->updateTicketStatus($tick_id, 'Abierto');
 
+            date_default_timezone_set('America/Bogota');
             $fecha_inicio = new DateTime($novedad['fecha_inicio']);
             $fecha_fin = new DateTime();
             $duracion = $fecha_inicio->diff($fecha_fin);
