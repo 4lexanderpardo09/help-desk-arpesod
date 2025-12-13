@@ -329,7 +329,7 @@ class Ticket extends Conectar
             LEFT JOIN td_documento_detalle ON td_ticketdetalle.tickd_id = td_documento_detalle.tickd_id
             WHERE td_ticketdetalle.tick_id = ? AND td_ticketdetalle.est = 1
             GROUP BY td_ticketdetalle.tickd_id
-            ORDER BY td_ticketdetalle.tickd_id DESC
+            ORDER BY td_ticketdetalle.tickd_id ASC
               ";
         $sql = $conectar->prepare($sql);
         $sql->bindValue(1, $tick_id);

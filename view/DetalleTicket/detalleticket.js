@@ -271,8 +271,37 @@ $(document).ready(function () {
             closeOnConfirm: false
         }, function (isConfirm) {
             if (isConfirm) {
-                $.post("../../controller/ticket.php?op=resolver_novedad", { tick_id: getUrlParameter('ID'), usu_id: $('#user_idx').val() })
-                    .done(function (response) {
+                // Prepare FormData to include text and files
+                var formData = new FormData();
+                formData.append('tick_id', getUrlParameter('ID'));
+                formData.append('usu_id', $('#user_idx').val());
+
+                // Get description from Summernote
+                var description = $('#tickd_descrip').summernote('code');
+                formData.append('tickd_descrip', description);
+
+                // Get files and validate size
+                var fileInput = document.getElementById('fileElem');
+                var totalSize = 0;
+                if (fileInput && fileInput.files.length > 0) {
+                    for (var i = 0; i < fileInput.files.length; i++) {
+                        totalSize += fileInput.files[i].size;
+                        formData.append('files[]', fileInput.files[i]);
+                    }
+                }
+
+                if (totalSize > 8 * 1024 * 1024) { // 8MB limit
+                    swal("Error", "El tamaño total de los archivos excede el límite permitido de 8MB. Por favor reduzca el tamaño.", "error");
+                    return;
+                }
+
+                $.ajax({
+                    url: "../../controller/ticket.php?op=resolver_novedad",
+                    type: "POST",
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
                         var data = JSON.parse(response);
                         if (data.status === 'success') {
 
@@ -289,10 +318,11 @@ $(document).ready(function () {
                         } else {
                             swal("Error", data.message, "error");
                         }
-                    })
-                    .fail(function () {
+                    },
+                    error: function () {
                         swal("Error", "No se pudo resolver la novedad.", "error");
-                    });
+                    }
+                });
             }
         });
     });
@@ -443,13 +473,13 @@ function enviarDetalle(signatureData = null) {
     formData.append("tick_id", getUrlParameter('ID'));
     formData.append("usu_id", $('#user_idx').val());
     formData.append("tickd_descrip", $('#tickd_descrip').summernote('code'));
-    
+
     // Explicitly handle file upload to ensure it works
     var fileInput = document.getElementById('fileElem');
-    if(fileInput && fileInput.files.length > 0) {
-         for (var i = 0; i < fileInput.files.length; i++) {
+    if (fileInput && fileInput.files.length > 0) {
+        for (var i = 0; i < fileInput.files.length; i++) {
             formData.append('files[]', fileInput.files[i]);
-         }
+        }
     }
 
     if ($('#checkbox_avanzar_flujo').is(':checked')) {

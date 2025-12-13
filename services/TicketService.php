@@ -1807,7 +1807,38 @@ class TicketService
             $duracion_formateada = $duracion->format('%d días, %h horas, %i minutos');
 
             $comentario = "Se ha resuelto la novedad: " . htmlspecialchars($novedad['descripcion_novedad']) . ".<br><b>Tiempo de resolución de la novedad:</b> " . $duracion_formateada;
-            $this->ticketModel->insert_ticket_detalle($tick_id, $usu_resuelve_novedad, $comentario);
+
+            // Append user comment if provided
+            if (!empty($data['tickd_descrip']) && trim(strip_tags($data['tickd_descrip'])) !== '') {
+                 $comentario .= "<br><br><b>Comentario de resolución:</b><br>" . $data['tickd_descrip'];
+            }
+
+            $result_detalle = $this->ticketModel->insert_ticket_detalle($tick_id, $usu_resuelve_novedad, $comentario);
+
+            // Insert documents if provided (linked to the detail)
+            if (isset($_FILES['files']) && is_array($result_detalle) && count($result_detalle) > 0) {
+                $tickd_id = $result_detalle[0]['tickd_id'];
+
+                if (isset($_FILES['files']['name']) && is_array($_FILES['files']['name'])) {
+                    $countfiles = count($_FILES['files']['name']);
+                    $ruta = '../public/document/detalle/' . $tickd_id . '/';
+                    if (!file_exists($ruta)) {
+                        mkdir($ruta, 0777, true);
+                    }
+
+                    for ($index = 0; $index < $countfiles; $index++) {
+                        if (empty($_FILES['files']['name'][$index])) {
+                            continue;
+                        }
+
+                        $doc1 = $_FILES['files']['name'][$index];
+                        $tmp_name = $_FILES['files']['tmp_name'][$index];
+                        $destino = $ruta . $doc1;
+                        $this->documentoModel->insert_documento_detalle($tickd_id, $doc1);
+                        move_uploaded_file($tmp_name, $destino);
+                    }
+                }
+            }
 
             // Notificar al agente que tenía el paso pausado
             $ticket = $this->ticketModel->listar_ticket_x_id($tick_id);
